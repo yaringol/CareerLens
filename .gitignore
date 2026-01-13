@@ -5,7 +5,6 @@ __pycache__/
 .env
 
 # Data outputs
-data/raw/*
 data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep

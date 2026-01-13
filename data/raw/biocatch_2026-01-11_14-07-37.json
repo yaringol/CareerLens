@@ -1,0 +1,68 @@
+[
+  {
+    "source": "biocatch",
+    "url": "https://www.comeet.com/jobs/biocatch/03.00E/devops-engineer-data-platform-group/C2.A5E",
+    "job_title": "DevOps Engineer (Data Platform Group)",
+    "company": "BioCatch",
+    "location": "Israel - TLV",
+    "department": "R&D",
+    "description": "Main responsibilities:\nData Architecture Direction: Provide strategic direction for our data architecture, selecting the appropriate componments for various tasks. Collaborate on requirements and make final decisions on system design and implementation.\nProject Management: Manage end-to-end execution of high-performance, large-scale data-driven projects, including design, implementation, and ongoing maintenance.\nCost Optimization: Monitor and optimize cloud costs associated with data infrastructure and processes.\nEfficiency and Reliability: Design and build monitoring tools to ensure the efficiency, reliability, and performance of data processes and systems.\nDevOps Integration: Implement and manage DevOps practices to streamline development and operations, focusing on infrastructure automation, continuous integration/continuous deployment (CI/CD) pipelines, containerization, orchestration, and infrastructure as code. Ensure scalable, reliable, and efficient deployment processes.\nOur stack: Azure, GCP, Kubernetes, ArgoCD, Jenkins, Databricks, Snowflake, Airflow, RDBMS, Spark, Kafka, Micro-Services, bash, Python, SQL.",
+    "requirements": "Requirements\n5+ Years of Experience: Demonstrated experience as a DevOps professional, with a strong focus on big data environments, or Data Engineer with strong DevOps skills.\nData Components Management: Experiences managing and designing data infrastructure, such as Snowflake, PostgreSQL, Kafka, Aerospike, and Object Store.\nDevOps Expertise: Proven experience creating, establishing, and managing big data tools, including automation tasks. Extensive knowledge of DevOps concepts and tools, including Docker, Kubernetes, Terraform, ArgoCD, Linux OS, Networking, Load Balancing, Nginx, etc.\nProgramming Skills: Proficiency in programming languages such as Python and Object-Oriented Programming (OOP), emphasizing big data processing (like PySpark). Experience with scripting languages like Bash and Shell for automation tasks.\nCloud Platforms: Hands-on experience with major cloud providers such as Azure, Google Cloud, or AWS.\nPreferred Qualifications:\nPerformance Optimization: Experience in optimizing performance for big data tools and pipelines - Big Advantage.\nSecurity Expertise: Experience in identifying and addressing security vulnerabilities within the data platform - Big Advantage.\nCI/CD Pipelines: Experience designing, implementing, and maintaining Continuous Integration/Continuous Deployment (CI/CD) pipelines – Advantage.\nData Pipelines: Experience in building big data pipelines - Advantage.\n</div>",
+    "full_text": null
+  },
+  {
+    "source": "biocatch",
+    "url": "https://www.comeet.com/jobs/biocatch/03.00E/full-stack-developer/17.16B",
+    "job_title": "Full Stack Developer",
+    "company": "BioCatch",
+    "location": "Israel - TLV",
+    "department": "R&D",
+    "description": "Are you an experienced full-stack developer passionate about using your skills to combat cybercrime and fraud? BioCatch, the market leader in behavioral biometrics, seeks a full-stack developer to join our dynamic team.\nAs a full-stack developer at BioCatch, this role requires strong problem-solving skills, working independently, and a solid understanding of web development technologies.\nResponsibilities:\nDevelop productivity-enhancing tools for the company, incorporating modern and intuitive user interfaces.\nOwn features end-to-end—from UX behavior to backend integration\nImplement and consume REST APIs\nCreate and maintain Python backend services (FastAPI optional)\nCollaborate closely with product and design to deliver polished experiences\nMaintain code quality through reviews, testing, and incremental improvement\nWork independently in a fast-paced environment",
+    "requirements": "Requirements\n3+ years building production web applications, front-end and back-end.\nStrong proficiency in React + TypeScript\nAbility to build clean, maintainable UI components\nExperience integrating complex UIs with backend APIs\nExperience building or consuming REST APIs\nExperience building backend microservices and infrastructure.\nFamiliarity with DBs (SQL+NoSQL), caching, and queues.\nFamiliarity with git, git workflows, K8S\nGeneral\nStrong problem-solving and ownership mindset\nClear communication and positive teamwork\nAbility to work independently and deliver reliably\nNice to Have\nDevOps / Infra (Lightweight awareness)\nFamiliarity with Docker (build/run locally)\nBasic understanding of CI/CD\nExposure to Kubernetes/ArgoCD or similar tools\nExperience with AI tools.\nWillingness to learn new tools as needed\n</div>",
+    "full_text": null
+  },
+  {
+    "source": "biocatch",
+    "url": "https://www.comeet.com/jobs/biocatch/03.00E/senior-backend-engineer-data-platform-group/FC.F56",
+    "job_title": "Senior Backend Engineer (Data Platform Group)",
+    "company": "BioCatch",
+    "location": "Israel - TLV",
+    "department": "R&D",
+    "description": "We are looking for a Backend Engineer to join our Data Engineering team and build backend components and data-focused infrastructure for large-scale data processing.\nYou will design and maintain core microservices and data pipelines that power our products and provide reliable data sources to teams across the company.\nYour work will focus on customer-facing features that depend on complex data assets, with an emphasis on reliability, clear SLAs, observability, and flexibility.\nWhat you will do\nDesign and implement infrastructure for high-volume data processing\nContinuously improve performance, cost, and reliability at scale\nCollaborate with frontend teams on customer-facing features and applications\nWork with stakeholders across the company to ensure data processes meet their requirements\nMaintain high engineering standards: testing, observability, clean code, and solid CI/CD practices",
+    "requirements": "Requirements\n3–5 years of experience in backend development\nStrong hands-on experience with Python\nExperience building high-scale, low-latency, robust services deployed across multiple AKS namespaces/regions with different configurations\nExperience with at least one major cloud platform (Azure preferred)\nAdvantages / Nice to Have\nExperience with modern data platforms – Snowflake / Delta Lake / Iceberg\nExperience with distributed data processing (Databricks, PySpark, or similar)\nExperience with leadership — team management, project ownership, or task management\nPersonal Attributes\nOwnership mindset and accountability\nPassion for performance, scale, and cost-efficiency\nStrong communication skills and effective collaboration with cross-functional teams\n</div>",
+    "full_text": null
+  },
+  {
+    "source": "biocatch",
+    "url": "https://www.comeet.com/jobs/biocatch/03.00E/senior-data-engineer/86.054",
+    "job_title": "Senior Data Engineer",
+    "company": "BioCatch",
+    "location": "Israel - TLV",
+    "department": "R&D",
+    "description": "Main responsibilities:\nProvide the direction of our data architecture. Determine the right tools for the right jobs. We collaborate on the requirements and then you call the shots on what gets built.\nManage end-to-end execution of high-performance, large-scale data-driven projects, including design, implementation, and ongoing maintenance.\nOptimize and monitor the team-related cloud costs.\nDesign and construct monitoring tools to ensure the efficiency and reliability of data processes.\nImplement CI/CD for Data Workflows",
+    "requirements": "Requirements\n5+ Years of Experience in data engineering and big data at large scales. - Must\nExtensive experience with modern data stack - Must:\nSnowflake, Delta Lake, Iceberg, BigQuery, Redshift\nKafka, RabbitMQ, or similar for real-time data processing.\nPyspark, Databricks\nStrong software development background with Python/OOP and hands-on experience in building large-scale data pipelines. - Must\nHands-on experience with Docker and Kubernetes. - Must\nExpertise in ETL development, data modeling, and data warehousing best practices.\nKnowledge of monitoring & observability (Datadog, Prometheus, ELK, etc)\nExperience with infrastructure as code, deployment automation, and CI/CD.\nPractices using tools such as Helm, ArgoCD, Terraform, GitHub Actions, and Jenkins.\nOur stack: Azure, GCP, Databricks, Snowflake, Airflow, Spark, Kafka, Kubernetes, Neo4J, AeroSpike, ELK, DataDog, Micro-Services, Python, SQL\nYour stack: Proven strong back-end software engineering skills, ability to think for yourself and challenge common assumptions, commitment to high-quality execution, and embrace collaboration.\n</div>",
+    "full_text": null
+  },
+  {
+    "source": "biocatch",
+    "url": "https://www.comeet.com/jobs/biocatch/03.00E/senior-devops-infra-engineer/46.A51",
+    "job_title": "Senior DevOps Infra Engineer",
+    "company": "BioCatch",
+    "location": "Israel - TLV",
+    "department": "R&D",
+    "description": "What we're looking for:\nBioCatch delivers advanced behavioral insights, providing global organizations with actionable intelligence to create a secure and frictionless digital customer journey.\nWe are looking for a talented DevOps Engineer to join our team, learn develop and grow with us. In this role you will work collaboratively with our RnD teams to empower the operations and infrastructure array, which is essential to support our ambitious goals.\nBuild and maintain a scalable cloud infrastructure in Production (Azure, GCP)\nTroubleshoot and fix Production infrastructure/platform issues\nProactively and continuously improve Production stability and robustness to assure our infrastructure components are always up and available\nDevelop end to end projects in order to make our infrastructure better in large-scale including design, implementation, and ongoing maintenance.\nCost Optimization: Monitor and optimize cloud costs associated with data infrastructure and processes.",
+    "requirements": "Requirements\n5+ years of experience as SRE /DevOps engineer - Must\n5+ years of experience with cloud environments such as Azure, GCP or AWS - Must\nProgramming Skills: Proficiency in programming languages such as Python etc. - Must\nKubernetes: Proven experience working with Kubernetes in production environments.\nLinux distributions familiarity: Ubuntu / CentOS\nNetworking & Security: Solid understanding of computer networking fundamentals and cloud security principles\nCDN and DNS systems – AWS CloudFront / Azure Front door\nDeep Understanding of web servers (Nginx preferred)\nExperience with logging monitoring services (such as Prometheus, Grafana,Datadog and Coralogix).\nExperience working with Infrastructure as Code (IaC) tools (Terraform preferred).\n</div>",
+    "full_text": null
+  },
+  {
+    "source": "biocatch",
+    "url": "https://www.comeet.com/jobs/biocatch/03.00E/software-engineer---web-sdk/6F.263",
+    "job_title": "Software Engineer - Web SDK",
+    "company": "BioCatch",
+    "location": "Israel - TLV",
+    "department": "R&D",
+    "description": "About the Role:\nWe are looking for a talented and motivated **Software Engineer** to join our SDK team, focusing on the development and enhancement of our SDKs web & mobile. In this role, you will take part in designing, building, and maintaining a high-performance SDK that is integrated into customer applications, used by customers around the world.\nYou will work closely with other engineers, product managers, and solution teams to ensure high quality, maintainability, and performance of the SDK. If you are passionate about web and mobile technologies and enjoy solving complex challenges, we’d love to meet you.\nWhat You’ll Do:\nDesign and implement new features and improvements in our SDKs .\nEnsure the SDK is robust, secure, and easy to integrate by third-party developers.\nCollaborate with cross-functional teams, including data engineer, data scientist and backend engineers.\nMaintain high code quality through code reviews, testing, and best practices.\nMonitor and optimize SDK performance and resource usage.\nWrite clear technical documentation and integration guides.",
+    "requirements": "Requirements\n5+ years of hands-on experience in JavaScript/TypeScript development.\nStrong knowledge of modern web development (ES6+, DOM APIs, browser compatibility).\nFamiliarity with security, performance, and cross-browser compatibility considerations.\nAbility to write clean, modular, and reusable code.\nGood communication skills and ability to work collaboratively in a team environment.\nStrong debugging and problem-solving skills.\nExperience working with CI/CD pipelines and automated testing tools.\nOptional but Advantageous:\nExperience in developing SDK, libraries, or APIs for external consumption - big advantage.\nExperience in mobile development (Android/iOS, React Native, or other cross-platform tools).\nFamiliarity with WebView integrations on mobile platforms.\nUnderstanding of user behavior data collection.\n</div>",
+    "full_text": null
+  }
+]
