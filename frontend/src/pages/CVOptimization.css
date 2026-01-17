@@ -1,0 +1,276 @@
+.cv-optimization-page {
+  min-height: 100vh;
+  padding: 2rem;
+  background: #f3f4f6;
+}
+
+.optimization-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+}
+
+/* Page flow navigation */
+.page-flow-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.flow-nav-button {
+  padding: 0.75rem 1.5rem;
+  background: white;
+  color: #667eea;
+  border: 2px solid #667eea;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 120px;
+}
+
+.flow-nav-button:hover:not(:disabled) {
+  background: #667eea;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.flow-nav-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.page-flow-dots {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.flow-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #d1d5db;
+  transition: all 0.2s;
+}
+
+.flow-dot.active {
+  background: #667eea;
+  width: 12px;
+  height: 12px;
+}
+
+.optimization-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+  text-align: center;
+  margin: 0;
+}
+
+.cv-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.cv-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.panel-icon {
+  font-size: 1.5rem;
+}
+
+.panel-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.before-panel {
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.improved-panel {
+  border: 2px solid #10b981;
+  border-radius: 12px;
+  padding: 1.5rem;
+  background: #f0fdf4;
+}
+
+.cv-textarea {
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-family: 'Courier New', monospace;
+  line-height: 1.6;
+  resize: vertical;
+  min-height: 400px;
+}
+
+.before-textarea {
+  background: #f9fafb;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.improved-textarea {
+  background: white;
+  color: #111827;
+}
+
+.improved-textarea:focus {
+  outline: none;
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.action-button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+}
+
+.copy-button {
+  background: #6b7280;
+  color: white;
+}
+
+.copy-button:hover {
+  background: #4b5563;
+  transform: translateY(-2px);
+}
+
+.download-button {
+  background: #3b82f6;
+  color: white;
+}
+
+.download-button:hover {
+  background: #2563eb;
+  transform: translateY(-2px);
+}
+
+.apply-button {
+  background: #10b981;
+  color: white;
+}
+
+.apply-button:hover {
+  background: #059669;
+  transform: translateY(-2px);
+}
+
+.button-icon {
+  font-size: 1.25rem;
+}
+
+.improvements-section {
+  background: #f0fdf4;
+  border: 1px solid #a7f3d0;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.improvements-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 1rem 0;
+}
+
+.improvements-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.improvement-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.check-icon {
+  color: #10b981;
+  font-size: 1.125rem;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+@media (max-width: 1024px) {
+  .cv-comparison {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .cv-optimization-page {
+    padding: 1rem;
+  }
+
+  .optimization-container {
+    padding: 1.5rem;
+  }
+
+  .page-flow-header {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .action-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
