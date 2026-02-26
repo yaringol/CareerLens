@@ -145,6 +145,29 @@ python3 -m src.main
 
 **Note:** Each scraping run creates a new timestamped file, preserving historical data and allowing comparison across different runs.
 
+### Running the Application
+
+To run the frontend application:
+
+1. **Navigate to the frontend directory:**
+```bash
+cd frontend
+```
+
+2. **Install dependencies (if not already installed):**
+```bash
+npm install
+```
+
+3. **Start the development server:**
+```bash
+npm run dev
+```
+
+The application will be available at `http://localhost:8080` and should open automatically in your browser.
+
+**Note:** If you encounter port permission errors, you can change the port in `frontend/vite.config.ts` by modifying the `server.port` value.
+
 ### Project Structure
 
 ```
