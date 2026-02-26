@@ -1,0 +1,154 @@
+[
+  {
+    "job_title": "Backend Developer",
+    "industry": "FinTech",
+    "skills": [
+      {"skill":"C#","added_date":"2026-01-10"},
+      {"skill":"C#","added_date":"2025-12-01"},
+      {"skill":".NET","added_date":"2026-01-05"},
+      {"skill":"SQL","added_date":"2026-01-15"},
+      {"skill":"REST","added_date":"2025-12-01"},
+      {"skill":"Microservices","added_date":"2025-11-01"},
+      {"skill":"Docker","added_date":"2025-12-01"},
+      {"skill":"Kubernetes","added_date":"2025-12-01"},
+      {"skill":"Azure","added_date":"2025-10-01"},
+      {"skill":"Redis","added_date":"2025-09-01"},
+      {"skill":"Kafka","added_date":"2025-08-01"},
+      {"skill":"JWT","added_date":"2025-06-01"},
+      {"skill":"OAuth2","added_date":"2025-05-01"},
+      {"skill":"Unit Testing","added_date":"2025-04-01"},
+      {"skill":"CI/CD","added_date":"2025-07-01"},
+      {"skill":"Git","added_date":"2025-07-01"}
+    ],
+    "co_occurrence": [
+      {"pair":["C#",".NET"],"count":42},
+      {"pair":["C#","SQL"],"count":28},
+      {"pair":[".NET","REST"],"count":20},
+      {"pair":["Microservices","Kafka"],"count":16},
+      {"pair":["Docker","Kubernetes"],"count":14},
+      {"pair":["JWT","OAuth2"],"count":10},
+      {"pair":["CI/CD","Git"],"count":9}
+    ]
+  },
+  {
+    "job_title": "Frontend Developer",
+    "industry": "E-commerce",
+    "skills": [
+      {"skill":"JavaScript","added_date":"2026-01-10"},
+      {"skill":"JavaScript","added_date":"2025-11-01"},
+      {"skill":"React","added_date":"2026-01-01"},
+      {"skill":"React","added_date":"2025-10-01"},
+      {"skill":"TypeScript","added_date":"2025-12-01"},
+      {"skill":"HTML","added_date":"2025-05-01"},
+      {"skill":"CSS","added_date":"2025-05-01"},
+      {"skill":"Next.js","added_date":"2025-11-01"},
+      {"skill":"Redux","added_date":"2025-08-01"},
+      {"skill":"REST","added_date":"2025-09-01"},
+      {"skill":"GraphQL","added_date":"2025-10-01"},
+      {"skill":"Tailwind","added_date":"2025-06-01"},
+      {"skill":"Jest","added_date":"2025-05-01"},
+      {"skill":"Cypress","added_date":"2025-04-01"},
+      {"skill":"Accessibility","added_date":"2024-09-01"},
+      {"skill":"SEO","added_date":"2024-08-01"},
+      {"skill":"Performance","added_date":"2025-03-01"},
+      {"skill":"Git","added_date":"2024-10-01"}
+    ],
+    "co_occurrence": [
+      {"pair":["React","TypeScript"],"count":38},
+      {"pair":["React","Next.js"],"count":22},
+      {"pair":["JavaScript","React"],"count":20},
+      {"pair":["GraphQL","Apollo Client"],"count":8},
+      {"pair":["Jest","React Testing Library"],"count":12},
+      {"pair":["Cypress","CI/CD"],"count":7},
+      {"pair":["SEO","Performance"],"count":9}
+    ]
+  },
+  {
+    "job_title": "ML Engineer",
+    "industry": "HealthTech",
+    "skills": [
+      {"skill":"Python","added_date":"2026-01-15"},
+      {"skill":"Python","added_date":"2025-11-01"},
+      {"skill":"PyTorch","added_date":"2026-01-01"},
+      {"skill":"TensorFlow","added_date":"2025-09-01"},
+      {"skill":"Deep Learning","added_date":"2025-12-01"},
+      {"skill":"Machine Learning","added_date":"2025-08-01"},
+      {"skill":"Pandas","added_date":"2025-07-01"},
+      {"skill":"NumPy","added_date":"2025-07-01"},
+      {"skill":"Scikit-learn","added_date":"2025-06-01"},
+      {"skill":"Transformers","added_date":"2025-11-01"},
+      {"skill":"MLOps","added_date":"2025-10-01"},
+      {"skill":"Docker","added_date":"2025-09-01"},
+      {"skill":"Kubernetes","added_date":"2025-09-01"},
+      {"skill":"AWS","added_date":"2025-08-01"},
+      {"skill":"Statistics","added_date":"2024-10-01"}
+    ],
+    "co_occurrence": [
+      {"pair":["Python","PyTorch"],"count":34},
+      {"pair":["Python","Pandas"],"count":22},
+      {"pair":["Deep Learning","GPU"],"count":15},
+      {"pair":["MLOps","MLflow"],"count":10},
+      {"pair":["Docker","Kubernetes"],"count":12},
+      {"pair":["Transformers","NLP"],"count":14},
+      {"pair":["AWS","Model Deployment"],"count":9}
+    ]
+  },
+  {
+    "job_title": "DevOps Engineer",
+    "industry": "CyberSecurity",
+    "skills": [
+      {"skill":"AWS","added_date":"2026-01-15"},
+      {"skill":"AWS","added_date":"2025-11-01"},
+      {"skill":"Kubernetes","added_date":"2026-01-01"},
+      {"skill":"Docker","added_date":"2025-10-01"},
+      {"skill":"Terraform","added_date":"2025-11-01"},
+      {"skill":"CI/CD","added_date":"2025-08-01"},
+      {"skill":"Linux","added_date":"2025-05-01"},
+      {"skill":"Bash","added_date":"2025-04-01"},
+      {"skill":"Python","added_date":"2025-03-01"},
+      {"skill":"Helm","added_date":"2025-02-01"},
+      {"skill":"Prometheus","added_date":"2024-11-01"},
+      {"skill":"Grafana","added_date":"2024-11-01"},
+      {"skill":"Jenkins","added_date":"2024-10-01"}
+    ],
+    "co_occurrence": [
+      {"pair":["AWS","Terraform"],"count":26},
+      {"pair":["Kubernetes","Helm"],"count":18},
+      {"pair":["Docker","Kubernetes"],"count":16},
+      {"pair":["CI/CD","Jenkins"],"count":12},
+      {"pair":["Prometheus","Grafana"],"count":14},
+      {"pair":["Linux","Bash"],"count":10},
+      {"pair":["DevSecOps","Secrets Management"],"count":9}
+    ]
+  },
+  {
+    "job_title": "Data Analyst",
+    "industry": "Retail",
+    "skills": [
+      {"skill":"SQL","added_date":"2026-01-10"},
+      {"skill":"SQL","added_date":"2025-10-01"},
+      {"skill":"Excel","added_date":"2025-09-01"},
+      {"skill":"Power BI","added_date":"2025-08-01"},
+      {"skill":"Tableau","added_date":"2025-07-01"},
+      {"skill":"Python","added_date":"2025-06-01"},
+      {"skill":"Pandas","added_date":"2025-05-01"},
+      {"skill":"Statistics","added_date":"2024-10-01"},
+      {"skill":"A/B Testing","added_date":"2025-04-01"},
+      {"skill":"Regression","added_date":"2025-03-01"},
+      {"skill":"ETL","added_date":"2025-02-01"},
+      {"skill":"BigQuery","added_date":"2025-01-01"},
+      {"skill":"Snowflake","added_date":"2024-12-01"},
+      {"skill":"Dashboard Design","added_date":"2024-11-01"},
+      {"skill":"KPIs","added_date":"2024-10-01"}
+    ],
+    "co_occurrence": [
+      {"pair":["SQL","Power BI"],"count":30},
+      {"pair":["SQL","Excel"],"count":26},
+      {"pair":["Python","Pandas"],"count":18},
+      {"pair":["A/B Testing","KPIs"],"count":12},
+      {"pair":["ETL","Data Warehousing"],"count":10},
+      {"pair":["Tableau","Dashboard Design"],"count":9},
+      {"pair":["Regression","Statistics"],"count":11}
+    ]
+  }
+]
