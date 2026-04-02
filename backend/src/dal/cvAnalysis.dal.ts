@@ -1,0 +1,88 @@
+import { Types } from 'mongoose';
+import { CvAnalysis, ICvAnalysis } from '../models/cvAnalysis.model';
+
+// Shape the scoring agent is expected to return
+export interface AgentScoringResponse {
+  skills: Array<{ skill: string; score: number }>;
+  explanation?: string;
+}
+
+// Caller-supplied context needed to build a complete analysis document
+export interface SaveAnalysisInput {
+  cvFileName: string;
+  cvTextExtracted: string;
+  jobId: string;
+  jobTitle: string;
+  extractedSkills: string[];
+  rawAgentOutput: string; // the raw string returned by the agent
+}
+
+class AgentResponseError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'AgentResponseError';
+  }
+}
+
+function parseAgentResponse(raw: string): AgentScoringResponse {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new AgentResponseError('Agent response is not valid JSON');
+  }
+
+  const response = parsed as AgentScoringResponse;
+
+  if (!Array.isArray(response?.skills)) {
+    throw new AgentResponseError('Agent response missing "skills" array');
+  }
+  if (response.skills.length !== 10) {
+    throw new AgentResponseError(
+      `Expected exactly 10 skill scores, got ${response.skills.length}`
+    );
+  }
+  for (const entry of response.skills) {
+    if (typeof entry.skill !== 'string' || typeof entry.score !== 'number') {
+      throw new AgentResponseError('Each skill entry must have a string "skill" and numeric "score"');
+    }
+  }
+
+  return response;
+}
+
+function clamp(score: number): number {
+  return Math.min(10, Math.max(1, Math.round(score)));
+}
+
+function calcMatchScore(scores: number[]): number {
+  const sum = scores.reduce((acc, s) => acc + s, 0);
+  return Math.round((sum / scores.length) * 10) / 10; // 1 decimal place
+}
+
+// Parse raw agent output, validate, enforce bounds, calculate matchScore, persist
+export async function parseAndSaveAnalysis(input: SaveAnalysisInput): Promise<ICvAnalysis> {
+  const agentResponse = parseAgentResponse(input.rawAgentOutput);
+
+  const scores = agentResponse.skills.map(({ skill, score }) => ({
+    skill,
+    score: clamp(score),
+  }));
+
+  const matchScore = calcMatchScore(scores.map((s) => s.score));
+
+  return CvAnalysis.create({
+    cvFileName: input.cvFileName,
+    cvTextExtracted: input.cvTextExtracted,
+    jobId: new Types.ObjectId(input.jobId),
+    jobTitle: input.jobTitle,
+    extractedSkills: input.extractedSkills,
+    scores,
+    matchScore,
+    rawAgentOutput: input.rawAgentOutput,
+  });
+}
+
+export async function getAnalysisById(id: string): Promise<ICvAnalysis | null> {
+  return CvAnalysis.findById(id);
+}

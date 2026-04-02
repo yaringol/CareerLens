@@ -1,0 +1,31 @@
+{
+  "name": "careerlens-backend",
+  "version": "0.1.0",
+  "description": "CareerLens CV-Job matching backend",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "nodemon",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "seed": "ts-node src/scripts/seed.ts"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "mongoose": "^8.5.1",
+    "multer": "^1.4.5-lts.1",
+    "openai": "^4.98.0",
+    "pdf-parse": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/multer": "^1.4.11",
+    "@types/node": "^20.14.12",
+    "@types/pdf-parse": "^1.1.4",
+    "nodemon": "^3.1.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.3"
+  }
+}
