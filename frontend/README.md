@@ -1,82 +1,49 @@
 # CareerLens Frontend
 
-React + TypeScript frontend application for CareerLens CV match analysis.
+React + TypeScript UI for the CareerLens POC.
 
 ## Setup
 
-1. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+npm run dev
+```
 
-2. **Run development server:**
-   ```bash
-   npm run dev
-   ```
+- Dev server: **`http://localhost:8080`** (see `vite.config.ts`).
+- API calls use **`/api`** by default; Vite proxies `/api` → backend `http://localhost:8000`.
 
-   The app will be available at `http://localhost:3000`
+```bash
+npm run build
+npm run preview
+```
 
-3. **Build for production:**
-   ```bash
-   npm run build
-   ```
+## POC flow (current)
 
-4. **Preview production build:**
-   ```bash
-   npm run preview
-   ```
+1. **`/upload`** — `UploadScreen`: load jobs, pick PDF, select job, submit.
+2. **`/dashboard`** — `SkillsMatchDashboard`: shows last analyze result from `sessionStorage`.
 
-## Project Structure
+Full step-by-step, contracts, and backend file map: **[`../docs/POC.md`](../docs/POC.md)**.
+
+## Project structure (relevant)
 
 ```
 frontend/
 ├── src/
-│   ├── components/
-│   │   ├── MatchOverviewDisplay.tsx    # Match overview component
-│   │   └── MatchOverviewDisplay.css     # Component styles
+│   ├── App.tsx                 # Routes: /upload, /dashboard
 │   ├── pages/
-│   │   ├── InputPage.tsx                # CV upload & job description input
-│   │   ├── InputPage.css
-│   │   ├── ExtractPage.tsx              # Extraction progress display
-│   │   ├── ExtractPage.css
-│   │   ├── ResultsPage.tsx              # Results display page
-│   │   └── ResultsPage.css
-│   ├── App.tsx                          # Main app with routing
-│   ├── App.css                          # App styles
-│   ├── main.tsx                         # Entry point
-│   └── index.css                        # Global styles
-├── index.html                           # HTML template
-├── package.json                         # Dependencies
-├── tsconfig.json                        # TypeScript config
-└── vite.config.ts                       # Vite configuration
+│   │   ├── UploadScreen.tsx
+│   │   └── SkillsMatchDashboard.tsx
+│   ├── services/
+│   │   └── api.ts              # fetchJobs, uploadPdf, analyzeCv
+│   └── components/ui/          # CircularGauge, SkillBar, …
+├── vite.config.ts              # dev server + /api proxy
+└── package.json
 ```
 
-## Features
+## Stack
 
-- **Multi-Page Flow**: Three-page workflow (Input → Extract → Results)
-- **Input Page**: CV PDF upload and job description input form
-- **Extract Page**: Real-time progress display during CV analysis
-- **Results Page**: Match score, skills analysis, and optimization suggestions
-- **React Router**: Navigation between pages
-- **Responsive Design**: Works on desktop and mobile devices
-- **Modern UI**: Clean, professional interface with smooth animations
+- React 18, TypeScript, Vite, React Router
 
-## Development
+## Legacy / outdated docs
 
-The frontend uses:
-- **React 18** with TypeScript
-- **Vite** for fast development and building
-- **CSS Modules** for component styling
-
-## Pages
-
-1. **Input Page** (`/input`): Upload CV and enter job description
-2. **Extract Page** (`/extract`): Shows extraction progress (auto-navigates from input)
-3. **Results Page** (`/results`): Displays match analysis results
-
-## Next Steps
-
-- Connect to backend API for real data extraction
-- Implement actual file upload to backend
-- Add real-time extraction status updates
-- Integrate with NLP pipeline for skill extraction
+If you see references to Input/Extract/Results pages or mocked `api.ts`, ignore them — the POC uses **`api.ts` real fetches** as described in `docs/POC.md`.

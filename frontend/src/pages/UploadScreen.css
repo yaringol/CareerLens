@@ -71,6 +71,14 @@
   min-height: 200px;
 }
 
+.file-upload-area--has-file {
+  min-height: 220px;
+}
+
+.file-upload-area--loading .file-upload-display {
+  pointer-events: none;
+}
+
 .file-input {
   position: absolute;
   width: 100%;
@@ -78,6 +86,22 @@
   opacity: 0;
   cursor: pointer;
   z-index: 2;
+}
+
+/* After a file is chosen: input is focusable for accessibility only; "Change file" opens picker */
+.file-input--reveal {
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  top: 0;
+  left: 0;
+  cursor: default;
+  z-index: 0;
 }
 
 .file-upload-display {
@@ -114,6 +138,96 @@
 .upload-hint {
   font-size: 0.875rem;
   color: #9ca3af;
+}
+
+.file-upload-display--loading {
+  border-style: solid;
+  border-color: #c7d2fe;
+  background: linear-gradient(180deg, #eef2ff 0%, #f9fafb 100%);
+}
+
+.upload-spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid #e5e7eb;
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: upload-spin 0.75s linear infinite;
+}
+
+@keyframes upload-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.file-upload-selected {
+  border: 2px solid #6ee7b7;
+  border-radius: 12px;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  background: linear-gradient(180deg, #ecfdf5 0%, #f0fdf4 50%, #ffffff 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 200px;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+}
+
+.file-selected-icon {
+  color: #059669;
+  margin-bottom: 0.25rem;
+}
+
+.file-selected-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #065f46;
+}
+
+.file-selected-name {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 0.5rem;
+}
+
+.file-selected-meta {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.file-replace-button {
+  margin-top: 0.25rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #047857;
+  background: white;
+  border: 1px solid #6ee7b7;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.file-replace-button:hover:not(:disabled) {
+  background: #ecfdf5;
+  border-color: #34d399;
+}
+
+.file-replace-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .job-description-textarea {

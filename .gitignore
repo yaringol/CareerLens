@@ -13,6 +13,8 @@ data/processed/*
 .DS_Store
 .vscode/
 .idea/
+.cursor/
+github-helper.sh
 
 # Frontend
 frontend/node_modules/

@@ -2,91 +2,105 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import CircularGauge from '../components/ui/CircularGauge'
 import SkillBar from '../components/ui/SkillBar'
+import type { AnalyzeResponse } from '../services/api'
 import './SkillsMatchDashboard.css'
 
-interface Skill {
-  name: string
-  score: number
-  category: 'core' | 'dynamic'
-}
+const RESULT_KEY = 'pocAnalysisResult'
 
 const SkillsMatchDashboard = () => {
   const navigate = useNavigate()
-  const [overallScore, setOverallScore] = useState(72)
-  const [coreSkills, setCoreSkills] = useState<Skill[]>([])
-  const [dynamicSkills, setDynamicSkills] = useState<Skill[]>([])
+  const [result, setResult] = useState<AnalyzeResponse | null>(null)
+  const [parseError, setParseError] = useState<string | null>(null)
 
   useEffect(() => {
-    // Mock data - in real app, this would come from API
-    setCoreSkills([
-      { name: 'SQL', score: 7, category: 'core' },
-      { name: 'Python', score: 6, category: 'core' },
-    ])
-    setDynamicSkills([
-      { name: 'Pandas', score: 9, category: 'dynamic' },
-      { name: 'Docker', score: 6, category: 'dynamic' },
-    ])
-  }, [])
+    const raw = sessionStorage.getItem(RESULT_KEY)
+    if (!raw) {
+      navigate('/upload', { replace: true })
+      return
+    }
+    try {
+      setResult(JSON.parse(raw) as AnalyzeResponse)
+    } catch {
+      setParseError('Invalid results data')
+    }
+  }, [navigate])
 
   const handleBackToUpload = () => {
+    sessionStorage.removeItem(RESULT_KEY)
     navigate('/upload')
   }
 
-  const handleNext = () => {
-    navigate('/skill-details')
+  if (parseError) {
+    return (
+      <div className="skills-match-dashboard">
+        <div className="dashboard-container">
+          <p>{parseError}</p>
+          <button type="button" className="flow-nav-button back-button" onClick={handleBackToUpload}>
+            ← Back to Upload
+          </button>
+        </div>
+      </div>
+    )
   }
 
-  const handlePrevious = () => {
-    navigate('/extract')
+  if (!result) {
+    return (
+      <div className="skills-match-dashboard">
+        <div className="dashboard-container">
+          <p>Loading…</p>
+        </div>
+      </div>
+    )
   }
+
+  const coreSkills = result.skills.slice(0, 5)
+  const dynamicSkills = result.skills.slice(5, 10)
+  const matchPercent = Math.round((result.matchScore / 10) * 100)
 
   return (
     <div className="skills-match-dashboard">
       <div className="dashboard-container">
-        {/* Page flow navigation */}
         <div className="page-flow-header">
           <button
+            type="button"
             onClick={handleBackToUpload}
             className="flow-nav-button back-button"
           >
             ← Back to Upload
           </button>
-          
+
           <div className="page-flow-dots">
-            <div className="flow-dot" />
             <div className="flow-dot active" />
-            <div className="flow-dot" />
-            <div className="flow-dot" />
+            <div className="flow-dot active" />
+            <div className="flow-dot active" />
           </div>
 
-          <button
-            onClick={handleNext}
-            className="flow-nav-button next-button"
-          >
+          <div className="flow-nav-button next-button" style={{ visibility: 'hidden' }} aria-hidden>
             Next →
-          </button>
+          </div>
         </div>
 
         <div className="match-overview-card">
-          <h2 className="match-overview-title">Match Overview</h2>
-          
+          <h2 className="match-overview-title">{result.jobTitle}</h2>
+
           <div className="match-content">
-            {/* Left: Overall Score */}
             <div className="overall-score-section">
               <div className="score-display">
-                <CircularGauge score={overallScore / 10} maxScore={10} size={200} />
-                <div className="percentage-display">{overallScore}%</div>
+                <CircularGauge score={result.matchScore} maxScore={10} size={200} />
+                <div className="match-score-caption">
+                  <div className="match-score-caption__title">Match score</div>
+                  <div className="match-score-caption__percent">{matchPercent}%</div>
+                </div>
               </div>
             </div>
 
-            {/* Right: Skills Breakdown */}
             <div className="skills-breakdown">
               <div className="skills-column">
-                <h3 className="skills-column-title">Core Skills</h3>
+                <h3 className="skills-column-title">Core skills (5)</h3>
                 <div className="skills-list">
                   {coreSkills.map((skill) => (
                     <SkillBar
-                      key={skill.name}
+                      key={`c-${skill.name}`}
                       name={skill.name}
                       score={skill.score}
                       maxScore={10}
@@ -97,15 +111,15 @@ const SkillsMatchDashboard = () => {
               </div>
 
               <div className="skills-column">
-                <h3 className="skills-column-title">Dynamic Skills</h3>
+                <h3 className="skills-column-title">Dynamic skills (5)</h3>
                 <div className="skills-list">
                   {dynamicSkills.map((skill) => (
                     <SkillBar
-                      key={skill.name}
+                      key={`d-${skill.name}`}
                       name={skill.name}
                       score={skill.score}
                       maxScore={10}
-                      color={skill.score >= 8 ? "#10b981" : "#3b82f6"}
+                      color={skill.score >= 8 ? '#10b981' : '#3b82f6'}
                     />
                   ))}
                 </div>

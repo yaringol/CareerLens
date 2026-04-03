@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Router } from 'express';
 import cors from 'cors';
 import cvRoutes from './routes/cv.routes';
 import jobsRoutes from './routes/jobs.routes';
@@ -12,11 +12,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.use('/cv', cvRoutes);
-app.use('/jobs', jobsRoutes);
-app.use('/score', scoreRoutes);
-app.use('/results', resultsRoutes);
-app.use('/analyze', analyzeRoutes);
+const api = Router();
+api.use(cvRoutes);
+api.use('/jobs', jobsRoutes);
+api.use('/analyze', analyzeRoutes);
+api.use('/score', scoreRoutes);
+api.use('/results', resultsRoutes);
+
+app.use('/api', api);
 
 app.use((_req, res) => {
   res.status(404).json({ error: 'Not found' });

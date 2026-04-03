@@ -1,10 +1,12 @@
 import 'dotenv/config';
 import app from './app';
 import { connectDB } from './config/db';
+import { logPocStartup } from './utils/pocLog';
 
-const PORT = process.env.PORT ?? 3000;
+const PORT = process.env.PORT ?? 8000;
 
 async function main() {
+  logPocStartup();
   await connectDB();
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

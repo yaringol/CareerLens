@@ -1,46 +1,13 @@
-# API Service
+# API service (`api.ts`)
 
-This directory contains API service functions for communicating with the backend.
+These functions call the **real** backend over HTTP (not mocks).
 
-## Current Status
+| Function | Method | Path | Purpose |
+|----------|--------|------|---------|
+| `fetchJobs()` | GET | `/api/jobs` | Job list for the upload screen |
+| `uploadPdf(file)` | POST | `/api/upload` | `FormData` field **`file`** → `{ cvText }` |
+| `analyzeCv(jobId, cvText)` | POST | `/api/analyze` | JSON `{ jobId, cvText }` → analyze result |
 
-**All functions currently return mock data.** They are structured to be easily replaced with real API calls when the backend is ready.
+Base URL: `import.meta.env.VITE_API_BASE_URL` or **`/api`** (Vite dev proxy to port 8000).
 
-## Functions
-
-### `uploadCVAndJobDescription()`
-Uploads CV file and job description to the backend.
-
-**TODO:** Replace the mock implementation with:
-```typescript
-const response = await fetch(`${API_BASE_URL}/analyze`, {
-  method: 'POST',
-  body: formData,
-})
-return response.json()
-```
-
-### `getExtractionStatus()`
-Polls the backend for extraction progress.
-
-**TODO:** Replace with polling or WebSocket connection:
-```typescript
-const response = await fetch(`${API_BASE_URL}/analyze/${jobId}/status`)
-return response.json()
-```
-
-### `getMatchResults()`
-Fetches the final match analysis results.
-
-**TODO:** Replace with:
-```typescript
-const response = await fetch(`${API_BASE_URL}/analyze/${jobId}/results`)
-return response.json()
-```
-
-## Environment Variables
-
-Set `VITE_API_BASE_URL` in `.env` file:
-```
-VITE_API_BASE_URL=http://localhost:8000/api
-```
+See **[`../../../docs/POC.md`](../../../docs/POC.md)** for full contracts and fallback behavior.
