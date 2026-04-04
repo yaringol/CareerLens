@@ -5,7 +5,17 @@ import { connectDB } from './config/db';
 const PORT = process.env.PORT ?? 3000;
 
 async function main() {
-  await connectDB();
+  console.log('Starting server...');
+
+  try {
+    await connectDB();
+    console.log('DB connected');
+  } catch (err) {
+    console.warn('MongoDB connection failed, starting server without DB:', err);
+  }
+
+  console.log('Starting Express...');
+
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });

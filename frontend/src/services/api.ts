@@ -1,10 +1,8 @@
 /**
  * API Service for CareerLens Backend
- * 
- * Currently returns mock data. Replace with actual API calls when backend is ready.
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
 
 export interface UploadResponse {
   jobId: string
@@ -32,96 +30,92 @@ export interface MatchData {
   company: string
 }
 
-/**
- * Upload CV and job description
- * TODO: Replace with actual API call
- */
 export const uploadCVAndJobDescription = async (
   cvFile: File,
   jobDescription: string,
   jobTitle?: string,
   company?: string
 ): Promise<UploadResponse> => {
-  // Mock implementation
-  const formData = new FormData()
-  formData.append('cv', cvFile)
-  formData.append('jobDescription', jobDescription)
-  if (jobTitle) formData.append('jobTitle', jobTitle)
-  if (company) formData.append('company', company)
+  const selectedJobTitle =
+    jobTitle ||
+    sessionStorage.getItem('jobTitle') ||
+    'Data Scientist'
 
-  // TODO: Replace with actual API call
-  // const response = await fetch(`${API_BASE_URL}/analyze`, {
-  //   method: 'POST',
-  //   body: formData,
-  // })
-  // return response.json()
+  if (company) {
+    sessionStorage.setItem('company', company)
+  }
+  sessionStorage.setItem('jobTitle', selectedJobTitle)
 
-  // Mock response
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        jobId: `job_${Date.now()}`,
-        status: 'processing',
-      })
-    }, 1000)
+  const uploadFormData = new FormData()
+  uploadFormData.append('file', cvFile)
+
+  const uploadResponse = await fetch(`${API_BASE_URL}/cv/upload`, {
+    method: 'POST',
+    body: uploadFormData,
   })
+
+  if (!uploadResponse.ok) {
+    throw new Error('Failed to upload CV')
+  }
+
+  const uploadResult = await uploadResponse.json()
+
+  const cvText =
+    uploadResult.cvText ||
+    uploadResult.text ||
+    uploadResult.extractedText ||
+    uploadResult.cvTextExtracted
+
+  if (!cvText) {
+    throw new Error('CV text was not returned from upload endpoint')
+  }
+
+  const analyzeResponse = await fetch(`${API_BASE_URL}/analyze`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      jobTitle: selectedJobTitle,
+      jobDescription,
+      cvText,
+    }),
+  })
+
+  if (!analyzeResponse.ok) {
+    throw new Error('Failed to analyze CV against job description')
+  }
+
+  const analyzeResult = await analyzeResponse.json()
+
+  return {
+    jobId: analyzeResult.id,
+    status: 'completed',
+  }
 }
 
-/**
- * Get extraction status
- * TODO: Replace with actual API call (polling or WebSocket)
- */
-export const getExtractionStatus = async (jobId: string): Promise<ExtractionStatus> => {
-  // TODO: Replace with actual API call
-  // const response = await fetch(`${API_BASE_URL}/analyze/${jobId}/status`)
-  // return response.json()
-
-  // Mock implementation
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        progress: 100,
-        currentStep: 'Calculating match scores...',
-        isComplete: true,
-        cvSkills: ['Python', 'React', 'TypeScript'],
-        jobRequirements: ['Python', 'React', 'Machine Learning'],
-      })
-    }, 2000)
-  })
+export const getExtractionStatus = async (_jobId: string): Promise<ExtractionStatus> => {
+  return {
+    progress: 100,
+    currentStep: 'Analysis completed',
+    isComplete: true,
+  }
 }
 
-/**
- * Get match results
- * TODO: Replace with actual API call
- */
 export const getMatchResults = async (jobId: string): Promise<MatchData> => {
-  // TODO: Replace with actual API call
-  // const response = await fetch(`${API_BASE_URL}/analyze/${jobId}/results`)
-  // return response.json()
+  const response = await fetch(`${API_BASE_URL}/results/${jobId}`)
 
-  // Mock implementation
-  const jobTitle = sessionStorage.getItem('jobTitle') || 'Senior Full Stack Developer'
-  const company = sessionStorage.getItem('company') || 'Tech Corp'
+  if (!response.ok) {
+    throw new Error('Failed to fetch match results')
+  }
 
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        globalMatchScore: 7.5,
-        skills: [
-          { name: 'Python', cvScore: 8, jobScore: 9, gap: 1 },
-          { name: 'React', cvScore: 7, jobScore: 8, gap: 1 },
-          { name: 'TypeScript', cvScore: 6, jobScore: 7, gap: 1 },
-          { name: 'Machine Learning', cvScore: 5, jobScore: 8, gap: 3 },
-          { name: 'Docker', cvScore: 4, jobScore: 6, gap: 2 },
-        ],
-        suggestions: [
-          'Emphasize your Python experience in the skills section',
-          'Add Machine Learning projects to showcase your expertise',
-          'Include Docker experience if you have any containerization knowledge',
-        ],
-        jobTitle,
-        company,
-      })
-    }, 500)
-  })
+  const result = await response.json()
+
+  return {
+    globalMatchScore: result.globalMatchScore ?? 0,
+    skills: result.skills ?? [],
+    suggestions: result.suggestions ?? [],
+    jobTitle: result.jobTitle || sessionStorage.getItem('jobTitle') || 'Unknown Job Title',
+    company: sessionStorage.getItem('company') || 'CareerLens',
+  }
 }
