@@ -15,6 +15,7 @@ data/processed/*
 .idea/
 .cursor/
 github-helper.sh
+CVs/
 
 # Frontend
 frontend/node_modules/

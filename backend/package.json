@@ -7,7 +7,8 @@
     "dev": "nodemon",
     "build": "tsc",
     "start": "node dist/index.js",
-    "seed": "ts-node src/scripts/seed.ts"
+    "seed": "ts-node src/scripts/seed.ts",
+    "check-cvs": "ts-node src/scripts/checkCvsMatchScores.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",

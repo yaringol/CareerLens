@@ -88,7 +88,7 @@ const MERGE_PADDING_BY_TITLE: Record<string, string[]> = {
 /**
  * Positions 1–5: canonical core skills. Positions 6–10: dynamics (LLM or fallback), minus near-duplicates of core, then role-specific padding.
  */
-function mergeTenSkills(jobTitle: string, core: string[], dynamic: string[]): string[] {
+export function mergeTenSkills(jobTitle: string, core: string[], dynamic: string[]): string[] {
   const coreFive = core.slice(0, 5);
   if (coreFive.length !== 5) {
     throw new ValidationError('Internal error: expected exactly 5 core skills');
