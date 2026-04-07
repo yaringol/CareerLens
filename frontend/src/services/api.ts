@@ -1,121 +1,66 @@
 /**
- * API Service for CareerLens Backend
+ * API base: relative `/api` in dev (Vite proxies to backend) unless VITE_API_BASE_URL is set.
  */
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
-
-export interface UploadResponse {
-  jobId: string
-  status: 'processing' | 'completed'
+function apiBase(): string {
+  const raw = import.meta.env.VITE_API_BASE_URL?.trim()
+  if (raw) return raw.replace(/\/$/, '')
+  return '/api'
 }
 
-export interface ExtractionStatus {
-  progress: number
-  currentStep: string
-  isComplete: boolean
-  cvSkills?: string[]
-  jobRequirements?: string[]
+/** Alias for apiBase — avoids ReferenceError if any code or cached bundle still calls `base()`. */
+const base = apiBase
+
+export interface PocJob {
+  id: string
+  title: string
+  skills: string[]
 }
 
-export interface MatchData {
-  globalMatchScore: number
-  skills: Array<{
-    name: string
-    cvScore: number
-    jobScore: number
-    gap: number
-  }>
-  suggestions: string[]
+export interface UploadPdfResponse {
+  cvText: string
+}
+
+export interface AnalyzeResponse {
   jobTitle: string
-  company: string
+  skills: Array<{ name: string; score: number }>
+  matchScore: number
+  id: string
 }
 
-export const uploadCVAndJobDescription = async (
-  cvFile: File,
-  jobDescription: string,
-  jobTitle?: string,
-  company?: string
-): Promise<UploadResponse> => {
-  const selectedJobTitle =
-    jobTitle ||
-    sessionStorage.getItem('jobTitle') ||
-    'Data Scientist'
+const jsonHeaders = { 'Content-Type': 'application/json' }
 
-  if (company) {
-    sessionStorage.setItem('company', company)
+export async function fetchJobs(): Promise<PocJob[]> {
+  const res = await fetch(`${base()}/jobs`)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || `Failed to load jobs (${res.status})`)
   }
-  sessionStorage.setItem('jobTitle', selectedJobTitle)
+  return res.json() as Promise<PocJob[]>
+}
 
-  const uploadFormData = new FormData()
-  uploadFormData.append('file', cvFile)
-
-  const uploadResponse = await fetch(`${API_BASE_URL}/cv/upload`, {
+export async function uploadPdf(file: File): Promise<UploadPdfResponse> {
+  const formData = new FormData()
+  formData.append('file', file)
+  const res = await fetch(`${base()}/upload`, {
     method: 'POST',
-    body: uploadFormData,
+    body: formData,
   })
-
-  if (!uploadResponse.ok) {
-    throw new Error('Failed to upload CV')
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || `Upload failed (${res.status})`)
   }
+  return res.json() as Promise<UploadPdfResponse>
+}
 
-  const uploadResult = await uploadResponse.json()
-
-  const cvText =
-    uploadResult.cvText ||
-    uploadResult.text ||
-    uploadResult.extractedText ||
-    uploadResult.cvTextExtracted
-
-  if (!cvText) {
-    throw new Error('CV text was not returned from upload endpoint')
-  }
-
-  const analyzeResponse = await fetch(`${API_BASE_URL}/analyze`, {
+export async function analyzeCv(jobId: string, cvText: string): Promise<AnalyzeResponse> {
+  const res = await fetch(`${base()}/analyze`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      jobTitle: selectedJobTitle,
-      jobDescription,
-      cvText,
-    }),
+    headers: jsonHeaders,
+    body: JSON.stringify({ jobId, cvText }),
   })
-
-  if (!analyzeResponse.ok) {
-    throw new Error('Failed to analyze CV against job description')
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || `Analyze failed (${res.status})`)
   }
-
-  const analyzeResult = await analyzeResponse.json()
-
-  return {
-    jobId: analyzeResult.id,
-    status: 'completed',
-  }
-}
-
-export const getExtractionStatus = async (_jobId: string): Promise<ExtractionStatus> => {
-  return {
-    progress: 100,
-    currentStep: 'Analysis completed',
-    isComplete: true,
-  }
-}
-
-export const getMatchResults = async (jobId: string): Promise<MatchData> => {
-  const response = await fetch(`${API_BASE_URL}/results/${jobId}`)
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch match results')
-  }
-
-  const result = await response.json()
-
-  return {
-    globalMatchScore: result.globalMatchScore ?? 0,
-    skills: result.skills ?? [],
-    suggestions: result.suggestions ?? [],
-    jobTitle: result.jobTitle || sessionStorage.getItem('jobTitle') || 'Unknown Job Title',
-    company: sessionStorage.getItem('company') || 'CareerLens',
-  }
+  return res.json() as Promise<AnalyzeResponse>
 }

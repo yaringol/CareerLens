@@ -4,8 +4,89 @@ import { parseAndSaveAnalysis } from '../dal/cvAnalysis.dal';
 import { ICvAnalysis } from '../models/cvAnalysis.model';
 import { validateSkillArray } from '../utils/validateSkills';
 import { ValidationError } from '../errors';
+import { logFallbackScoring } from '../utils/pocLog';
 
 const MIN_CV_TEXT_LENGTH = 50;
+
+/** Keyword overlap 1–10; varies per skill string so different jobs diverge on the same CV. */
+function overlapScoreForSkill(skill: string, cvText: string): number {
+  const cv = cvText.toLowerCase();
+  const tokens = skill
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((t) => t.length > 2);
+  if (tokens.length === 0) {
+    return 5;
+  }
+  const hits = tokens.filter((t) => cv.includes(t)).length;
+  const ratio = hits / tokens.length;
+  const score = Math.round(3 + ratio * 7);
+  return Math.min(10, Math.max(1, score));
+}
+
+/** When LLM is unavailable, score from token overlap so different jobs (different skills) differentiate on the same CV. */
+function buildMockAgentJson(skills: string[], cvText: string): string {
+  const scored = skills.map((skill) => ({
+    skill,
+    score: overlapScoreForSkill(skill, cvText),
+  }));
+  return JSON.stringify({ skills: scored });
+}
+
+/**
+ * Map LLM JSON to our 10 skills in order; fill gaps with overlap scores.
+ * If the model returns the same score for every skill (common with low-variance outputs), use keyword scores instead.
+ */
+function normalizeLlmScoringJson(
+  raw: string,
+  expectedSkills: string[],
+  cvText: string
+): string {
+  const parsed = JSON.parse(raw) as { skills?: unknown };
+  if (!Array.isArray(parsed.skills)) {
+    throw new Error('Invalid LLM scoring shape');
+  }
+
+  const pool = new Map<string, number>();
+  for (const row of parsed.skills) {
+    if (
+      row &&
+      typeof row === 'object' &&
+      'skill' in row &&
+      'score' in row &&
+      typeof (row as { skill: unknown }).skill === 'string' &&
+      typeof (row as { score: unknown }).score === 'number'
+    ) {
+      const s = (row as { skill: string; score: number }).skill.trim().toLowerCase();
+      pool.set(s, (row as { score: number }).score);
+    }
+  }
+
+  const aligned = expectedSkills.map((skill) => {
+    const k = skill.trim().toLowerCase();
+    let score = pool.get(k);
+    if (score === undefined) {
+      for (const [name, s] of pool) {
+        if (name.includes(k) || k.includes(name)) {
+          score = s;
+          break;
+        }
+      }
+    }
+    if (score === undefined) {
+      score = overlapScoreForSkill(skill, cvText);
+    }
+    return { skill, score: Math.round(score) };
+  });
+
+  const values = aligned.map((a) => a.score);
+  const allSame = values.length > 0 && values.every((n) => n === values[0]);
+  if (allSame) {
+    return buildMockAgentJson(expectedSkills, cvText);
+  }
+
+  return JSON.stringify({ skills: aligned });
+}
 
 export interface ScoreRequest {
   jobId: string;
@@ -25,14 +106,26 @@ export async function scoreAndPersist(req: ScoreRequest): Promise<ICvAnalysis> {
 
   const validatedSkills = validateSkillArray(req.skills, 10);
 
-  const rawAgentOutput = await scoreSkills(req.cvText, validatedSkills);
-
-  return parseAndSaveAnalysis({
+  const baseInput = {
     cvFileName: req.cvFileName ?? req.jobId,
     cvTextExtracted: req.cvText,
     jobId: req.jobId,
     jobTitle: req.jobTitle,
     extractedSkills: validatedSkills,
-    rawAgentOutput,
-  });
+    rawAgentOutput: '',
+  };
+
+  try {
+    const raw = await scoreSkills(req.cvText, validatedSkills);
+    try {
+      baseInput.rawAgentOutput = normalizeLlmScoringJson(raw, validatedSkills, req.cvText);
+    } catch {
+      baseInput.rawAgentOutput = raw;
+    }
+    return await parseAndSaveAnalysis(baseInput);
+  } catch {
+    logFallbackScoring();
+    baseInput.rawAgentOutput = buildMockAgentJson(validatedSkills, req.cvText);
+    return parseAndSaveAnalysis(baseInput);
+  }
 }

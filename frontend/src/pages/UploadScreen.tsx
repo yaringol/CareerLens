@@ -1,13 +1,45 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { uploadCVAndJobDescription } from '../services/api'
+import { analyzeCv, fetchJobs, uploadPdf, type PocJob } from '../services/api'
 import './UploadScreen.css'
+
+const RESULT_KEY = 'pocAnalysisResult'
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
 
 const UploadScreen = () => {
   const navigate = useNavigate()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [cvFile, setCvFile] = useState<File | null>(null)
-  const [jobDescription, setJobDescription] = useState('')
+  const [jobs, setJobs] = useState<PocJob[]>([])
+  const [jobId, setJobId] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const list = await fetchJobs()
+        if (cancelled) return
+        setJobs(list)
+        if (list.length > 0) {
+          setJobId(list[0].id)
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setLoadError(e instanceof Error ? e.message : 'Could not load jobs')
+        }
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -21,6 +53,10 @@ const UploadScreen = () => {
     }
   }
 
+  const handleReplaceClick = () => {
+    fileInputRef.current?.click()
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -28,26 +64,19 @@ const UploadScreen = () => {
       alert('Please upload your CV')
       return
     }
-
-    if (!jobDescription.trim()) {
-      alert('Please enter a job description')
+    if (!jobId) {
+      alert('Please select a job')
       return
     }
 
     setIsLoading(true)
-
-    sessionStorage.setItem('jobDescription', jobDescription)
-
     try {
-      const response = await uploadCVAndJobDescription(cvFile, jobDescription)
-
-      sessionStorage.setItem('jobId', response.jobId)
-      sessionStorage.setItem('analysisStatus', response.status)
-
-      navigate('/extract')
-    } catch (error) {
-      console.error('Failed to upload CV and job description:', error)
-      alert('Failed to analyze match. Please try again.')
+      const { cvText } = await uploadPdf(cvFile)
+      const result = await analyzeCv(jobId, cvText)
+      sessionStorage.setItem(RESULT_KEY, JSON.stringify(result))
+      navigate('/dashboard')
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
       setIsLoading(false)
     }
@@ -61,72 +90,112 @@ const UploadScreen = () => {
 
         <form onSubmit={handleSubmit} className="upload-form">
           <div className="upload-sections">
-
-            {/* Left: Upload Resume */}
             <div className="upload-section">
               <div className="section-header">
                 <span className="section-icon">📄</span>
                 <h2 className="section-title">Upload Resume</h2>
               </div>
-
-              <div className="file-upload-area">
+              <div
+                className={`file-upload-area${cvFile ? ' file-upload-area--has-file' : ''}${
+                  isLoading ? ' file-upload-area--loading' : ''
+                }`}
+              >
                 <input
+                  ref={fileInputRef}
                   type="file"
                   id="cv-upload"
                   accept=".pdf"
                   onChange={handleFileChange}
-                  className="file-input"
+                  className={cvFile ? 'file-input file-input--reveal' : 'file-input'}
                   disabled={isLoading}
                 />
-
-                <label htmlFor="cv-upload" className="file-upload-display">
-                  <span className="upload-icon">⬆</span>
-                  <span className="upload-text">
-                    {cvFile ? cvFile.name : 'Drag & Drop CV'}
-                  </span>
-                  <span className="upload-hint">
-                    {cvFile ? 'PDF selected' : 'or click to browse'}
-                  </span>
-                </label>
+                {isLoading ? (
+                  <div className="file-upload-display file-upload-display--loading" aria-live="polite">
+                    <span className="upload-spinner" aria-hidden />
+                    <span className="upload-text">Analyzing your CV…</span>
+                    <span className="upload-hint">Scoring skills for the selected role</span>
+                  </div>
+                ) : cvFile ? (
+                  <div className="file-upload-selected">
+                    <div className="file-selected-icon" aria-hidden>
+                      <svg viewBox="0 0 24 24" width="40" height="40" fill="none">
+                        <path
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </div>
+                    <p className="file-selected-title">Resume ready</p>
+                    <p className="file-selected-name" title={cvFile.name}>
+                      {cvFile.name}
+                    </p>
+                    <p className="file-selected-meta">{formatFileSize(cvFile.size)} · PDF</p>
+                    <button
+                      type="button"
+                      className="file-replace-button"
+                      onClick={handleReplaceClick}
+                      disabled={isLoading}
+                    >
+                      Change file
+                    </button>
+                  </div>
+                ) : (
+                  <div className="file-upload-display">
+                    <span className="upload-icon">⬆</span>
+                    <span className="upload-text">Drag & Drop CV</span>
+                    <span className="upload-hint">or click to browse (PDF)</span>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Right: Job Description */}
             <div className="upload-section">
               <div className="section-header">
                 <span className="section-icon">💼</span>
-                <h2 className="section-title">Job Description</h2>
+                <h2 className="section-title">Select job</h2>
               </div>
-
-              <textarea
-                id="job-description"
-                value={jobDescription}
-                onChange={(e) => setJobDescription(e.target.value)}
-                placeholder="Paste job description here..."
+              {loadError && <p className="textarea-hint" style={{ color: '#b91c1c' }}>{loadError}</p>}
+              <select
+                id="job-select"
                 className="job-description-textarea"
-                rows={12}
-                disabled={isLoading}
+                style={{ minHeight: '3rem', cursor: 'pointer' }}
+                value={jobId}
+                onChange={(e) => setJobId(e.target.value)}
+                disabled={isLoading || jobs.length === 0}
                 required
-              />
-
-              <p className="textarea-hint">
-                Include required skills, qualifications, and responsibilities.
-              </p>
+              >
+                {jobs.length === 0 && !loadError ? (
+                  <option value="">Loading jobs…</option>
+                ) : (
+                  jobs.map((j) => (
+                    <option key={j.id} value={j.id}>
+                      {j.title}
+                    </option>
+                  ))
+                )}
+              </select>
+              <p className="textarea-hint">Choose one of five predefined roles for this POC.</p>
             </div>
-
           </div>
 
           <button
             type="submit"
             className="analyze-button"
-            disabled={isLoading || !cvFile || !jobDescription.trim()}
+            disabled={isLoading || !cvFile || !jobId || !!loadError}
           >
-            {isLoading ? 'Analyzing...' : 'Analyze Match →'}
+            {isLoading ? 'Analyzing…' : 'Analyze Match →'}
           </button>
 
-          {(!cvFile || !jobDescription.trim()) && (
+          {!isLoading && (
             <p className="instruction-text">
-              Please upload a resume and provide a job description
+              {!cvFile
+                ? 'Upload a PDF resume and pick a job to analyze'
+                : !jobId
+                  ? 'Select a job, then run the match analysis'
+                  : 'Click Analyze Match to see your score on the next screen'}
             </p>
           )}
         </form>

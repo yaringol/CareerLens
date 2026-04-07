@@ -187,7 +187,7 @@ CareerLens/
 │   └── requirements.txt
 ├── data/            # Raw and processed datasets
 │   └── raw/        # Timestamped JSON files from scraping
-└── docs/            # Project documentation
+└── docs/            # Project documentation (see docs/POC.md for current POC flow)
 ```
 
 ---
@@ -196,6 +196,10 @@ CareerLens/
 
 🚧 **Work in Progress**  
 This repository is under active development as part of an academic Data Science capstone project.
+
+### POC (implemented flow)
+
+The **current end-to-end demo** is documented in **[`docs/POC.md`](docs/POC.md)** — active API endpoints (`GET/POST /api/...`), frontend/backend file map, data contracts, real vs fallback behavior, and what is out of scope for the core demo.
 
 ---
 

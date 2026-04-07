@@ -1,16 +1,13 @@
-import multer from 'multer'
-
-const storage = multer.memoryStorage()
+import multer from 'multer';
 
 export const uploadMiddleware = multer({
-  storage,
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB
-  },
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 8 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     if (file.mimetype !== 'application/pdf') {
-      return cb(new Error('Only PDF files are allowed'))
+      cb(new Error('Only PDF files are allowed'));
+      return;
     }
-    cb(null, true)
+    cb(null, true);
   },
-})
+});
