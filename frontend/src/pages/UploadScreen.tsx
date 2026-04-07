@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { uploadCVAndJobDescription } from '../services/api'
 import './UploadScreen.css'
 
 const UploadScreen = () => {
@@ -22,7 +23,7 @@ const UploadScreen = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!cvFile) {
       alert('Please upload your CV')
       return
@@ -34,15 +35,22 @@ const UploadScreen = () => {
     }
 
     setIsLoading(true)
-    
-    // Store data in sessionStorage for next pages
+
     sessionStorage.setItem('jobDescription', jobDescription)
-    
-    // In a real app, you would upload the file here
-    setTimeout(() => {
-      setIsLoading(false)
+
+    try {
+      const response = await uploadCVAndJobDescription(cvFile, jobDescription)
+
+      sessionStorage.setItem('jobId', response.jobId)
+      sessionStorage.setItem('analysisStatus', response.status)
+
       navigate('/extract')
-    }, 500)
+    } catch (error) {
+      console.error('Failed to upload CV and job description:', error)
+      alert('Failed to analyze match. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -53,12 +61,14 @@ const UploadScreen = () => {
 
         <form onSubmit={handleSubmit} className="upload-form">
           <div className="upload-sections">
+
             {/* Left: Upload Resume */}
             <div className="upload-section">
               <div className="section-header">
                 <span className="section-icon">📄</span>
                 <h2 className="section-title">Upload Resume</h2>
               </div>
+
               <div className="file-upload-area">
                 <input
                   type="file"
@@ -68,11 +78,16 @@ const UploadScreen = () => {
                   className="file-input"
                   disabled={isLoading}
                 />
-                <div className="file-upload-display">
+
+                <label htmlFor="cv-upload" className="file-upload-display">
                   <span className="upload-icon">⬆</span>
-                  <span className="upload-text">Drag & Drop CV</span>
-                  <span className="upload-hint">or click to browse</span>
-                </div>
+                  <span className="upload-text">
+                    {cvFile ? cvFile.name : 'Drag & Drop CV'}
+                  </span>
+                  <span className="upload-hint">
+                    {cvFile ? 'PDF selected' : 'or click to browse'}
+                  </span>
+                </label>
               </div>
             </div>
 
@@ -82,6 +97,7 @@ const UploadScreen = () => {
                 <span className="section-icon">💼</span>
                 <h2 className="section-title">Job Description</h2>
               </div>
+
               <textarea
                 id="job-description"
                 value={jobDescription}
@@ -92,20 +108,26 @@ const UploadScreen = () => {
                 disabled={isLoading}
                 required
               />
-              <p className="textarea-hint">Include required skills, qualifications, and responsibilities.</p>
+
+              <p className="textarea-hint">
+                Include required skills, qualifications, and responsibilities.
+              </p>
             </div>
+
           </div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="analyze-button"
             disabled={isLoading || !cvFile || !jobDescription.trim()}
           >
-            Analyze Match →
+            {isLoading ? 'Analyzing...' : 'Analyze Match →'}
           </button>
 
           {(!cvFile || !jobDescription.trim()) && (
-            <p className="instruction-text">Please upload a resume and provide a job description</p>
+            <p className="instruction-text">
+              Please upload a resume and provide a job description
+            </p>
           )}
         </form>
       </div>
