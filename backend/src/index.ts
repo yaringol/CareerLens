@@ -3,7 +3,7 @@ import app from './app';
 import { connectDB } from './config/db';
 import { logPocStartup } from './utils/pocLog';
 
-const PORT = process.env.PORT ?? 8000;
+const PORT = Number(process.env.PORT) || 8000;
 
 async function main() {
   logPocStartup();

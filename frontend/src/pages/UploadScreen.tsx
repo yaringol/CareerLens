@@ -17,6 +17,7 @@ const UploadScreen = () => {
   const [cvFile, setCvFile] = useState<File | null>(null)
   const [jobs, setJobs] = useState<PocJob[]>([])
   const [jobId, setJobId] = useState('')
+  const [jobDescription, setJobDescription] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
 
@@ -68,11 +69,15 @@ const UploadScreen = () => {
       alert('Please select a job')
       return
     }
+    if (jobDescription.trim().length < 40) {
+      alert('Please paste the job description (at least 40 characters) for skill extraction')
+      return
+    }
 
     setIsLoading(true)
     try {
       const { cvText } = await uploadPdf(cvFile)
-      const result = await analyzeCv(jobId, cvText)
+      const result = await analyzeCv(jobId, cvText, jobDescription)
       sessionStorage.setItem(RESULT_KEY, JSON.stringify(result))
       navigate('/dashboard')
     } catch (err) {
@@ -152,7 +157,7 @@ const UploadScreen = () => {
               </div>
             </div>
 
-            <div className="upload-section">
+            <div className="upload-section upload-section--job">
               <div className="section-header">
                 <span className="section-icon">💼</span>
                 <h2 className="section-title">Select job</h2>
@@ -160,8 +165,7 @@ const UploadScreen = () => {
               {loadError && <p className="textarea-hint" style={{ color: '#b91c1c' }}>{loadError}</p>}
               <select
                 id="job-select"
-                className="job-description-textarea"
-                style={{ minHeight: '3rem', cursor: 'pointer' }}
+                className="job-select"
                 value={jobId}
                 onChange={(e) => setJobId(e.target.value)}
                 disabled={isLoading || jobs.length === 0}
@@ -178,13 +182,37 @@ const UploadScreen = () => {
                 )}
               </select>
               <p className="textarea-hint">Choose one of five predefined roles for this POC.</p>
+
+              <label htmlFor="job-description" className="job-description-label">
+                Job description
+              </label>
+              <textarea
+                id="job-description"
+                className="job-description-textarea job-description-textarea--compact"
+                value={jobDescription}
+                onChange={(e) => setJobDescription(e.target.value)}
+                placeholder="Paste the full job posting (requirements, responsibilities, stack)…"
+                rows={6}
+                disabled={isLoading}
+                required
+                minLength={40}
+              />
+              <p className="textarea-hint">
+                Dynamic skills are extracted from this text.
+              </p>
             </div>
           </div>
 
           <button
             type="submit"
             className="analyze-button"
-            disabled={isLoading || !cvFile || !jobId || !!loadError}
+            disabled={
+              isLoading ||
+              !cvFile ||
+              !jobId ||
+              jobDescription.trim().length < 40 ||
+              !!loadError
+            }
           >
             {isLoading ? 'Analyzing…' : 'Analyze Match →'}
           </button>
@@ -192,10 +220,12 @@ const UploadScreen = () => {
           {!isLoading && (
             <p className="instruction-text">
               {!cvFile
-                ? 'Upload a PDF resume and pick a job to analyze'
+                ? 'Upload a PDF resume, pick a role, and paste a job description'
                 : !jobId
-                  ? 'Select a job, then run the match analysis'
-                  : 'Click Analyze Match to see your score on the next screen'}
+                  ? 'Select a job, paste a job description, then analyze'
+                  : jobDescription.trim().length < 40
+                    ? 'Paste at least 40 characters of job description text'
+                    : 'Click Analyze Match to see your score on the next screen'}
             </p>
           )}
         </form>
