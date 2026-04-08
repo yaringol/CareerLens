@@ -1,6 +1,6 @@
 /**
  * Minimal production-friendly logging for the POC.
- * Set POC_DEBUG=1 for optional text previews (CV snippets) in cv.service.
+ * Set POC_DEBUG=1 for optional text previews (CV snippets, job description input to extractSkills).
  */
 
 const PREFIX = '[CareerLens]';
@@ -50,9 +50,33 @@ export function logFallbackScoring(): void {
   console.log(`${PREFIX} Scoring fallback (keyword overlap) — OpenAI unavailable or response invalid`);
 }
 
+/** Client job description accepted for dynamic extraction (before LLM). */
+export function logJobDescriptionForExtraction(jobTitle: string, descriptionChars: number): void {
+  console.log(
+    `${PREFIX} Job description OK for dynamic skills job=${JSON.stringify(jobTitle)} descriptionChars=${descriptionChars}`
+  );
+}
+
+/**
+ * What `skillExtraction` sends to the chat API: fixed system prompt + one user message
+ * `"Job description:\\n" + <full JD text>`.
+ */
+export function logSkillExtractionAgentPayload(meta: {
+  jobDescriptionChars: number;
+  userMessageChars: number;
+}): void {
+  console.log(
+    `${PREFIX} skillExtraction → OpenAI: system=fixed rules; user="Job description:\\n"+JD (${meta.jobDescriptionChars} chars); userMessageTotalChars=${meta.userMessageChars}`
+  );
+}
+
 /** Dynamic skill extraction succeeded via OpenAI (job description → 5 skills). */
-export function logLlmDynamicSkillsOk(jobTitle: string): void {
-  console.log(`${PREFIX} LLM OK dynamic skills job=${JSON.stringify(jobTitle)}`);
+export function logLlmDynamicSkillsOk(jobTitle: string, extractedSkills?: string[]): void {
+  const skillsPart =
+    extractedSkills && extractedSkills.length > 0
+      ? ` extracted=${JSON.stringify(extractedSkills)}`
+      : '';
+  console.log(`${PREFIX} LLM OK dynamic skills job=${JSON.stringify(jobTitle)}${skillsPart}`);
 }
 
 /** Scoring used OpenAI output (aligned to the 10 skills). */
