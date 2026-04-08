@@ -18,7 +18,7 @@ Use **[`../docs/POC.md`](../docs/POC.md)** for:
 | `src/services/api.ts` | `app.ts` mounts `/api` |
 | `fetchJobs()` | `GET /api/jobs` |
 | `uploadPdf(file)` — field name **`file`** | `POST /api/upload` |
-| `analyzeCv(jobId, cvText)` | `POST /api/analyze` |
+| `analyzeCv(jobId, cvText, jobDescription)` | `POST /api/analyze` |
 
 Optional env: `VITE_API_BASE_URL` (no trailing slash), e.g. `http://localhost:8000/api`. If unset, the app uses relative `/api` (works with the Vite proxy).
 

@@ -52,11 +52,21 @@ export async function uploadPdf(file: File): Promise<UploadPdfResponse> {
   return res.json() as Promise<UploadPdfResponse>
 }
 
-export async function analyzeCv(jobId: string, cvText: string): Promise<AnalyzeResponse> {
+const MIN_JOB_DESCRIPTION_CHARS = 40
+
+export async function analyzeCv(
+  jobId: string,
+  cvText: string,
+  jobDescription: string
+): Promise<AnalyzeResponse> {
+  const jd = jobDescription.trim()
+  if (jd.length < MIN_JOB_DESCRIPTION_CHARS) {
+    throw new Error(`Please paste a job description (at least ${MIN_JOB_DESCRIPTION_CHARS} characters).`)
+  }
   const res = await fetch(`${base()}/analyze`, {
     method: 'POST',
     headers: jsonHeaders,
-    body: JSON.stringify({ jobId, cvText }),
+    body: JSON.stringify({ jobId, cvText, jobDescription: jd }),
   })
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
