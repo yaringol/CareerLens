@@ -5,6 +5,7 @@ import {
   getCoreSkillsById,
   extractDynamicSkills,
 } from '../services/job.service';
+import { getSkillsFromText } from '../services/dsModel';
 import { scoreAndPersist } from '../services/scoring.service';
 import { ValidationError } from '../errors';
 import type { IJob } from '../models/job.model';
@@ -205,6 +206,71 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       skills: analysis.scores.map((s) => ({ name: s.skill, score: s.score })),
       matchScore: analysis.matchScore,
       id: analysis._id.toString(),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * POST /api/analyze/skillner
+ *
+ * Same as POST /api/analyze but uses SkillNer (DS model /text/skills)
+ * for dynamic skill extraction instead of the LLM agent.
+ *
+ * Body: { jobId, cvText } or { jobTitle, jobDescription, cvText }
+ */
+router.post('/skillner', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { jobId, cvText, jobTitle, jobDescription } = req.body as {
+      jobId?: string;
+      cvText?: string;
+      jobTitle?: string;
+      jobDescription?: string;
+    };
+
+    let job: IJob;
+    let descriptionForDynamic: string;
+
+    if (jobId && cvText) {
+      job = await validateJobById(jobId);
+      descriptionForDynamic =
+        job.description?.trim() ||
+        `${job.title}: professional role requiring strong execution, collaboration, and domain-relevant technical skills.`;
+    } else if (jobTitle && jobDescription && cvText) {
+      job = await validateJobTitle(jobTitle);
+      descriptionForDynamic = jobDescription;
+    } else {
+      throw new ValidationError(
+        'Provide jobId and cvText, or jobTitle, jobDescription, and cvText'
+      );
+    }
+
+    const id = job._id.toString();
+
+    const [{ coreSkills }, dynamicSkills] = await Promise.all([
+      getCoreSkillsById(id),
+      getSkillsFromText(descriptionForDynamic),
+    ]);
+
+    const allSkills = mergeTenSkills(job.title, coreSkills, dynamicSkills);
+
+    const analysis = await scoreAndPersist({
+      jobId: id,
+      jobTitle: job.title,
+      cvText: cvText!.trim(),
+      skills: allSkills,
+      cvFileName: id,
+    });
+
+    logAnalyzeOk(job.title);
+
+    res.json({
+      jobTitle: analysis.jobTitle,
+      skills: analysis.scores.map((s) => ({ name: s.skill, score: s.score })),
+      matchScore: analysis.matchScore,
+      id: analysis._id.toString(),
+      extractor: 'skillner',
     });
   } catch (err) {
     next(err);

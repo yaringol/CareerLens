@@ -19,3 +19,11 @@ CVs/
 
 # Frontend
 frontend/node_modules/
+
+# DS model — versioned snapshots and generated outputs
+ds/model/model_*.joblib
+ds/model/token_dist.json
+ds/model/tsne_map.html
+ds/model/.ipynb_checkpoints/
+
+*.md

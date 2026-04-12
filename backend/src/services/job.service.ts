@@ -29,10 +29,7 @@ export async function getCoreSkillsById(jobId: string): Promise<{
   const job = await getJobById(jobId);
   if (!job) throw new NotFoundError('Job not found');
 
-  // TODO (Phase 3): Replace mock DS model with real DS model call:
-  //   dsModel.getCoreSkills(job.normalizedTitle)
-  // Blocked on DS team delivery — see src/interfaces/dsModel.interface.ts
-  const coreSkills = getCoreSkills(job.title);
+  const coreSkills = await getCoreSkills(job.title);
   if (!coreSkills) {
     throw new DsModelError(`No core skills available for job title "${job.title}"`, 503);
   }
