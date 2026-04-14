@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import { listJobs, getCoreSkillsById, extractDynamicSkills } from '../services/job.service';
-import { getCoreSkills as lookupCoreSkills } from '../services/dsModel';
 import { ValidationError } from '../errors';
 
 export async function getJobs(_req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -9,7 +8,6 @@ export async function getJobs(_req: Request, res: Response, next: NextFunction):
     const payload = jobs.map((j) => ({
       id: j._id.toString(),
       title: j.title,
-      skills: lookupCoreSkills(j.title) ?? [],
     }));
     res.json(payload);
   } catch (err) {

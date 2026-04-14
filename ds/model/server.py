@@ -4,7 +4,6 @@ import json
 
 from fastapi import FastAPI
 import joblib
-from collections import Counter
 import uvicorn
 
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -51,17 +50,16 @@ def predict_skills_from_text(text: str):
 
 @app.get("/title/skills")
 def predict_skills(title: str):
-    # 1. Vectorize input
+    # 1. Vectorize input title
     vec = vectorizer.transform([title])
-    
-    # 2. Find neighbors
+
+    # 2. Snap to the nearest POC role (n_neighbors=1)
     _, indices = knn.kneighbors(vec)
-    neighbor_skills = []
-    for idx in indices[0]:
-        neighbor_skills.extend(skills_data[idx])
-        
-    top_5 = [s for s, count in Counter(neighbor_skills).most_common(5)]
-    
+    matched_role = skills_data[indices[0][0]]
+
+    # Skills are pre-sorted by aggregated score — take top 5 directly
+    top_5 = matched_role[:5]
+
     return {
         "suggested_skills": top_5
     }
