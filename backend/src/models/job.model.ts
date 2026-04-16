@@ -3,7 +3,7 @@ import { Schema, model, Document } from 'mongoose';
 export interface IJob extends Document {
   title: string;
   normalizedTitle: string;
-  /** Stored JD snippet for POC dynamic skill extraction when the client only sends jobId */
+  /** Optional; POC analyze uses the client `jobDescription` body field, not this. */
   description?: string;
   metadata?: Record<string, unknown>;
 }

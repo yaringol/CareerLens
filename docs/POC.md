@@ -1,6 +1,6 @@
 # CareerLens POC Current Flow
 
-Short overview: the POC is a **single linear path** in the React app. The user uploads a **PDF CV**, picks **one of five seeded jobs**, and submits. The frontend calls the Node backend (`/api/...`), which extracts text, merges **10 skills** (5 static “core” + 5 dynamic), scores them (OpenAI when available, otherwise fallbacks), and returns JSON. The **Skills Match Dashboard** reads the last result from **`sessionStorage`** (set after a successful analyze).
+Short overview: the POC is a **single linear path** in the React app. The user uploads a **PDF CV**, picks **one of five seeded jobs**, **pastes a job description** (the posting text used for dynamic skill extraction), and submits. The frontend calls the Node backend (`/api/...`), which merges **10 skills** (5 static “core” + 5 dynamic from that pasted text), scores them (OpenAI when available, otherwise fallbacks), and returns JSON. The **Skills Match Dashboard** reads the last result from **`sessionStorage`** (set after a successful analyze).
 
 ---
 
@@ -8,8 +8,9 @@ Short overview: the POC is a **single linear path** in the React app. The user u
 
 1. **Upload CV** — PDF only; `POST /api/upload` returns extracted normalized text.
 2. **Choose one of 5 jobs** — `GET /api/jobs` loads the list; dropdown uses Mongo-backed jobs (seed script inserts five titles).
-3. **Analyze** — `POST /api/analyze` with `jobId` + `cvText` from the previous step.
-4. **View results** — Navigate to `/dashboard`; UI reads `sessionStorage` key `pocAnalysisResult` and shows job title, 10 skill bars, and match score.
+3. **Paste job description** — User-provided posting text (min 40 characters); **not** taken from the `Job` document for extraction.
+4. **Analyze** — `POST /api/analyze` with `jobId` + `cvText` + `jobDescription` from the previous steps.
+5. **View results** — Navigate to `/dashboard`; UI reads `sessionStorage` key `pocAnalysisResult` and shows job title, 10 skill bars, and match score.
 
 ---
 
@@ -19,7 +20,7 @@ Short overview: the POC is a **single linear path** in the React app. The user u
 |--------|------|-------------|
 | `GET` | `/api/jobs` | List jobs for the dropdown (`id`, `title`, `skills` preview from static core map). |
 | `POST` | `/api/upload` | Multipart field **`file`** (PDF) → `{ cvText }`. |
-| `POST` | `/api/analyze` | JSON body **`{ jobId, cvText }`** → analysis JSON (see Data Contract). |
+| `POST` | `/api/analyze` | JSON body **`{ jobId, cvText, jobDescription }`** → analysis JSON (see Data Contract). |
 
 All are mounted under **`/api`** in `backend/src/app.ts` (default backend port **8000**).
 
@@ -61,8 +62,9 @@ All are mounted under **`/api`** in `backend/src/app.ts` (default backend port *
 
 ### `POST /api/analyze`
 
-- **Request (JSON):** `{ "jobId": string, "cvText": string }`  
-  (`jobId` is Mongo ObjectId string for a seeded job.)
+- **Request (JSON):** `{ "jobId": string, "cvText": string, "jobDescription": string }`  
+  - `jobId`: Mongo ObjectId string for a seeded job (selects role + core skills).  
+  - `jobDescription`: user-pasted posting text; **must be at least 40 characters** after trim. Used only for dynamic skill extraction (not read from `Job.description`).
 
 - **Response (200):**
   ```json
@@ -85,7 +87,7 @@ All are mounted under **`/api`** in `backend/src/app.ts` (default backend port *
 | Jobs list | MongoDB documents | **`GET /api/jobs`** returns exactly the five canonical POC titles (in fixed order); extra DB rows are ignored. Fewer than five → **503** with a message to run **`npm run seed`**. |
 | PDF text | `pdf-parse` in `cv.service.ts` | Errors → 4xx validation (no fake text). |
 | Core 5 skills | Always from **`dsModel.ts`** static map by job title | Placeholder until a real DS/vector pipeline exists (see comments in `job.service.ts`). |
-| Dynamic 5 skills | OpenAI extraction from job **description** (`skillExtraction.agent.ts`) when call succeeds | Static per-job or generic lists in `job.service.ts` if LLM fails or key missing. |
+| Dynamic 5 skills | OpenAI extraction from **request body `jobDescription`** (`skillExtraction.agent.ts`) when call succeeds | Static per-job or generic lists in `job.service.ts` if LLM fails or key missing. |
 | Per-skill scores | OpenAI scoring (`scoring.agent.ts`) when JSON parses | Keyword overlap mock in `scoring.service.ts` if API fails or invalid agent JSON. |
 | OpenAI key | `OPENAI_API_KEY` in `backend/.env` | Server boots with placeholder key in code; LLM calls fail through to fallbacks (see `openaiClient.ts`, `pocLog.ts`). |
 

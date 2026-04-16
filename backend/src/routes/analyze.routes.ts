@@ -150,10 +150,13 @@ export function mergeTenSkills(jobTitle: string, core: string[], dynamic: string
   return out.slice(0, 10);
 }
 
+const MIN_JOB_DESCRIPTION_CHARS = 40;
+
 /**
  * POST /api/analyze
  *
- * POC: { jobId, cvText } — job description is loaded from the Job document.
+ * POC: { jobId, cvText, jobDescription } — user supplies the JD text for dynamic skill extraction;
+ *       jobId selects role (core skills + DB record). Stored Job.description is not used for extraction.
  * Legacy: { jobTitle, jobDescription, cvText }
  */
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
@@ -170,15 +173,20 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 
     if (jobId && cvText) {
       job = await validateJobById(jobId);
-      descriptionForDynamic =
-        job.description?.trim() ||
-        `${job.title}: professional role requiring strong execution, collaboration, and domain-relevant technical skills.`;
+      const jd =
+        typeof jobDescription === 'string' ? jobDescription.trim() : '';
+      if (jd.length < MIN_JOB_DESCRIPTION_CHARS) {
+        throw new ValidationError(
+          `jobDescription is required (at least ${MIN_JOB_DESCRIPTION_CHARS} characters) — paste the job posting for skill extraction`
+        );
+      }
+      descriptionForDynamic = jd;
     } else if (jobTitle && jobDescription && cvText) {
       job = await validateJobTitle(jobTitle);
       descriptionForDynamic = jobDescription;
     } else {
       throw new ValidationError(
-        'Provide jobId and cvText, or jobTitle, jobDescription, and cvText'
+        'Provide jobId, cvText, and jobDescription, or jobTitle, jobDescription, and cvText'
       );
     }
 

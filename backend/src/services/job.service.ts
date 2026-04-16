@@ -4,7 +4,12 @@ import { IJob } from '../models/job.model';
 import { getCoreSkills } from './dsModel';
 import { extractSkills } from '../agents/skillExtraction.agent';
 import { ValidationError, NotFoundError, DsModelError } from '../errors';
-import { logFallbackDynamicSkills } from '../utils/pocLog';
+import {
+  logFallbackDynamicSkills,
+  logJobDescriptionForExtraction,
+  logLlmDynamicSkillsOk,
+  logDebugText,
+} from '../utils/pocLog';
 
 export async function listJobs(): Promise<IJob[]> {
   const jobs = await getPocJobsForList();
@@ -98,7 +103,10 @@ export async function extractDynamicSkills(
   dynamicSource: DynamicSkillsSource;
 }> {
   try {
+    logJobDescriptionForExtraction(jobTitle, jobDescription.length);
+    logDebugText('job description (extractSkills input)', jobDescription, 400);
     const extractedSkills = await extractSkills(jobDescription);
+    logLlmDynamicSkillsOk(jobTitle, extractedSkills);
     return { jobTitle, extractedSkills, dynamicSource: 'llm_job_description' };
   } catch {
     const perJob = FALLBACK_DYNAMIC_BY_TITLE[jobTitle];

@@ -49,6 +49,42 @@
   gap: 1rem;
 }
 
+.upload-section--job .job-description-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+  margin-top: 0.25rem;
+}
+
+.job-select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  color: #111827;
+  background: #fff;
+  cursor: pointer;
+  min-height: 3rem;
+  transition: border-color 0.2s;
+}
+
+.job-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.job-select:disabled {
+  background-color: #f3f4f6;
+  cursor: not-allowed;
+}
+
+.job-description-textarea--compact {
+  min-height: 140px;
+}
+
 .section-header {
   display: flex;
   align-items: center;

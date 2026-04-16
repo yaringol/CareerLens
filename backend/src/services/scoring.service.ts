@@ -4,7 +4,12 @@ import { parseAndSaveAnalysis } from '../dal/cvAnalysis.dal';
 import { ICvAnalysis } from '../models/cvAnalysis.model';
 import { validateSkillArray } from '../utils/validateSkills';
 import { ValidationError } from '../errors';
-import { logFallbackScoring } from '../utils/pocLog';
+import {
+  logFallbackScoring,
+  logLlmScoringOk,
+  logLlmScoringRawUnnormalized,
+  logLlmScoringUniformReplaced,
+} from '../utils/pocLog';
 
 const MIN_CV_TEXT_LENGTH = 50;
 
@@ -41,7 +46,7 @@ function normalizeLlmScoringJson(
   raw: string,
   expectedSkills: string[],
   cvText: string
-): string {
+): { json: string; uniformReplacedWithKeywords: boolean } {
   const parsed = JSON.parse(raw) as { skills?: unknown };
   if (!Array.isArray(parsed.skills)) {
     throw new Error('Invalid LLM scoring shape');
@@ -82,10 +87,16 @@ function normalizeLlmScoringJson(
   const values = aligned.map((a) => a.score);
   const allSame = values.length > 0 && values.every((n) => n === values[0]);
   if (allSame) {
-    return buildMockAgentJson(expectedSkills, cvText);
+    return {
+      json: buildMockAgentJson(expectedSkills, cvText),
+      uniformReplacedWithKeywords: true,
+    };
   }
 
-  return JSON.stringify({ skills: aligned });
+  return {
+    json: JSON.stringify({ skills: aligned }),
+    uniformReplacedWithKeywords: false,
+  };
 }
 
 export interface ScoreRequest {
@@ -118,9 +129,20 @@ export async function scoreAndPersist(req: ScoreRequest): Promise<ICvAnalysis> {
   try {
     const raw = await scoreSkills(req.cvText, validatedSkills);
     try {
-      baseInput.rawAgentOutput = normalizeLlmScoringJson(raw, validatedSkills, req.cvText);
+      const { json, uniformReplacedWithKeywords } = normalizeLlmScoringJson(
+        raw,
+        validatedSkills,
+        req.cvText
+      );
+      baseInput.rawAgentOutput = json;
+      if (uniformReplacedWithKeywords) {
+        logLlmScoringUniformReplaced(req.jobTitle);
+      } else {
+        logLlmScoringOk(req.jobTitle);
+      }
     } catch {
       baseInput.rawAgentOutput = raw;
+      logLlmScoringRawUnnormalized(req.jobTitle);
     }
     return await parseAndSaveAnalysis(baseInput);
   } catch {
