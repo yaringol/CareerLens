@@ -1,57 +1,24 @@
 .circular-gauge {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-}
-
-.gauge-container {
-  position: relative;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
 .gauge-svg {
-  width: 100%;
-  height: 100%;
-  transform: rotate(-90deg);
+  overflow: visible;
 }
 
-.gauge-background {
-  transition: stroke 0.3s;
-}
-
-.gauge-fill {
-  transition: stroke-dashoffset 0.5s ease;
-}
-
-.gauge-content {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  align-items: baseline;
-  gap: 0.25rem;
-}
-
-.gauge-score {
+.gauge-score-text {
+  font-family: 'Inter', system-ui, sans-serif;
   font-size: 2rem;
-  font-weight: 700;
-  line-height: 1;
+  font-weight: 800;
+  fill: var(--color-primary);
+  letter-spacing: -0.04em;
 }
 
-.gauge-max {
-  font-size: 1.25rem;
-  font-weight: 500;
-  opacity: 0.7;
-}
-
-.gauge-label {
-  padding: 0.5rem 1rem;
-  border-radius: 9999px;
+.gauge-max-text {
+  font-family: 'Inter', system-ui, sans-serif;
   font-size: 0.875rem;
-  font-weight: 600;
-  text-align: center;
+  font-weight: 500;
+  fill: var(--color-secondary);
 }

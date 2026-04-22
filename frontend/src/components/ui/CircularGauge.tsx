@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import './CircularGauge.css'
 
 interface CircularGaugeProps {
@@ -6,71 +6,98 @@ interface CircularGaugeProps {
   maxScore?: number
   size?: number
   strokeWidth?: number
+  animate?: boolean
 }
 
 const CircularGauge: React.FC<CircularGaugeProps> = ({
   score,
   maxScore = 10,
-  size = 120,
-  strokeWidth = 8,
+  size = 160,
+  strokeWidth = 10,
+  animate = true,
 }) => {
+  const [displayed, setDisplayed] = useState(animate ? 0 : score)
+
+  useEffect(() => {
+    if (!animate) { setDisplayed(score); return }
+    const start = performance.now()
+    const duration = 900
+    const raf = (now: number) => {
+      const t = Math.min((now - start) / duration, 1)
+      const eased = 1 - Math.pow(1 - t, 3)
+      setDisplayed(score * eased)
+      if (t < 1) requestAnimationFrame(raf)
+    }
+    const id = requestAnimationFrame(raf)
+    return () => cancelAnimationFrame(id)
+  }, [score, animate])
+
   const radius = (size - strokeWidth) / 2
   const circumference = 2 * Math.PI * radius
-  const percentage = (score / maxScore) * 100
+  const percentage = (displayed / maxScore) * 100
   const offset = circumference - (percentage / 100) * circumference
 
-  const getColor = () => {
-    if (percentage >= 80) return '#10b981' // green
-    if (percentage >= 60) return '#3b82f6' // blue
-    if (percentage >= 40) return '#f59e0b' // amber
-    return '#ef4444' // red
-  }
-
-  const getAlignmentLabel = () => {
-    if (percentage >= 80) return 'Excellent Alignment'
-    if (percentage >= 60) return 'Good Alignment'
-    if (percentage >= 40) return 'Medium Alignment'
-    return 'Low Alignment'
-  }
-
-  const color = getColor()
-  const alignmentLabel = getAlignmentLabel()
+  const gradientId = `gauge-gradient-${size}`
 
   return (
     <div className="circular-gauge">
-      <div className="gauge-container" style={{ width: size, height: size }}>
-        <svg className="gauge-svg" viewBox={`0 0 ${size} ${size}`}>
-          <circle
-            className="gauge-background"
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill="none"
-            stroke="#e5e7eb"
-            strokeWidth={strokeWidth}
-          />
-          <circle
-            className="gauge-fill"
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill="none"
-            stroke={color}
-            strokeWidth={strokeWidth}
-            strokeDasharray={circumference}
-            strokeDashoffset={offset}
-            strokeLinecap="round"
-            transform={`rotate(-90 ${size / 2} ${size / 2})`}
-          />
-        </svg>
-        <div className="gauge-content">
-          <span className="gauge-score">{score}</span>
-          <span className="gauge-max">/{maxScore}</span>
-        </div>
-      </div>
-      <div className="gauge-label" style={{ backgroundColor: `${color}20`, color }}>
-        {alignmentLabel}
-      </div>
+      <svg
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
+        className="gauge-svg"
+      >
+        <defs>
+          <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="var(--color-accent-start)" />
+            <stop offset="100%" stopColor="var(--color-accent-end)" />
+          </linearGradient>
+        </defs>
+
+        {/* Track */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="var(--color-border)"
+          strokeWidth={strokeWidth}
+        />
+
+        {/* Fill */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={`url(#${gradientId})`}
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        />
+
+        {/* Score text */}
+        <text
+          x={size / 2}
+          y={size / 2 - 4}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          className="gauge-score-text"
+        >
+          {Math.round(displayed * 10) / 10}
+        </text>
+        <text
+          x={size / 2}
+          y={size / 2 + 16}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          className="gauge-max-text"
+        >
+          /{maxScore}
+        </text>
+      </svg>
     </div>
   )
 }
