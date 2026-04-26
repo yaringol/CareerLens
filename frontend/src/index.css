@@ -1,28 +1,58 @@
+/* ─── Brand tokens ─────────────────────────────────────────────────── */
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  /* Colors */
+  --color-bg:           #eeeef8;
+  --color-primary:      #1e1b6e;
+  --color-accent-start: #8b7cf6;
+  --color-accent-end:   #c084fc;
+  --color-accent:       #8b7cf6;
+  --color-secondary:    #9b8ec4;
+  --color-surface:      #ffffff;
+  --color-border:       rgba(30, 27, 110, 0.10);
+  --color-muted:        #6b7280;
+  --color-error:        #ef4444;
+  --color-success:      #10b981;
+  --color-warning:      #f59e0b;
+
+  /* Gradient */
+  --gradient-accent: linear-gradient(135deg, var(--color-accent-start), var(--color-accent-end));
+
+  /* Radius */
+  --radius-card:   12px;
+  --radius-input:  8px;
+  --radius-badge:  6px;
+  --radius-full:   9999px;
+
+  /* Shadow */
+  --shadow-card: 0 1px 3px rgba(30, 27, 110, 0.08), 0 4px 16px rgba(30, 27, 110, 0.06);
+  --shadow-lg:   0 8px 32px rgba(30, 27, 110, 0.12);
+
+  /* Typography */
+  font-family: 'Inter', system-ui, -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 16px;
   line-height: 1.5;
   font-weight: 400;
+  color: var(--color-primary);
 
+  /* Rendering */
   color-scheme: light;
-  color: rgba(0, 0, 0, 0.87);
-  background-color: #ffffff;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-* {
+/* ─── Reset ────────────────────────────────────────────────────────── */
+*, *::before, *::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
 body {
-  margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  background-color: var(--color-bg);
 }
 
 #root {

@@ -1,0 +1,95 @@
+.hcg-root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* ─── SVG wrapper ──────────────────────────────────────────────────── */
+.hcg-svg-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 220px;
+}
+
+.hcg-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.hcg-track {
+  stroke: rgba(30, 27, 110, 0.08);
+}
+
+/* ─── Score overlay — centered at the circle's focal point ─────────── */
+/* SVG viewBox "0 0 100 50", circle centre at (50,50.5).
+   Position at 72% places the score in the lower arc interior,
+   visually centred between the arc top and the flat base.            */
+.hcg-score-wrap {
+  position: absolute;
+  top: 72%;
+  left: 0;
+  right: 0;
+  text-align: center;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.hcg-digits {
+  font-size: 2.75rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--color-primary);
+  line-height: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.hcg-digit {
+  display: inline-block;
+  animation: digit-up 800ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes digit-up {
+  from { opacity: 0; transform: translateY(100%); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Strength badge ───────────────────────────────────────────────── */
+.hcg-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3125rem 0.875rem;
+  border-radius: var(--radius-full);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  animation: badge-in 0.4s ease-out 0.8s both;
+  opacity: 0;
+}
+
+@keyframes badge-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.hcg-badge--strong   { background: rgba(16,185,129,0.12); color: #059669; }
+.hcg-badge--moderate { background: rgba(245,158,11,0.12);  color: #d97706; }
+.hcg-badge--weak     { background: rgba(239,68,68,0.12);   color: #dc2626; }
+
+.hcg-percent {
+  display: inline-block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  line-height: 1;
+  margin-left: 0.1em;
+  align-self: flex-end;
+  padding-bottom: 0.1em;
+  animation: digit-up 700ms cubic-bezier(0.16, 1, 0.3, 1) 500ms both;
+}

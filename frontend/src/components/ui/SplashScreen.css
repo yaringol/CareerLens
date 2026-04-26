@@ -1,0 +1,163 @@
+/* ─── Overlay ──────────────────────────────────────────────────────── */
+.splash {
+  position: fixed;
+  inset: 0;
+  background: var(--color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  transition: opacity 0.4s ease-out;
+}
+
+.splash--exit {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ─── Content ──────────────────────────────────────────────────────── */
+.splash-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+/* ─── Icon ─────────────────────────────────────────────────────────── */
+.splash-icon {
+  width: 100px;
+  height: 112px;
+  animation: icon-drop 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
+@keyframes icon-drop {
+  from { opacity: 0; transform: translateY(-20px) scale(0.9); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.splash-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Document body — stroke draw-in */
+.sp-doc {
+  stroke-dasharray: 280;
+  stroke-dashoffset: 280;
+  animation: draw 0.7s ease-out 0.2s forwards;
+}
+
+.sp-fold {
+  stroke-dasharray: 60;
+  stroke-dashoffset: 60;
+  animation: draw 0.3s ease-out 0.75s forwards;
+}
+
+@keyframes draw {
+  to { stroke-dashoffset: 0; }
+}
+
+/* Document lines fade in */
+.sp-line { opacity: 0; }
+.sp-line-1 { animation: fade-in 0.25s ease-out 0.85s forwards; }
+.sp-line-2 { animation: fade-in 0.25s ease-out 0.95s forwards; }
+.sp-line-3 { animation: fade-in 0.25s ease-out 1.05s forwards; }
+
+/* Lens circle draw */
+.sp-lens {
+  stroke-dasharray: 114;
+  stroke-dashoffset: 114;
+  animation: draw 0.5s ease-out 0.9s forwards;
+}
+
+/* Handle draw */
+.sp-handle {
+  stroke-dasharray: 20;
+  stroke-dashoffset: 20;
+  animation: draw 0.2s ease-out 1.3s forwards;
+}
+
+/* Chart bars grow up */
+.sp-bar { transform-origin: bottom; transform: scaleY(0); opacity: 0; }
+.sp-bar-1 { animation: bar-grow 0.3s cubic-bezier(0.16,1,0.3,1) 1.1s forwards; }
+.sp-bar-2 { animation: bar-grow 0.3s cubic-bezier(0.16,1,0.3,1) 1.2s forwards; }
+.sp-bar-3 { animation: bar-grow 0.3s cubic-bezier(0.16,1,0.3,1) 1.3s forwards; }
+
+@keyframes bar-grow {
+  from { transform: scaleY(0); opacity: 0; }
+  to   { transform: scaleY(1); opacity: 1; }
+}
+
+/* Arrow pops in */
+.sp-arrow {
+  opacity: 0;
+  animation: fade-in 0.2s ease-out 1.45s forwards;
+}
+
+@keyframes fade-in {
+  to { opacity: 1; }
+}
+
+/* ─── Wordmark ─────────────────────────────────────────────────────── */
+.splash-wordmark {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  animation: wordmark-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) 1.0s both;
+}
+
+@keyframes wordmark-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.splash-career {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.splash-lens {
+  font-size: 2rem;
+  font-weight: 400;
+  color: var(--color-secondary);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+/* ─── Tagline ──────────────────────────────────────────────────────── */
+.splash-tagline {
+  font-size: 0.875rem;
+  color: var(--color-secondary);
+  letter-spacing: 0.02em;
+  animation: fade-in 0.4s ease-out 1.4s both;
+  opacity: 0;
+}
+
+/* ─── Progress bar ─────────────────────────────────────────────────── */
+.splash-progress {
+  width: 120px;
+  height: 3px;
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin-top: 0.5rem;
+  animation: fade-in 0.3s ease-out 1.5s both;
+  opacity: 0;
+}
+
+.splash-progress-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--gradient-accent);
+  animation: progress-fill 0.65s cubic-bezier(0.4, 0, 0.2, 1) 1.55s both;
+  width: 0;
+}
+
+@keyframes progress-fill {
+  from { width: 0; }
+  to   { width: 100%; }
+}
