@@ -1,0 +1,179 @@
+================================================================
+SOFTWARE ENGINEER
+================================================================
+
+--- WEAK / STRONG (Senior) ---
+We are hiring a Senior Software Engineer / Tech Lead for a high-scale distributed platform.
+
+Critical requirements:
+1. Expert Python, Go, or Java for production microservices
+2. Distributed systems design (event-driven, Kafka, high-availability)
+3. Advanced database optimisation (PostgreSQL query planning, Redis caching)
+4. Kubernetes and CI/CD pipeline ownership in AWS or GCP
+5. Open-source contributions and technical leadership / mentoring
+
+Additional requirements:
+- 5+ years building and operating systems at 1 M+ requests/day
+- System design for scalability and fault tolerance
+- 90%+ automated test coverage (TDD, contract testing)
+- AWS/GCP certifications preferred
+
+--- MID ---
+We are seeking a Software Engineer to join our backend team.
+
+Required:
+- 2+ years of development experience in Python or Java
+- Experience building and consuming REST APIs
+- Relational database management with SQL (MySQL or PostgreSQL)
+- Version control with Git including branch management and code review
+- Unit and integration testing fundamentals
+- Familiarity with Agile / Scrum delivery
+
+Nice to have:
+- Basic Docker containerisation
+- Cloud deployment on AWS (EC2, S3 basics)
+- CI/CD pipeline setup experience
+
+
+================================================================
+DATA SCIENTIST
+================================================================
+
+--- WEAK / STRONG (Senior) ---
+We are seeking a Senior Data Scientist / ML Engineer to lead modelling at scale.
+
+Critical requirements:
+1. Deep learning model development with PyTorch or TensorFlow (BERT, CNN, LSTM)
+2. Production ML pipeline ownership (MLflow, Kubeflow, or SageMaker)
+3. Large-scale feature engineering using Apache Spark on streaming data
+4. Rigorous A/B testing with causal inference (CUPED, DiD, propensity matching)
+5. Published research at top ML venues (NeurIPS, ICML, ICLR) or equivalent
+
+Additional requirements:
+- PhD or MSc in Machine Learning, Statistics, or related field
+- Distributed GPU training (PyTorch DDP, Horovod)
+- Kaggle Master rank or equivalent competition experience
+- NLP and/or computer vision production deployment
+
+--- MID ---
+We are looking for a junior Data Analyst / Data Scientist to support our analytics team.
+
+Required:
+- 1-2 years of data analysis experience
+- Python for basic data manipulation (pandas, numpy) and SQL for data extraction
+- Experience building simple predictive models (logistic regression, random forest)
+- Data visualisation to present findings to stakeholders
+- Statistical fundamentals: descriptive statistics, correlation, basic hypothesis testing
+
+Nice to have:
+- Jupyter notebook-based analysis workflows
+- Tableau or Power BI dashboard creation
+- A/B testing awareness
+
+
+================================================================
+PRODUCT MANAGER
+================================================================
+
+--- WEAK / STRONG (Senior) ---
+We are hiring a Senior Product Manager to own the strategy for our core platform.
+
+Critical requirements:
+1. OKR definition and cross-team tracking with measurable revenue or retention impact
+2. Rigorous A/B experimentation programme: hypothesis-driven, statistically valid, CUPED
+3. Mixed-methods user research leadership (interview programmes + quantitative surveys)
+4. Product roadmap ownership driving multi-million dollar features end-to-end
+5. Data-driven decision making with SQL and product analytics tools (Mixpanel, Amplitude)
+
+Additional requirements:
+- 5+ years of product management experience
+- Proven ability to mentor and grow a PM team
+- MBA or CS background preferred
+- Experience with growth loops and retention engineering
+
+--- MID ---
+We are hiring a Business Analyst to support product and engineering teams.
+
+Required:
+- 1-3 years of business analysis or product support experience
+- Requirements gathering and documentation using Jira and Confluence
+- Participation in Agile / Scrum ceremonies and user-story writing
+- Basic data analysis using Excel or simple SQL queries
+- Communication of findings to cross-functional stakeholders
+
+Nice to have:
+- Exposure to product roadmap planning concepts
+- Wireframing with Figma or Balsamiq
+- Familiarity with software development lifecycle
+
+
+================================================================
+DEVOPS ENGINEER
+================================================================
+
+--- WEAK / STRONG (Senior) ---
+We are seeking a Principal SRE / DevOps Architect for our cloud-native platform.
+
+Critical requirements:
+1. Kubernetes multi-cluster management across AWS EKS, GCP GKE, and Azure AKS simultaneously
+2. Full Infrastructure-as-Code ownership with Terraform (500+ resources, zero config drift)
+3. GitOps continuous delivery with ArgoCD and GitHub Actions
+4. Istio service mesh and zero-trust security policy enforcement using OPA/Gatekeeper
+5. HashiCorp Vault for secrets management with dynamic credentials and PKI automation
+
+Additional requirements:
+- CKA + CKS (Kubernetes Security Specialist) certifications
+- Chaos engineering programme (LitmusChaos or Chaos Monkey)
+- Distributed tracing with Jaeger; full Prometheus + Grafana observability
+- $1M+ annual cloud cost optimisation experience
+
+--- MID ---
+We are hiring a DevOps Engineer to scale our cloud infrastructure.
+
+Required:
+- Production Kubernetes cluster management including deployments, services, and scaling
+- Infrastructure provisioning using Terraform or CloudFormation
+- Multi-cloud or hybrid cloud exposure (AWS plus at least one other provider)
+- Advanced monitoring and alerting setup (Prometheus, Grafana, or equivalent)
+- Linux security hardening and secrets management best practices
+
+Nice to have:
+- GitOps workflow experience (ArgoCD or Flux)
+- Disaster recovery planning (RPO/RTO targets)
+- Container security scanning (Trivy, Snyk, or similar)
+
+
+================================================================
+FRONTEND DEVELOPER
+================================================================
+
+--- WEAK / STRONG (Senior) ---
+We are hiring a Senior Frontend Engineer to lead UI architecture for a platform with millions of users.
+
+Critical requirements:
+1. WCAG 2.1 AA accessibility implementation including ARIA, screen-reader testing, and axe-core audits
+2. End-to-end automated testing with Cypress or Playwright (150+ tests in production)
+3. Core Web Vitals ownership: LCP, CLS, FID optimisation measured in production Lighthouse runs
+4. Micro-frontend architecture using Module Federation for independent team deployments
+5. React component library authorship with TypeScript, full a11y docs, and Storybook
+
+Additional requirements:
+- Expert React + TypeScript including advanced patterns
+- Next.js SSR and static site generation in production
+- Jest + React Testing Library with 90%+ unit coverage
+- Performance: code-splitting, lazy loading, bundle analysis
+
+--- MID ---
+We are looking for a Frontend Developer to build React applications.
+
+Required:
+- 1-3 years of frontend development experience
+- React proficiency: functional components, hooks, and basic state management
+- HTML5, CSS3, and responsive layout (Flexbox, Grid)
+- JavaScript (ES6+) and basic TypeScript
+- REST API integration using Axios or fetch
+
+Nice to have:
+- Tailwind CSS or Bootstrap experience
+- Basic form validation and error handling
+- Git version control and pull-request workflow
