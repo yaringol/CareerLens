@@ -13,14 +13,14 @@ const fsSource = `
   uniform vec2 iResolution;
   uniform float iTime;
 
-  const float overallSpeed = 0.2;
+  const float overallSpeed = 0.08;
   const float gridSmoothWidth = 0.015;
   const float axisWidth = 0.05;
   const float majorLineWidth = 0.025;
   const float minorLineWidth = 0.0125;
   const float majorLineFrequency = 5.0;
   const float minorLineFrequency = 1.0;
-  const vec4 gridColor = vec4(0.5);
+  const vec4 gridColor = vec4(0.25);
   const float scale = 5.0;
   const vec4 lineColor = vec4(0.4, 0.2, 0.8, 1.0);
   const float minLineWidth = 0.01;

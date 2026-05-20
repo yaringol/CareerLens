@@ -1,18 +1,39 @@
-import { Router } from 'express';
-import { getJobs, getCoreSkills, extractSkillsHandler } from '../controllers/jobs.controller';
+import { Router, Request, Response, NextFunction } from 'express';
+import { getAllJobs } from '../dal/job.dal';
+import { extractSkills } from '../agents/skillExtraction.agent';
+import { authenticate } from '../middleware/auth.middleware';
 
 const router = Router();
+router.use(authenticate);
 
-// GET /api/jobs — List all POC jobs for dropdown
-router.get('/', getJobs);
+// GET /jobs — List all POC jobs for dropdown
+router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const jobs = await getAllJobs();
+    res.json(jobs.map((j) => ({ id: String(j._id), title: j.title })));
+  } catch (err) {
+    next(err);
+  }
+});
 
-// GET /api/jobs/:id/core-skills — Fetch 5 core skills from DS model for a job
-// TODO (Phase 3): Blocked on DS team — currently uses mock DS model
-router.get('/:id/core-skills', getCoreSkills);
+// POST /jobs/extract — Extract 5 dynamic skills from job description provided by client
+router.post('/extract', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { jobTitle, jobDescription } = req.body as {
+      jobTitle?: string;
+      jobDescription?: string;
+    };
 
-// POST /api/jobs/extract — Extract 5 dynamic skills from job description provided by client
-// Note: jobDescription comes from the UI (user-pasted job posting), not from DB.
-// TODO: Replace jobTitle validation with vector DB semantic matching in production
-router.post('/extract', extractSkillsHandler);
+    if (!jobTitle || !jobDescription) {
+      res.status(400).json({ error: 'jobTitle and jobDescription are required' });
+      return;
+    }
+
+    const extractedSkills = await extractSkills(jobDescription);
+    res.json({ jobTitle, extractedSkills });
+  } catch (err) {
+    next(err);
+  }
+});
 
 export default router;

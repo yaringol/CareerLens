@@ -13,7 +13,7 @@ import {
 
 const MIN_CV_TEXT_LENGTH = 50;
 
-/** Keyword overlap 1–10; varies per skill string so different jobs diverge on the same CV. */
+/** Keyword overlap 0–10; no keyword match → 0, full match → 10. */
 function overlapScoreForSkill(skill: string, cvText: string): number {
   const cv = cvText.toLowerCase();
   const tokens = skill
@@ -21,16 +21,16 @@ function overlapScoreForSkill(skill: string, cvText: string): number {
     .split(/[^a-z0-9]+/)
     .filter((t) => t.length > 2);
   if (tokens.length === 0) {
-    return 5;
+    return 0;
   }
   const hits = tokens.filter((t) => cv.includes(t)).length;
   const ratio = hits / tokens.length;
-  const score = Math.round(3 + ratio * 7);
-  return Math.min(10, Math.max(1, score));
+  const score = Math.round(ratio * 10);
+  return Math.min(10, Math.max(0, score));
 }
 
-/** When LLM is unavailable, score from token overlap so different jobs (different skills) differentiate on the same CV. */
-function buildMockAgentJson(skills: string[], cvText: string): string {
+/** Keyword-overlap fallback used when LLM is unavailable or returns uniform scores. */
+function buildKeywordFallbackJson(skills: string[], cvText: string): string {
   const scored = skills.map((skill) => ({
     skill,
     score: overlapScoreForSkill(skill, cvText),
@@ -88,7 +88,7 @@ function normalizeLlmScoringJson(
   const allSame = values.length > 0 && values.every((n) => n === values[0]);
   if (allSame) {
     return {
-      json: buildMockAgentJson(expectedSkills, cvText),
+      json: buildKeywordFallbackJson(expectedSkills, cvText),
       uniformReplacedWithKeywords: true,
     };
   }
@@ -147,7 +147,7 @@ export async function scoreAndPersist(req: ScoreRequest): Promise<ICvAnalysis> {
     return await parseAndSaveAnalysis(baseInput);
   } catch {
     logFallbackScoring();
-    baseInput.rawAgentOutput = buildMockAgentJson(validatedSkills, req.cvText);
+    baseInput.rawAgentOutput = buildKeywordFallbackJson(validatedSkills, req.cvText);
     return parseAndSaveAnalysis(baseInput);
   }
 }

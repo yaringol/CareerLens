@@ -10,8 +10,10 @@ import { scoreAndPersist } from '../services/scoring.service';
 import { ValidationError } from '../errors';
 import type { IJob } from '../models/job.model';
 import { logAnalyzeOk } from '../utils/pocLog';
+import { authenticate } from '../middleware/auth.middleware';
 
 const router = Router();
+router.use(authenticate);
 
 function tokenSet(s: string): Set<string> {
   return new Set(
@@ -151,6 +153,13 @@ export function mergeTenSkills(jobTitle: string, core: string[], dynamic: string
 }
 
 const MIN_JOB_DESCRIPTION_CHARS = 40;
+const MIN_MEANINGFUL_WORDS = 5;
+
+/** Require at least MIN_MEANINGFUL_WORDS distinct alphabetic words of 3+ chars. */
+function isMeaningfulText(text: string): boolean {
+  const words = new Set((text.match(/[a-zA-Z]{3,}/g) ?? []).map((w) => w.toLowerCase()));
+  return words.size >= MIN_MEANINGFUL_WORDS;
+}
 
 /**
  * POST /api/analyze
@@ -178,6 +187,11 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       if (jd.length < MIN_JOB_DESCRIPTION_CHARS) {
         throw new ValidationError(
           `jobDescription is required (at least ${MIN_JOB_DESCRIPTION_CHARS} characters) — paste the job posting for skill extraction`
+        );
+      }
+      if (!isMeaningfulText(jd)) {
+        throw new ValidationError(
+          'Job description does not appear to contain valid text. Please paste an actual job posting.'
         );
       }
       descriptionForDynamic = jd;

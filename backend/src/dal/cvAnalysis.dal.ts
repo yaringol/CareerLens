@@ -52,7 +52,7 @@ function parseAgentResponse(raw: string): AgentScoringResponse {
 }
 
 function clamp(score: number): number {
-  return Math.min(10, Math.max(1, Math.round(score)));
+  return Math.min(10, Math.max(0, Math.round(score)));
 }
 
 function calcMatchScore(scores: number[]): number {

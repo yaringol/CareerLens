@@ -23,18 +23,15 @@
   stroke: rgba(30, 27, 110, 0.08);
 }
 
-/* ─── Score overlay — centered at the circle's focal point ─────────── */
-/* SVG viewBox "0 0 100 50", circle centre at (50,50.5).
-   Position at 72% places the score in the lower arc interior,
-   visually centred between the arc top and the flat base.            */
 .hcg-score-wrap {
   position: absolute;
-  top: 72%;
-  left: 0;
-  right: 0;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   text-align: center;
-  transform: translateY(-50%);
   pointer-events: none;
+  background: transparent;
+  z-index: 1;
 }
 
 .hcg-digits {
@@ -46,7 +43,6 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  overflow: hidden;
 }
 
 .hcg-digit {
@@ -84,12 +80,12 @@
 
 .hcg-percent {
   display: inline-block;
-  font-size: 1.5rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: var(--color-primary);
   line-height: 1;
   margin-left: 0.1em;
   align-self: flex-end;
-  padding-bottom: 0.1em;
+  padding-bottom: 0.2em;
   animation: digit-up 700ms cubic-bezier(0.16, 1, 0.3, 1) 500ms both;
 }
