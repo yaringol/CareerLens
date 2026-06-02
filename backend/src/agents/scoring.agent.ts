@@ -25,7 +25,7 @@ export async function scoreSkills(cvText: string, skills: string[]): Promise<str
     { role: 'system', content: SYSTEM_PROMPT },
     {
       role: 'user',
-      content: `Skills to score (all 10, in order):\n${skillsList}\n\nCV text:\n${cvText}`,
+      content: `Skills to score (all supplied skills, in order):\n${skillsList}\n\nCV text:\n${cvText}`,
     },
   ]);
 }

@@ -12,6 +12,8 @@ import {
 } from '../utils/pocLog';
 
 const MIN_CV_TEXT_LENGTH = 50;
+const SCORE_MIN = 1;
+const SCORE_MAX = 10;
 
 /** Keyword overlap 1–10; varies per skill string so different jobs diverge on the same CV. */
 function overlapScoreForSkill(skill: string, cvText: string): number {
@@ -21,21 +23,30 @@ function overlapScoreForSkill(skill: string, cvText: string): number {
     .split(/[^a-z0-9]+/)
     .filter((t) => t.length > 2);
   if (tokens.length === 0) {
-    return 5;
+    return SCORE_MIN;
   }
   const hits = tokens.filter((t) => cv.includes(t)).length;
   const ratio = hits / tokens.length;
-  const score = Math.round(3 + ratio * 7);
-  return Math.min(10, Math.max(1, score));
+  const score = Math.round(SCORE_MIN + ratio * (SCORE_MAX - SCORE_MIN));
+  return Math.min(SCORE_MAX, Math.max(SCORE_MIN, score));
 }
 
 /** When LLM is unavailable, score from token overlap so different jobs (different skills) differentiate on the same CV. */
-function buildMockAgentJson(skills: string[], cvText: string): string {
+function buildKeywordOverlapJson(skills: string[], cvText: string): string {
   const scored = skills.map((skill) => ({
     skill,
     score: overlapScoreForSkill(skill, cvText),
   }));
   return JSON.stringify({ skills: scored });
+}
+
+/** Last-resort fallback when LLM scoring is unavailable. */
+function buildMockAgentJson(skills: string[], cvText: string): string {
+  return buildKeywordOverlapJson(skills, cvText);
+}
+
+function detectUniformScores(scores: number[]): boolean {
+  return scores.length > 0 && scores.every((n) => n === scores[0]);
 }
 
 /**
@@ -85,10 +96,9 @@ function normalizeLlmScoringJson(
   });
 
   const values = aligned.map((a) => a.score);
-  const allSame = values.length > 0 && values.every((n) => n === values[0]);
-  if (allSame) {
+  if (detectUniformScores(values)) {
     return {
-      json: buildMockAgentJson(expectedSkills, cvText),
+      json: buildKeywordOverlapJson(expectedSkills, cvText),
       uniformReplacedWithKeywords: true,
     };
   }
@@ -105,6 +115,9 @@ export interface ScoreRequest {
   cvText: string;
   skills: unknown;
   cvFileName?: string;
+  expectedSkillCount?: number;
+  cvOnlyMode?: boolean;
+  keywordOnly?: boolean;
 }
 
 export async function scoreAndPersist(req: ScoreRequest): Promise<ICvAnalysis> {
@@ -115,7 +128,8 @@ export async function scoreAndPersist(req: ScoreRequest): Promise<ICvAnalysis> {
     throw new ValidationError('cvText is too short to analyze');
   }
 
-  const validatedSkills = validateSkillArray(req.skills, 10);
+  const expectedSkillCount = req.expectedSkillCount ?? 10;
+  const validatedSkills = validateSkillArray(req.skills, expectedSkillCount);
 
   const baseInput = {
     cvFileName: req.cvFileName ?? req.jobId,
@@ -124,7 +138,15 @@ export async function scoreAndPersist(req: ScoreRequest): Promise<ICvAnalysis> {
     jobTitle: req.jobTitle,
     extractedSkills: validatedSkills,
     rawAgentOutput: '',
+    expectedSkillCount,
+    cvOnlyMode: req.cvOnlyMode ?? false,
+    isEstimated: req.keywordOnly ?? false,
   };
+
+  if (req.keywordOnly) {
+    baseInput.rawAgentOutput = buildKeywordOverlapJson(validatedSkills, req.cvText);
+    return parseAndSaveAnalysis(baseInput);
+  }
 
   try {
     const raw = await scoreSkills(req.cvText, validatedSkills);
@@ -136,6 +158,7 @@ export async function scoreAndPersist(req: ScoreRequest): Promise<ICvAnalysis> {
       );
       baseInput.rawAgentOutput = json;
       if (uniformReplacedWithKeywords) {
+        baseInput.isEstimated = true;
         logLlmScoringUniformReplaced(req.jobTitle);
       } else {
         logLlmScoringOk(req.jobTitle);
@@ -147,6 +170,7 @@ export async function scoreAndPersist(req: ScoreRequest): Promise<ICvAnalysis> {
     return await parseAndSaveAnalysis(baseInput);
   } catch {
     logFallbackScoring();
+    baseInput.isEstimated = true;
     baseInput.rawAgentOutput = buildMockAgentJson(validatedSkills, req.cvText);
     return parseAndSaveAnalysis(baseInput);
   }

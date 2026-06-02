@@ -25,9 +25,18 @@ export interface AnalyzeResponse {
   skills: Array<{ name: string; score: number }>
   matchScore: number
   id: string
+  cvOnlyMode?: boolean
+  isEstimated?: boolean
 }
 
 const jsonHeaders = { 'Content-Type': 'application/json' }
+
+export class ApiError extends Error {
+  constructor(message: string, public status: number, public code?: string) {
+    super(message)
+    this.name = 'ApiError'
+  }
+}
 
 export async function fetchJobs(): Promise<PocJob[]> {
   const res = await fetch(`${base()}/jobs`)
@@ -57,7 +66,8 @@ const MIN_JOB_DESCRIPTION_CHARS = 40
 export async function analyzeCv(
   jobId: string,
   cvText: string,
-  jobDescription: string
+  jobDescription: string,
+  options: { skipGibberish?: boolean } = {}
 ): Promise<AnalyzeResponse> {
   const jd = jobDescription.trim()
   if (jd.length < MIN_JOB_DESCRIPTION_CHARS) {
@@ -65,12 +75,16 @@ export async function analyzeCv(
   }
   const res = await fetch(`${base()}/analyze`, {
     method: 'POST',
-    headers: jsonHeaders,
+    headers: {
+      ...jsonHeaders,
+      ...(options.skipGibberish ? { 'X-Skip-Gibberish': 'true' } : {}),
+    },
     body: JSON.stringify({ jobId, cvText, jobDescription: jd }),
   })
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
-    throw new Error((err as { error?: string }).error || `Analyze failed (${res.status})`)
+    const body = err as { error?: string; code?: string }
+    throw new ApiError(body.error || `Analyze failed (${res.status})`, res.status, body.code)
   }
   return res.json() as Promise<AnalyzeResponse>
 }

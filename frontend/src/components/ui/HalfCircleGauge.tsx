@@ -26,6 +26,14 @@ const STRENGTH_COLORS: Record<Strength, string[]> = {
 
 const EASING = 'cubic-bezier(0.65, 0, 0.35, 1)'
 
+function getRadiusForScore(score: number, max: number) {
+  const pct = Math.min(Math.max(score / max, 0), 1) * 100
+  if (pct <= 30) return 32
+  if (pct <= 60) return 37
+  if (pct <= 85) return 42
+  return 45
+}
+
 function randomId() {
   return 'g' + Math.random().toString(36).slice(2, 8)
 }
@@ -34,11 +42,11 @@ export function HalfCircleGauge({ value, max, animate = true }: HalfCircleGaugeP
   const strokeRef = useRef<SVGCircleElement>(null)
   const gradId    = useRef(randomId()).current
 
-  const radius       = 45
-  const circ         = 2 * Math.PI * radius
-  const half         = circ / 2
-  const dasharray    = `${half} ${half}`
-  const targetOffset = -Math.min(value / max, 1) * half
+  const scoreRatio   = Math.min(Math.max(value / max, 0), 1)
+  const radius       = getRadiusForScore(value, max)
+  const circumference = 2 * Math.PI * radius
+  const dasharray    = `${circumference} ${circumference}`
+  const targetOffset = (1 - scoreRatio) * circumference
   const strength     = getStrength(value, max)
   const colorStops   = STRENGTH_COLORS[strength]
 
@@ -51,13 +59,13 @@ export function HalfCircleGauge({ value, max, animate = true }: HalfCircleGaugeP
     }
     el.animate(
       [
-        { strokeDashoffset: '0', offset: 0 },
-        { strokeDashoffset: '0', offset: 400 / 1400 },
+        { strokeDashoffset: String(circumference), offset: 0 },
+        { strokeDashoffset: String(circumference), offset: 400 / 1400 },
         { strokeDashoffset: String(targetOffset) },
       ],
       { duration: 1400, easing: EASING, fill: 'forwards' }
     )
-  }, [value, max, animate, targetOffset])
+  }, [value, max, animate, circumference, targetOffset])
 
   const displayValue = Math.round(value)
 
@@ -82,7 +90,9 @@ export function HalfCircleGauge({ value, max, animate = true }: HalfCircleGaugeP
               ref={strokeRef}
               stroke={`url(#${gradId})`}
               strokeDasharray={dasharray}
+              strokeDashoffset={circumference}
               strokeLinecap="round"
+              transform="rotate(-90)"
               r={radius}
             />
           </g>

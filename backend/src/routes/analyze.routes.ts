@@ -10,6 +10,7 @@ import { scoreAndPersist } from '../services/scoring.service';
 import { ValidationError } from '../errors';
 import type { IJob } from '../models/job.model';
 import { logAnalyzeOk } from '../utils/pocLog';
+import { isGibberish } from '../utils/gibberishDetector';
 
 const router = Router();
 
@@ -170,6 +171,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 
     let job: IJob;
     let descriptionForDynamic: string;
+    const skipGibberish = req.header('X-Skip-Gibberish')?.toLowerCase() === 'true';
 
     if (jobId && cvText) {
       job = await validateJobById(jobId);
@@ -192,12 +194,24 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 
     const id = job._id.toString();
 
-    const [{ coreSkills }, { extractedSkills: dynamicSkills }] = await Promise.all([
-      getCoreSkillsById(id),
-      extractDynamicSkills(job.title, descriptionForDynamic),
-    ]);
+    if (!skipGibberish && isGibberish(descriptionForDynamic)) {
+      res.status(400).json({
+        code: 'GIBBERISH_DETECTED',
+        error: 'The job description does not look like readable English.',
+      });
+      return;
+    }
 
-    const allSkills = mergeTenSkills(job.title, coreSkills, dynamicSkills);
+    const { coreSkills } = await getCoreSkillsById(id);
+    const allSkills = skipGibberish
+      ? coreSkills.slice(0, 5)
+      : mergeTenSkills(
+          job.title,
+          coreSkills,
+          (await extractDynamicSkills(job.title, descriptionForDynamic)).extractedSkills
+        );
+
+    const cvOnlyMode = skipGibberish;
 
     const analysis = await scoreAndPersist({
       jobId: id,
@@ -205,6 +219,9 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       cvText: cvText.trim(),
       skills: allSkills,
       cvFileName: id,
+      expectedSkillCount: cvOnlyMode ? 5 : 10,
+      cvOnlyMode,
+      keywordOnly: cvOnlyMode,
     });
 
     logAnalyzeOk(job.title);
@@ -214,6 +231,8 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       skills: analysis.scores.map((s) => ({ name: s.skill, score: s.score })),
       matchScore: analysis.matchScore,
       id: analysis._id.toString(),
+      cvOnlyMode: analysis.cvOnlyMode ?? false,
+      isEstimated: analysis.isEstimated ?? false,
     });
   } catch (err) {
     next(err);
@@ -279,6 +298,7 @@ router.post('/skillner', async (req: Request, res: Response, next: NextFunction)
       matchScore: analysis.matchScore,
       id: analysis._id.toString(),
       extractor: 'skillner',
+      isEstimated: analysis.isEstimated ?? false,
     });
   } catch (err) {
     next(err);
