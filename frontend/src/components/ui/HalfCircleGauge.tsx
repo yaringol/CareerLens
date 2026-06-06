@@ -34,11 +34,11 @@ export function HalfCircleGauge({ value, max, animate = true }: HalfCircleGaugeP
   const strokeRef = useRef<SVGCircleElement>(null)
   const gradId    = useRef(randomId()).current
 
-  const radius       = 45
+  const radius       = 40
   const circ         = 2 * Math.PI * radius
-  const half         = circ / 2
-  const dasharray    = `${half} ${half}`
-  const targetOffset = -Math.min(value / max, 1) * half
+  const dasharray    = `${circ} ${circ}`
+  const pct          = Math.min(value / max, 1)
+  const targetOffset = (1 - pct) * circ
   const strength     = getStrength(value, max)
   const colorStops   = STRENGTH_COLORS[strength]
 
@@ -51,20 +51,20 @@ export function HalfCircleGauge({ value, max, animate = true }: HalfCircleGaugeP
     }
     el.animate(
       [
-        { strokeDashoffset: '0', offset: 0 },
-        { strokeDashoffset: '0', offset: 400 / 1400 },
+        { strokeDashoffset: String(circ), offset: 0 },
+        { strokeDashoffset: String(circ), offset: 400 / 1400 },
         { strokeDashoffset: String(targetOffset) },
       ],
       { duration: 1400, easing: EASING, fill: 'forwards' }
     )
-  }, [value, max, animate, targetOffset])
+  }, [value, max, animate, targetOffset, circ])
 
   const displayValue = Math.round(value)
 
   return (
     <div className="hcg-root">
       <div className="hcg-svg-wrap">
-        <svg viewBox="0 0 100 50" className="hcg-svg" aria-hidden="true">
+        <svg viewBox="0 0 100 100" className="hcg-svg" aria-hidden="true">
           <defs>
             <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="0">
               {colorStops.map((c, i) => (
@@ -76,7 +76,8 @@ export function HalfCircleGauge({ value, max, animate = true }: HalfCircleGaugeP
               ))}
             </linearGradient>
           </defs>
-          <g fill="none" strokeWidth="10" transform="translate(50,50.5)">
+          {/* rotate(-90) starts the arc at 12 o'clock */}
+          <g fill="none" strokeWidth="10" transform="translate(50,50) rotate(-90)">
             <circle className="hcg-track" r={radius} />
             <circle
               ref={strokeRef}
