@@ -15,6 +15,7 @@ export interface SaveAnalysisInput {
   jobTitle: string;
   extractedSkills: string[];
   rawAgentOutput: string; // the raw string returned by the agent
+  isEstimated?: boolean;
 }
 
 class AgentResponseError extends Error {
@@ -79,6 +80,7 @@ export async function parseAndSaveAnalysis(input: SaveAnalysisInput): Promise<IC
     extractedSkills: input.extractedSkills,
     scores,
     matchScore,
+    isEstimated: input.isEstimated ?? false,
     rawAgentOutput: input.rawAgentOutput,
   });
 }

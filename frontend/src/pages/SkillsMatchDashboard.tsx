@@ -406,7 +406,14 @@ const SkillsMatchDashboard = () => {
 
           {/* ── Overall score card ── */}
           <ScoreCard className="score-card--main">
-            <p className="card-eyebrow">Overall match</p>
+            <div className="card-eyebrow-row">
+              <p className="card-eyebrow">Overall match</p>
+              {result.isEstimated && (
+                <span className="estimated-badge" title="Scores were computed with keyword matching because the AI service was unavailable">
+                  Estimated score (AI unavailable)
+                </span>
+              )}
+            </div>
             <HalfCircleGauge value={matchPercent} max={100} animate />
             <p className="card-description">
               Your CV matches <strong>{result.jobTitle}</strong> requirements

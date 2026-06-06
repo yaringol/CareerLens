@@ -1,0 +1,16 @@
+We are hiring a DevOps Engineer to scale our cloud infrastructure.
+
+Required:
+- Production Kubernetes cluster management including deployments, services, and scaling
+- Infrastructure provisioning using Terraform or CloudFormation
+- Multi-cloud or hybrid cloud exposure (AWS plus at least one other provider)
+- CI/CD pipeline design and maintenance with GitHub Actions or Jenkins
+- Monitoring and alerting with Prometheus, Grafana, or Datadog
+- Strong Linux administration and shell scripting (Bash or Python)
+- Experience with container registries and image security scanning
+- On-call rotation experience and incident response procedures
+
+Nice to have:
+- Helm charts, ArgoCD, Istio service mesh
+- CKA certification
+- Cost optimization across cloud environments

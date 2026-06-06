@@ -228,6 +228,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       skills: analysis.scores.map((s) => ({ name: s.skill, score: s.score })),
       matchScore: analysis.matchScore,
       id: analysis._id.toString(),
+      isEstimated: analysis.isEstimated,
     });
   } catch (err) {
     next(err);
@@ -292,6 +293,7 @@ router.post('/skillner', async (req: Request, res: Response, next: NextFunction)
       skills: analysis.scores.map((s) => ({ name: s.skill, score: s.score })),
       matchScore: analysis.matchScore,
       id: analysis._id.toString(),
+      isEstimated: analysis.isEstimated,
       extractor: 'skillner',
     });
   } catch (err) {

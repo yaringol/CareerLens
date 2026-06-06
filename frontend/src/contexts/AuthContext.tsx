@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, ReactNode } from 'react'
 
 const TOKEN_KEY = 'auth_token'
 
@@ -49,22 +49,21 @@ function isTokenValid(token: string): boolean {
   return exp * 1000 > Date.now()
 }
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null)
-  const [token, setToken] = useState<string | null>(null)
+/** Read JWT from localStorage synchronously so protected routes don't flash-redirect to /login. */
+function readStoredAuth(): { token: string | null; user: AuthUser | null } {
+  const stored = localStorage.getItem(TOKEN_KEY)
+  if (stored && isTokenValid(stored)) {
+    const decoded = decodeUser(stored)
+    if (decoded) return { token: stored, user: decoded }
+  }
+  if (stored) localStorage.removeItem(TOKEN_KEY)
+  return { token: null, user: null }
+}
 
-  useEffect(() => {
-    const stored = localStorage.getItem(TOKEN_KEY)
-    if (stored && isTokenValid(stored)) {
-      const decoded = decodeUser(stored)
-      if (decoded) {
-        setToken(stored)
-        setUser(decoded)
-      }
-    } else if (stored) {
-      localStorage.removeItem(TOKEN_KEY)
-    }
-  }, [])
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [stored] = useState(readStoredAuth)
+  const [user, setUser] = useState<AuthUser | null>(stored.user)
+  const [token, setToken] = useState<string | null>(stored.token)
 
   function storeAuth(jwt: string): void {
     localStorage.setItem(TOKEN_KEY, jwt)

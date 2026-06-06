@@ -1,219 +1,158 @@
-# CareerLens
+# CareerLens — Local development
 
-CareerLens is a Data Science project designed to help job seekers improve their resumes by analyzing their CV against a specific job description.
+Run **four processes** (MongoDB + DS model + backend + frontend). Use **four terminals**.
 
-The system evaluates how well a candidate’s resume matches a job’s required skills and provides actionable feedback, including a match score and suggestions for improvement.
+## Quick start (after one-time setup)
 
----
+| # | Service | Directory | Command | URL |
+|---|---------|-----------|---------|-----|
+| 1 | **MongoDB** | — | `brew services start mongodb-community` | `localhost:27017` |
+| 2 | **DS model** | `ds/model` | `source .venv/bin/activate && python server.py` | http://localhost:8000 |
+| 3 | **Backend** | `backend` | `npm run dev` | http://localhost:3000 |
+| 4 | **Frontend** | `frontend` | `npm run dev` | http://localhost:8080 |
 
-## Project Goals
+Open **http://localhost:8080** → register or log in → upload a CV → analyze.
 
-- Analyze CVs and job descriptions using NLP techniques
-- Identify missing or under-emphasized skills
-- Generate a skill-based match score
-- Provide CV optimization suggestions to improve ATS and recruiter screening results
-
----
-
-## High-Level Architecture
-
-CareerLens is built using a client–server architecture:
-
-- **Frontend**: React + TypeScript  
-- **Backend**: Node.js + TypeScript (API Gateway)  
-- **Data Science / NLP**: Python-based pipeline with LLM integration  
-- **Database**: MongoDB (prototype stage)
+**Testing guide:** see [`docs/TESTING.md`](docs/TESTING.md) for step-by-step manual checks.
 
 ---
 
-## Core Features
+## One-time setup
 
-- PDF resume parsing (English only)
-- Job description input (text or scraped from job boards)
-- Automatic extraction of core and dynamic skills
-- Skill-level scoring (1–10)
-- Global match score calculation
-- Gap analysis and CV optimization suggestions
+### 1. MongoDB
 
----
-
-## Data Collection
-
-Job descriptions are collected from public job boards using web scraping (Selenium).  
-The dataset is used for skill extraction, model calibration, and evaluation.
-
-### Supported Sites
-
-- **BioCatch**: Cybersecurity careers with filtering for R&D department and Israel - TLV location
-- Additional sites can be added by implementing the `BaseExtractor` interface
-
-### Scraping Features
-
-- **Smart Filtering**: Automatically applies department and location filters
-- **Data Extraction**: Separates job descriptions from requirements
-- **Timestamped Output**: Each scraping run creates a unique JSON file with timestamp
-- **Data Validation**: Filters out jobs that don't match specified criteria
-- **Structured Output**: Clean JSON format with all job details
-
----
-
-## Installation & Setup
-
-### Prerequisites
-
-- Python 3.8 or higher
-- pip (Python package manager)
-- Node.js 18+ (for frontend/backend)
-- MongoDB (for database, optional in prototype stage)
-
-### Python Environment Setup
-
-1. **Navigate to the scraping directory:**
 ```bash
-cd scraping
+brew tap mongodb/brew
+brew install mongodb-community
+brew services start mongodb-community
 ```
 
-2. **Create a virtual environment:**
+Or with Docker:
+
 ```bash
-python3 -m venv .venv
+docker run -d -p 27017:27017 --name careerlens-mongo mongo:7
 ```
 
-3. **Activate the virtual environment:**
-   - On macOS/Linux:
-   ```bash
-   source .venv/bin/activate
-   ```
-   - On Windows:
-   ```bash
-   .venv\Scripts\activate
-   ```
-
-4. **Install Python dependencies:**
-```bash
-pip install -r requirements.txt
-```
-
-**Note:** If you see a warning about pip being outdated, you can optionally upgrade it:
-```bash
-python3 -m pip install --upgrade pip
-```
-This warning is non-critical and can be safely ignored if the upgrade fails due to system restrictions.
-
-### Configuration
-
-Create a `.env` file in the `scraping` directory with the following variables:
+### 2. Backend
 
 ```bash
-# Run browser in headless mode (true/false)
-HEADLESS=true
-
-# Output path base directory (files will be named with timestamp)
-OUTPUT_PATH=../data/raw/jobs_raw.jsonl
-
-# Site to scrape: 'biocatch' or 'example'
-SITE=biocatch
-
-# Starting URL for the scraper
-START_URL=https://www.biocatch.com/cybersecurity-careers
-
-# Maximum number of jobs to scrape
-MAX_JOBS=50
-```
-
-### Running the Scraper
-
-From the `scraping` directory with the virtual environment activated:
-
-```bash
-python -m src.main
-```
-
-Or using Python 3 explicitly:
-```bash
-python3 -m src.main
-```
-
-**Example: Scraping BioCatch careers:**
-1. Set `SITE=biocatch` and `START_URL=https://www.biocatch.com/cybersecurity-careers` in your `.env` file
-2. Run the scraper - it will:
-   - Apply filters for R&D department and Israel - TLV location
-   - Collect matching job listings
-   - Extract job details (title, location, department, description, requirements)
-   - Save results to a timestamped JSON file
-3. Results are saved in JSON format with fields: `job_title`, `company`, `location`, `department`, `description`, `requirements`, `url`
-4. Output file format: `{company}_{YYYY-MM-DD_HH-MM-SS}.json` (e.g., `biocatch_2025-01-11_14-30-45.json`)
-
-**Note:** Each scraping run creates a new timestamped file, preserving historical data and allowing comparison across different runs.
-
-### Running the Application
-
-To run the frontend application:
-
-1. **Navigate to the frontend directory:**
-```bash
-cd frontend
-```
-
-2. **Install dependencies (if not already installed):**
-```bash
+cd backend
 npm install
 ```
 
-3. **Start the development server:**
-```bash
-npm run dev
+Create `backend/.env`:
+
+```env
+MONGODB_URI=mongodb://localhost:27017/careerlens
+PORT=3000
+JWT_SECRET=your-local-dev-secret
+JWT_EXPIRY=7d
+BCRYPT_ROUNDS=10
+DS_MODEL_URL=http://localhost:8000
+OPENAI_API_KEY=sk-...          # optional — real AI scoring; omit for keyword fallback
 ```
 
-The application will be available at `http://localhost:8080` and should open automatically in your browser.
+Seed the 5 POC jobs:
 
-**Note:** If you encounter port permission errors, you can change the port in `frontend/vite.config.ts` by modifying the `server.port` value.
+```bash
+npm run seed
+```
 
-### Project Structure
+### 3. DS model (Python)
+
+Requires **Python 3.11+**.
+
+```bash
+cd ds/model
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements-server.txt
+```
+
+First run downloads the spaCy `en_core_web_lg` model (~500 MB).
+
+### 4. Frontend
+
+```bash
+cd frontend
+npm install
+```
+
+---
+
+## Ports (important)
+
+| Service | Port | Notes |
+|---------|------|-------|
+| Frontend (Vite) | **8080** | Proxies `/api` → backend |
+| Backend (Express) | **3000** | Set `PORT=3000` in `.env` |
+| DS model (FastAPI) | **8000** | SkillNer + title/KNN endpoints |
+| MongoDB | **27017** | Database `careerlens` |
+
+The backend code defaults to port `8000`, which **conflicts** with the DS model. Always use `PORT=3000` in `backend/.env`.
+
+---
+
+## Health checks
+
+```bash
+# DS model
+curl "http://localhost:8000/text/skills?text=python"
+
+# Backend (401 without login token is OK — server is up)
+curl http://localhost:3000/api/jobs
+
+# Frontend
+open http://localhost:8080
+```
+
+---
+
+## Auth
+
+All main API routes require a JWT. Use the app login page to register, or:
+
+```bash
+curl -X POST http://localhost:3000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"you@example.com","password":"secret12"}'
+```
+
+---
+
+## Optional commands
+
+| Task | Command |
+|------|---------|
+| Stop MongoDB | `brew services stop mongodb-community` |
+| Re-seed jobs | `cd backend && npm run seed` |
+| Manual testing | see [`docs/TESTING.md`](docs/TESTING.md) |
+| Production build (frontend) | `cd frontend && npm run build` |
+| Production build (backend) | `cd backend && npm run build && npm start` |
+| CV score check script | `cd backend && npm run check-cvs` |
+
+## Troubleshooting
+
+| Problem | Fix |
+|---------|-----|
+| `address already in use` on 8000 | DS model already running — OK. Or kill: `lsof -ti:8000 \| xargs kill` |
+| `address already in use` on 3000 | `lsof -ti:3000 \| xargs kill` then restart backend |
+| `address already in use` on 8080 | `lsof -ti:8080 \| xargs kill` then restart frontend |
+| Jobs dropdown empty | Run `cd backend && npm run seed` |
+| `JWT_SECRET` errors | Add `JWT_SECRET=...` to `backend/.env` |
+| Mongo connection failed | Start MongoDB: `brew services start mongodb-community` |
+| Analyze works but scores say "Estimated (AI unavailable)" | Set `OPENAI_API_KEY` in `.env`, or expected when OpenAI is down |
+| Frontend can't reach API | Backend must be on **3000**; Vite proxy targets `http://localhost:3000` |
+
+---
+
+## Project layout
 
 ```
 CareerLens/
-├── backend/          # Node.js API Gateway
-├── frontend/         # React + TypeScript UI
-├── ds/              # Data Science / NLP pipeline
-├── scraping/        # Web scraping module
-│   ├── src/
-│   │   ├── main.py          # Main scraper runner
-│   │   ├── config.py        # Configuration management
-│   │   ├── driver.py        # Selenium WebDriver setup
-│   │   ├── extractors/      # Base extractor interface
-│   │   ├── pipelines/       # Data saving pipelines (JSON)
-│   │   └── sites/           # Site-specific extractors
-│   │       └── biocatch_site.py  # BioCatch extractor
-│   └── requirements.txt
-├── data/            # Raw and processed datasets
-│   └── raw/        # Timestamped JSON files from scraping
-└── docs/            # Project documentation (see docs/POC.md for current POC flow)
+├── frontend/     React + Vite (port 8080)
+├── backend/      Express + MongoDB (port 3000)
+├── ds/model/     FastAPI SkillNer service (port 8000)
+├── ds/src/       CV preprocessing pipeline (offline)
+└── scraping/     Job scraping tools (not needed for POC demo)
 ```
-
----
-
-## Project Status
-
-🚧 **Work in Progress**  
-This repository is under active development as part of an academic Data Science capstone project.
-
-### POC (implemented flow)
-
-The **current end-to-end demo** is documented in **[`docs/POC.md`](docs/POC.md)** — active API endpoints (`GET/POST /api/...`), frontend/backend file map, data contracts, real vs fallback behavior, and what is out of scope for the core demo.
-
----
-
-## Team
-
-- Amit Alon  
-- May Eliyahu  
-- Yarin Golzar  
-- Reut Maduel  
-
-Supervisor: Dr. Galit Haim
-
----
-
-## License
-
-This project is for academic and educational purposes only.

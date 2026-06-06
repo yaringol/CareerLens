@@ -27,4 +27,6 @@ ds/model/tsne_map.html
 ds/model/.ipynb_checkpoints/
 
 *.md
+!README.md
+!docs/TESTING.md
 *node_modules*

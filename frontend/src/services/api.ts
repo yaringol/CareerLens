@@ -106,6 +106,7 @@ export interface AnalyzeResponse {
   skills: Array<{ name: string; score: number }>
   matchScore: number
   id: string
+  isEstimated?: boolean
 }
 
 export interface SavedCv {

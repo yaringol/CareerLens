@@ -4,7 +4,7 @@ import { AgentError } from '../agents/agentError';
 
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err instanceof AgentError) {
-    res.status(502).json({ error: err.message });
+    res.status(502).json({ error: err.message, code: 'AI_UNAVAILABLE' });
     return;
   }
   if (err instanceof AppError) {

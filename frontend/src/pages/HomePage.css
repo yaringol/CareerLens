@@ -561,6 +561,10 @@
   margin-top: 0.25rem;
 }
 
+.char-counter--warn {
+  color: var(--color-error);
+}
+
 .field-inline-error {
   font-size: 0.75rem;
   color: var(--color-error);
