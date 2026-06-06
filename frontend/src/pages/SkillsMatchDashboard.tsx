@@ -332,22 +332,28 @@ const SkillsMatchDashboard = () => {
   const [params] = useSearchParams()
   const [result, setResult] = useState<AnalyzeResponse | null>(null)
   const [parseError, setParseError] = useState<string | null>(null)
+  const leavingRef = useRef(false)
 
   useEffect(() => {
+    if (leavingRef.current) return
     const mock = params.get('mock')
     if (mock && MOCK_DATA[mock]) {
       setResult(MOCK_DATA[mock] as AnalyzeResponse)
       return
     }
     const raw = sessionStorage.getItem(RESULT_KEY)
-    if (!raw) { navigate('/', { replace: true }); return }
+    if (!raw) {
+      navigate('/upload', { replace: true })
+      return
+    }
     try { setResult(JSON.parse(raw) as AnalyzeResponse) }
     catch { setParseError('Invalid results data') }
   }, [navigate, params])
 
   const handleBack = () => {
+    leavingRef.current = true
     sessionStorage.removeItem(RESULT_KEY)
-    navigate('/')
+    navigate('/upload', { replace: true })
   }
 
   if (parseError) return (

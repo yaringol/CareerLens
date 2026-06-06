@@ -9,8 +9,11 @@ import SkillsMatchDashboard from './pages/SkillsMatchDashboard'
 import LoginPage from './pages/LoginPage'
 import AdminPage from './pages/AdminPage'
 import AccountPage from './pages/AccountPage'
+import UploadPage from './pages/UploadPage'
 import ErrorBoundary from './components/ui/ErrorBoundary'
+import ErrorToast from './components/ui/ErrorToast'
 import SplashScreen from './components/ui/SplashScreen'
+import { ErrorProvider } from './context/ErrorContext'
 import './App.css'
 
 function App() {
@@ -21,52 +24,62 @@ function App() {
   return (
     <AuthProvider>
       <ToastProvider>
-      <ErrorBoundary>
-        {showSplash && <SplashScreen onDone={handleSplashDone} />}
-        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <div className="app">
-            <main className="app-main">
-              <Routes>
-                <Route path="/login" element={<LoginPage />} />
-                <Route
-                  path="/"
-                  element={
-                    <RequireAuth>
-                      <HomePage />
-                    </RequireAuth>
-                  }
-                />
-                <Route path="/upload" element={<Navigate to="/" replace />} />
-                <Route
-                  path="/dashboard"
-                  element={
-                    <RequireAuth>
-                      <SkillsMatchDashboard />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/admin"
-                  element={
-                    <RequireAuth role="admin">
-                      <AdminPage />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/account"
-                  element={
-                    <RequireAuth>
-                      <AccountPage />
-                    </RequireAuth>
-                  }
-                />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </main>
-          </div>
-        </BrowserRouter>
-      </ErrorBoundary>
+        <ErrorProvider>
+          {showSplash && <SplashScreen onDone={handleSplashDone} />}
+          <ErrorToast />
+          <ErrorBoundary>
+            <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+              <div className="app">
+                <main className="app-main">
+                  <Routes>
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route
+                      path="/"
+                      element={
+                        <RequireAuth>
+                          <HomePage />
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/upload"
+                      element={
+                        <RequireAuth>
+                          <UploadPage />
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/dashboard"
+                      element={
+                        <RequireAuth>
+                          <SkillsMatchDashboard />
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/admin"
+                      element={
+                        <RequireAuth role="admin">
+                          <AdminPage />
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/account"
+                      element={
+                        <RequireAuth>
+                          <AccountPage />
+                        </RequireAuth>
+                      }
+                    />
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                </main>
+              </div>
+            </BrowserRouter>
+          </ErrorBoundary>
+        </ErrorProvider>
       </ToastProvider>
     </AuthProvider>
   )

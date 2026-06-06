@@ -9,6 +9,60 @@ function apiBase(): string {
 
 const base = apiBase
 
+export class ApiError extends Error {
+  readonly code: string
+  readonly status: number
+
+  constructor(message: string, status: number, code?: string) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+    this.code = code ?? statusToCode(status)
+  }
+}
+
+function statusToCode(status: number): string {
+  if (status >= 500) return 'SERVER_ERROR'
+  if (status === 404) return 'NOT_FOUND'
+  if (status === 422) return 'UNPROCESSABLE'
+  if (status === 400) return 'BAD_REQUEST'
+  if (status === 502) return 'UPSTREAM_ERROR'
+  if (status === 503) return 'SERVICE_UNAVAILABLE'
+  return `HTTP_${status}`
+}
+
+async function parseErrorResponse(res: Response): Promise<ApiError> {
+  const status = res.status
+  let message = friendlyStatusMessage(status)
+  let code = statusToCode(status)
+
+  try {
+    const body = (await res.json()) as { error?: unknown; code?: unknown; message?: unknown }
+    if (typeof body.error === 'string' && body.error.trim()) {
+      message = body.error.trim()
+    } else if (typeof body.message === 'string' && body.message.trim()) {
+      message = body.message.trim()
+    }
+    if (typeof body.code === 'string' && body.code.trim()) {
+      code = body.code.trim()
+    }
+  } catch {
+    /* non-JSON body */
+  }
+
+  return new ApiError(message, status, code)
+}
+
+function friendlyStatusMessage(status: number): string {
+  if (status === 400) return 'Invalid request. Please check your input and try again.'
+  if (status === 404) return 'The requested resource was not found.'
+  if (status === 422) return 'We could not process your file. Try a different PDF.'
+  if (status === 502) return 'Analysis service is temporarily unavailable. Please try again.'
+  if (status === 503) return 'A required service is unavailable. Ensure the backend and DS model are running.'
+  if (status >= 500) return 'Something went wrong on our side. Please try again in a moment.'
+  return `Request failed (${status}). Please try again.`
+}
+
 function getToken(): string | null {
   return localStorage.getItem('auth_token')
 }
@@ -24,6 +78,15 @@ async function handleUnauthorized(res: Response): Promise<void> {
     sessionStorage.setItem('auth_redirect', window.location.pathname + window.location.search)
     window.location.href = '/login'
   }
+}
+
+async function apiFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const res = await fetch(input, init)
+  await handleUnauthorized(res)
+  if (!res.ok) {
+    throw await parseErrorResponse(res)
+  }
+  return res
 }
 
 export interface PocJob {
@@ -55,14 +118,9 @@ export interface SavedCv {
 const jsonHeaders = { 'Content-Type': 'application/json' }
 
 export async function fetchJobs(): Promise<PocJob[]> {
-  const res = await fetch(`${base()}/jobs`, {
+  const res = await apiFetch(`${base()}/jobs`, {
     headers: { ...authHeaders() },
   })
-  await handleUnauthorized(res)
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error((err as { error?: string }).error || `Failed to load jobs (${res.status})`)
-  }
   return res.json() as Promise<PocJob[]>
 }
 
@@ -70,69 +128,46 @@ export async function uploadPdf(file: File, saveToLibrary = true): Promise<Uploa
   const formData = new FormData()
   formData.append('file', file)
   const url = saveToLibrary ? `${base()}/upload` : `${base()}/upload?save=false`
-  const res = await fetch(url, {
+  const res = await apiFetch(url, {
     method: 'POST',
     headers: { ...authHeaders() },
     body: formData,
   })
-  await handleUnauthorized(res)
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error((err as { error?: string }).error || `Upload failed (${res.status})`)
-  }
   return res.json() as Promise<UploadPdfResponse>
 }
 
 export async function deleteCv(cvId: string): Promise<void> {
-  const res = await fetch(`${base()}/cv/${cvId}`, {
+  await apiFetch(`${base()}/cv/${cvId}`, {
     method: 'DELETE',
     headers: { ...authHeaders() },
   })
-  await handleUnauthorized(res)
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error((err as { error?: string }).error || `Delete failed (${res.status})`)
-  }
 }
 
 export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
-  const res = await fetch(`${base()}/auth/password`, {
+  await apiFetch(`${base()}/auth/password`, {
     method: 'PUT',
     headers: { ...jsonHeaders, ...authHeaders() },
     body: JSON.stringify({ currentPassword, newPassword }),
   })
-  await handleUnauthorized(res)
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error((err as { error?: string }).error || `Password change failed (${res.status})`)
-  }
 }
 
 export async function getMyCVs(): Promise<SavedCv[]> {
-  const res = await fetch(`${base()}/cv`, {
+  const res = await apiFetch(`${base()}/cv`, {
     headers: { ...authHeaders() },
   })
-  await handleUnauthorized(res)
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error((err as { error?: string }).error || `Failed to load CVs (${res.status})`)
-  }
   return res.json() as Promise<SavedCv[]>
 }
 
 export async function getCvText(cvId: string): Promise<{ cvId: string; cvText: string; fileName: string }> {
-  const res = await fetch(`${base()}/cv/${cvId}`, {
+  const res = await apiFetch(`${base()}/cv/${cvId}`, {
     headers: { ...authHeaders() },
   })
-  await handleUnauthorized(res)
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error((err as { error?: string }).error || `Failed to load CV (${res.status})`)
-  }
   return res.json()
 }
 
-const MIN_JOB_DESCRIPTION_CHARS = 40
+export const MIN_JOB_DESCRIPTION_CHARS = 40
+
+export const JOB_DESCRIPTION_MIN_MESSAGE = `Paste at least ${MIN_JOB_DESCRIPTION_CHARS} characters of job description`
 
 export async function analyzeCv(
   jobId: string,
@@ -141,18 +176,13 @@ export async function analyzeCv(
 ): Promise<AnalyzeResponse> {
   const jd = jobDescription.trim()
   if (jd.length < MIN_JOB_DESCRIPTION_CHARS) {
-    throw new Error(`Please paste a job description (at least ${MIN_JOB_DESCRIPTION_CHARS} characters).`)
+    throw new ApiError(JOB_DESCRIPTION_MIN_MESSAGE, 400, 'VALIDATION')
   }
-  const res = await fetch(`${base()}/analyze`, {
+  const res = await apiFetch(`${base()}/analyze`, {
     method: 'POST',
     headers: { ...jsonHeaders, ...authHeaders() },
     body: JSON.stringify({ jobId, cvText, jobDescription: jd }),
   })
-  await handleUnauthorized(res)
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error((err as { error?: string }).error || `Analyze failed (${res.status})`)
-  }
   return res.json() as Promise<AnalyzeResponse>
 }
 
@@ -169,13 +199,8 @@ export async function fetchAdminAnalyses(filters?: {
   if (filters?.endDate) params.set('endDate', filters.endDate)
 
   const query = params.toString() ? `?${params.toString()}` : ''
-  const res = await fetch(`${base()}/admin/analyses${query}`, {
+  const res = await apiFetch(`${base()}/admin/analyses${query}`, {
     headers: { ...authHeaders() },
   })
-  await handleUnauthorized(res)
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error((err as { error?: string }).error || `Failed to load analyses (${res.status})`)
-  }
   return res.json()
 }
