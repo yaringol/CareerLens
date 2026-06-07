@@ -12,10 +12,10 @@ import {
 } from '../utils/pocLog';
 
 const MIN_CV_TEXT_LENGTH = 50;
-const SCORE_MIN = 1;
+const SCORE_MIN = 0;
 const SCORE_MAX = 10;
 
-/** Keyword overlap 1–10; varies per skill string so different jobs diverge on the same CV. */
+/** Keyword overlap 0-10; varies per skill string so different jobs diverge on the same CV. */
 function overlapScoreForSkill(skill: string, cvText: string): number {
   const cv = cvText.toLowerCase();
   const tokens = skill
