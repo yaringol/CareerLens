@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useRef, useState } from 'react'
+import { forwardRef, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useError } from '../../context/ErrorContext'
 import {
@@ -13,6 +13,7 @@ import {
   type SavedCv,
 } from '../../services/api'
 import ScanLoader from '../ui/ScanLoader'
+import { isGibberish } from '../../utils/gibberishDetector'
 import '../../pages/UploadScreen.css'
 
 const RESULT_KEY = 'pocAnalysisResult'
@@ -74,6 +75,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
   const [jobId, setJobId] = useState('')
   const [jobDescription, setJobDescription] = useState('')
   const [fieldErrors, setFieldErrors] = useState<UploadFieldErrors>({})
+  const [gibberishWarning, setGibberishWarning] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [cvTab, setCvTab] = useState<'upload' | 'my-cvs'>('upload')
@@ -159,6 +161,17 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
     }
   }
 
+  const trimmedJobDescription = jobDescription.trim()
+  const hasEnoughDescription = trimmedJobDescription.length >= MIN_JOB_DESCRIPTION_CHARS
+  const hasGibberishDescription = useMemo(
+    () => hasEnoughDescription && isGibberish(trimmedJobDescription),
+    [hasEnoughDescription, trimmedJobDescription],
+  )
+
+  useEffect(() => {
+    setGibberishWarning(hasGibberishDescription)
+  }, [hasGibberishDescription])
+
   const jdError = fieldErrors.jobDescription
   const hasCv = !!(cvFile || selectedCvText)
 
@@ -170,6 +183,10 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
     }
     setFieldErrors(nextErrors)
     if (nextErrors.jobDescription || nextErrors.cv || !jobId) return
+    if (hasGibberishDescription) {
+      setGibberishWarning(true)
+      return
+    }
     setIsLoading(true)
     try {
       let cvText: string
@@ -184,6 +201,10 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
       sessionStorage.setItem(RESULT_KEY, JSON.stringify(result))
       navigate('/dashboard', { replace: true })
     } catch (err) {
+      if (err instanceof ApiError && err.code === 'GIBBERISH_DETECTED') {
+        setGibberishWarning(true)
+        return
+      }
       if (err instanceof ApiError && err.code === 'VALIDATION') {
         setFieldErrors((prev) => ({
           ...prev,
@@ -202,7 +223,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
   }
 
   const activeCvName = cvFile ? cvFile.name : selectedCvName
-  const canSubmit = hasCv && !!jobId && !jdError && !loadError
+  const canSubmit = hasCv && !!jobId && !jdError && !hasGibberishDescription && !loadError
 
   return (
     <section
@@ -375,7 +396,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                 </label>
                 <textarea
                   id="job-description"
-                  className={`field-textarea${jdError ? ' field-textarea--invalid' : ''}`}
+                  className={`field-textarea${jdError ? ' field-textarea--invalid' : ''}${gibberishWarning ? ' field-textarea--error' : ''}`}
                   value={jobDescription}
                   onChange={(e) => {
                     const value = e.target.value
@@ -396,16 +417,33 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                   required
                   maxLength={700}
                   minLength={MIN_JOB_DESCRIPTION_CHARS}
-                  aria-invalid={!!jdError}
-                  aria-describedby={jdError ? 'job-description-error' : undefined}
+                  aria-invalid={!!jdError || gibberishWarning}
+                  aria-describedby={
+                    gibberishWarning
+                      ? 'job-description-warning'
+                      : jdError
+                        ? 'job-description-error'
+                        : undefined
+                  }
                 />
-                <span className={`char-counter${jdError ? ' char-counter--warn' : ''}`}>
+                <span className={`char-counter${jdError || gibberishWarning ? ' char-counter--warn' : ''}`}>
                   {jobDescription.length} / 700
                 </span>
                 {jdError && (
                   <span id="job-description-error" className="field-inline-error" role="alert">
                     {jdError}
                   </span>
+                )}
+                {gibberishWarning && (
+                  <div id="job-description-warning" className="job-description-warning" role="alert">
+                    <div className="job-description-warning__icon" aria-hidden="true">!</div>
+                    <div className="job-description-warning__content">
+                      <p className="job-description-warning__title">This description looks unreadable.</p>
+                      <p className="job-description-warning__text">
+                        Please replace it with a readable English job posting before analyzing.
+                      </p>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
@@ -418,7 +456,15 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
             </button>
             {!canSubmit && !isLoading && !jdError && !fieldErrors.cv && (
               <p className="cta-hint">
-                {!hasCv ? 'Upload or select a CV to continue' : !jobId ? 'Select a role' : null}
+                {!hasCv
+                  ? 'Upload or select a CV to continue'
+                  : !jobId
+                    ? 'Select a role'
+                    : hasGibberishDescription
+                      ? 'Enter a readable English job description to continue'
+                      : !hasEnoughDescription
+                        ? `Paste at least ${MIN_JOB_DESCRIPTION_CHARS} characters of job description`
+                        : null}
               </p>
             )}
           </div>
