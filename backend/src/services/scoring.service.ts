@@ -12,8 +12,10 @@ import {
 } from '../utils/pocLog';
 
 const MIN_CV_TEXT_LENGTH = 50;
+const SCORE_MIN = 0;
+const SCORE_MAX = 10;
 
-/** Keyword overlap 0–10; no keyword match → 0, full match → 10. */
+/** Keyword overlap 0-10; no keyword match returns 0, full match returns 10. */
 function overlapScoreForSkill(skill: string, cvText: string): number {
   const cv = cvText.toLowerCase();
   const tokens = skill
@@ -21,12 +23,12 @@ function overlapScoreForSkill(skill: string, cvText: string): number {
     .split(/[^a-z0-9]+/)
     .filter((t) => t.length > 2);
   if (tokens.length === 0) {
-    return 0;
+    return SCORE_MIN;
   }
   const hits = tokens.filter((t) => cv.includes(t)).length;
   const ratio = hits / tokens.length;
-  const score = Math.round(ratio * 10);
-  return Math.min(10, Math.max(0, score));
+  const score = Math.round(SCORE_MIN + ratio * (SCORE_MAX - SCORE_MIN));
+  return Math.min(SCORE_MAX, Math.max(SCORE_MIN, score));
 }
 
 /** Keyword-overlap fallback used when LLM is unavailable or returns uniform scores. */
@@ -38,9 +40,13 @@ function buildKeywordFallbackJson(skills: string[], cvText: string): string {
   return JSON.stringify({ skills: scored });
 }
 
+function detectUniformScores(scores: number[]): boolean {
+  return scores.length > 0 && scores.every((n) => n === scores[0]);
+}
+
 /**
- * Map LLM JSON to our 10 skills in order; fill gaps with overlap scores.
- * If the model returns the same score for every skill (common with low-variance outputs), use keyword scores instead.
+ * Map LLM JSON to our skills in order; fill gaps with overlap scores.
+ * If the model returns the same score for every skill, use keyword scores instead.
  */
 function normalizeLlmScoringJson(
   raw: string,
@@ -85,8 +91,7 @@ function normalizeLlmScoringJson(
   });
 
   const values = aligned.map((a) => a.score);
-  const allSame = values.length > 0 && values.every((n) => n === values[0]);
-  if (allSame) {
+  if (detectUniformScores(values)) {
     return {
       json: buildKeywordFallbackJson(expectedSkills, cvText),
       uniformReplacedWithKeywords: true,
@@ -105,6 +110,9 @@ export interface ScoreRequest {
   cvText: string;
   skills: unknown;
   cvFileName?: string;
+  expectedSkillCount?: number;
+  cvOnlyMode?: boolean;
+  keywordOnly?: boolean;
 }
 
 export async function scoreAndPersist(req: ScoreRequest): Promise<ICvAnalysis> {
@@ -115,7 +123,8 @@ export async function scoreAndPersist(req: ScoreRequest): Promise<ICvAnalysis> {
     throw new ValidationError('cvText is too short to analyze');
   }
 
-  const validatedSkills = validateSkillArray(req.skills, 10);
+  const expectedSkillCount = req.expectedSkillCount ?? 10;
+  const validatedSkills = validateSkillArray(req.skills, expectedSkillCount);
 
   const baseInput = {
     cvFileName: req.cvFileName ?? req.jobId,
@@ -124,8 +133,16 @@ export async function scoreAndPersist(req: ScoreRequest): Promise<ICvAnalysis> {
     jobTitle: req.jobTitle,
     extractedSkills: validatedSkills,
     rawAgentOutput: '',
+    expectedSkillCount,
+    cvOnlyMode: req.cvOnlyMode ?? false,
     isEstimated: false,
   };
+
+  if (req.keywordOnly) {
+    baseInput.rawAgentOutput = buildKeywordFallbackJson(validatedSkills, req.cvText);
+    baseInput.isEstimated = true;
+    return parseAndSaveAnalysis(baseInput);
+  }
 
   try {
     const raw = await scoreSkills(req.cvText, validatedSkills);
@@ -149,6 +166,7 @@ export async function scoreAndPersist(req: ScoreRequest): Promise<ICvAnalysis> {
     return await parseAndSaveAnalysis(baseInput);
   } catch {
     logFallbackScoring();
+    baseInput.isEstimated = true;
     baseInput.rawAgentOutput = buildKeywordFallbackJson(validatedSkills, req.cvText);
     baseInput.isEstimated = true;
     return await parseAndSaveAnalysis(baseInput);

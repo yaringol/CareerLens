@@ -10,6 +10,7 @@ import { scoreAndPersist } from '../services/scoring.service';
 import { ValidationError } from '../errors';
 import type { IJob } from '../models/job.model';
 import { logAnalyzeOk } from '../utils/pocLog';
+import { isGibberish } from '../utils/gibberishDetector';
 import { authenticate } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -153,13 +154,6 @@ export function mergeTenSkills(jobTitle: string, core: string[], dynamic: string
 }
 
 const MIN_JOB_DESCRIPTION_CHARS = 40;
-const MIN_MEANINGFUL_WORDS = 5;
-
-/** Require at least MIN_MEANINGFUL_WORDS distinct alphabetic words of 3+ chars. */
-function isMeaningfulText(text: string): boolean {
-  const words = new Set((text.match(/[a-zA-Z]{3,}/g) ?? []).map((w) => w.toLowerCase()));
-  return words.size >= MIN_MEANINGFUL_WORDS;
-}
 
 /**
  * POST /api/analyze
@@ -179,6 +173,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 
     let job: IJob;
     let descriptionForDynamic: string;
+    const skipGibberish = req.header('X-Skip-Gibberish')?.toLowerCase() === 'true';
 
     if (jobId && cvText) {
       job = await validateJobById(jobId);
@@ -187,11 +182,6 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       if (jd.length < MIN_JOB_DESCRIPTION_CHARS) {
         throw new ValidationError(
           `jobDescription is required (at least ${MIN_JOB_DESCRIPTION_CHARS} characters) — paste the job posting for skill extraction`
-        );
-      }
-      if (!isMeaningfulText(jd)) {
-        throw new ValidationError(
-          'Job description does not appear to contain valid text. Please paste an actual job posting.'
         );
       }
       descriptionForDynamic = jd;
@@ -206,12 +196,24 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 
     const id = job._id.toString();
 
-    const [{ coreSkills }, { extractedSkills: dynamicSkills }] = await Promise.all([
-      getCoreSkillsById(id),
-      extractDynamicSkills(job.title, descriptionForDynamic),
-    ]);
+    if (!skipGibberish && isGibberish(descriptionForDynamic)) {
+      res.status(400).json({
+        code: 'GIBBERISH_DETECTED',
+        error: 'The job description does not look like readable English.',
+      });
+      return;
+    }
 
-    const allSkills = mergeTenSkills(job.title, coreSkills, dynamicSkills);
+    const { coreSkills } = await getCoreSkillsById(id);
+    const allSkills = skipGibberish
+      ? coreSkills.slice(0, 5)
+      : mergeTenSkills(
+          job.title,
+          coreSkills,
+          (await extractDynamicSkills(job.title, descriptionForDynamic)).extractedSkills
+        );
+
+    const cvOnlyMode = skipGibberish;
 
     const analysis = await scoreAndPersist({
       jobId: id,
@@ -219,6 +221,9 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       cvText: cvText.trim(),
       skills: allSkills,
       cvFileName: id,
+      expectedSkillCount: cvOnlyMode ? 5 : 10,
+      cvOnlyMode,
+      keywordOnly: cvOnlyMode,
     });
 
     logAnalyzeOk(job.title);
@@ -228,7 +233,8 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       skills: analysis.scores.map((s) => ({ name: s.skill, score: s.score })),
       matchScore: analysis.matchScore,
       id: analysis._id.toString(),
-      isEstimated: analysis.isEstimated,
+      cvOnlyMode: analysis.cvOnlyMode ?? false,
+      isEstimated: analysis.isEstimated ?? false,
     });
   } catch (err) {
     next(err);
@@ -293,8 +299,8 @@ router.post('/skillner', async (req: Request, res: Response, next: NextFunction)
       skills: analysis.scores.map((s) => ({ name: s.skill, score: s.score })),
       matchScore: analysis.matchScore,
       id: analysis._id.toString(),
-      isEstimated: analysis.isEstimated,
       extractor: 'skillner',
+      isEstimated: analysis.isEstimated ?? false,
     });
   } catch (err) {
     next(err);

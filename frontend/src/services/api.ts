@@ -106,6 +106,7 @@ export interface AnalyzeResponse {
   skills: Array<{ name: string; score: number }>
   matchScore: number
   id: string
+  cvOnlyMode?: boolean
   isEstimated?: boolean
 }
 
@@ -173,7 +174,8 @@ export const JOB_DESCRIPTION_MIN_MESSAGE = `Paste at least ${MIN_JOB_DESCRIPTION
 export async function analyzeCv(
   jobId: string,
   cvText: string,
-  jobDescription: string
+  jobDescription: string,
+  options: { skipGibberish?: boolean } = {}
 ): Promise<AnalyzeResponse> {
   const jd = jobDescription.trim()
   if (jd.length < MIN_JOB_DESCRIPTION_CHARS) {
@@ -181,7 +183,11 @@ export async function analyzeCv(
   }
   const res = await apiFetch(`${base()}/analyze`, {
     method: 'POST',
-    headers: { ...jsonHeaders, ...authHeaders() },
+    headers: {
+      ...jsonHeaders,
+      ...authHeaders(),
+      ...(options.skipGibberish ? { 'X-Skip-Gibberish': 'true' } : {}),
+    },
     body: JSON.stringify({ jobId, cvText, jobDescription: jd }),
   })
   return res.json() as Promise<AnalyzeResponse>

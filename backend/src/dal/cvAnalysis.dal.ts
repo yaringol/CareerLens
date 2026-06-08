@@ -15,6 +15,8 @@ export interface SaveAnalysisInput {
   jobTitle: string;
   extractedSkills: string[];
   rawAgentOutput: string; // the raw string returned by the agent
+  expectedSkillCount?: number;
+  cvOnlyMode?: boolean;
   isEstimated?: boolean;
 }
 
@@ -25,7 +27,7 @@ class AgentResponseError extends Error {
   }
 }
 
-function parseAgentResponse(raw: string): AgentScoringResponse {
+function parseAgentResponse(raw: string, expectedSkillCount: number): AgentScoringResponse {
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
@@ -38,9 +40,9 @@ function parseAgentResponse(raw: string): AgentScoringResponse {
   if (!Array.isArray(response?.skills)) {
     throw new AgentResponseError('Agent response missing "skills" array');
   }
-  if (response.skills.length !== 10) {
+  if (response.skills.length !== expectedSkillCount) {
     throw new AgentResponseError(
-      `Expected exactly 10 skill scores, got ${response.skills.length}`
+      `Expected exactly ${expectedSkillCount} skill scores, got ${response.skills.length}`
     );
   }
   for (const entry of response.skills) {
@@ -63,7 +65,8 @@ function calcMatchScore(scores: number[]): number {
 
 // Parse raw agent output, validate, enforce bounds, calculate matchScore, persist
 export async function parseAndSaveAnalysis(input: SaveAnalysisInput): Promise<ICvAnalysis> {
-  const agentResponse = parseAgentResponse(input.rawAgentOutput);
+  const expectedSkillCount = input.expectedSkillCount ?? 10;
+  const agentResponse = parseAgentResponse(input.rawAgentOutput, expectedSkillCount);
 
   const scores = agentResponse.skills.map(({ skill, score }) => ({
     skill,
@@ -80,6 +83,7 @@ export async function parseAndSaveAnalysis(input: SaveAnalysisInput): Promise<IC
     extractedSkills: input.extractedSkills,
     scores,
     matchScore,
+    cvOnlyMode: input.cvOnlyMode ?? false,
     isEstimated: input.isEstimated ?? false,
     rawAgentOutput: input.rawAgentOutput,
   });

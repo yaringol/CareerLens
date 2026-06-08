@@ -374,6 +374,7 @@ const SkillsMatchDashboard = () => {
   const coreSkills    = result.skills.slice(0, 5)
   const dynamicSkills = result.skills.slice(5, 10)
   const matchPercent  = Math.round((result.matchScore / 10) * 100)
+  const analyzedSkillCount = result.cvOnlyMode ? 5 : 10
 
   return (
     <div className="dashboard-screen">
@@ -408,8 +409,14 @@ const SkillsMatchDashboard = () => {
           <ScoreCard className="score-card--main">
             <div className="card-eyebrow-row">
               <p className="card-eyebrow">Overall match</p>
+              {result.cvOnlyMode && (
+                <span className="cv-only-badge">CV-only analysis (5 skills)</span>
+              )}
               {result.isEstimated && (
-                <span className="estimated-badge" title="Scores were computed with keyword matching because the AI service was unavailable">
+                <span
+                  className="estimated-badge"
+                  title="Scores were computed with keyword matching because the AI service was unavailable"
+                >
                   Estimated score (AI unavailable)
                 </span>
               )}
@@ -417,7 +424,7 @@ const SkillsMatchDashboard = () => {
             <HalfCircleGauge value={matchPercent} max={100} animate />
             <p className="card-description">
               Your CV matches <strong>{result.jobTitle}</strong> requirements
-              based on <strong>10</strong> analyzed skills.
+              based on <strong>{analyzedSkillCount}</strong> analyzed skills.
             </p>
           </ScoreCard>
 
@@ -436,18 +443,20 @@ const SkillsMatchDashboard = () => {
           </ScoreCard>
 
           {/* ── Dynamic skills card ── */}
-          <ScoreCard>
-            <p className="card-eyebrow">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-              Dynamic Skills
-            </p>
-            <div className="skills-list">
-              {dynamicSkills.map((s, i) => (
-                <SkillRow key={s.name} name={s.name} score={s.score} max={10} delay={500 + i * 80} />
-              ))}
-            </div>
-            <p className="card-hint">Extracted from the job description you provided.</p>
-          </ScoreCard>
+          {!result.cvOnlyMode && (
+            <ScoreCard>
+              <p className="card-eyebrow">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                Dynamic Skills
+              </p>
+              <div className="skills-list">
+                {dynamicSkills.map((s, i) => (
+                  <SkillRow key={s.name} name={s.name} score={s.score} max={10} delay={500 + i * 80} />
+                ))}
+              </div>
+              <p className="card-hint">Extracted from the job description you provided.</p>
+            </ScoreCard>
+          )}
 
         </div>
 
