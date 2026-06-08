@@ -412,7 +412,7 @@ const SkillsMatchDashboard = () => {
               {result.cvOnlyMode && (
                 <span className="cv-only-badge">CV-only analysis (5 skills)</span>
               )}
-              {result.isEstimated && (
+              {result.isEstimated && !result.cvOnlyMode && (
                 <span
                   className="estimated-badge"
                   title="Scores were computed with keyword matching because the AI service was unavailable"

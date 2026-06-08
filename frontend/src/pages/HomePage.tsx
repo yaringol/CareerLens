@@ -54,7 +54,7 @@ const HomePage = () => {
           <h1 className="hero-headline">Does your CV match today's job market?</h1>
           <p className="hero-subheadline">
             CareerLens uses a data-science model to extract the key skills from any job posting<br />
-            and score your CV against them — so you know exactly what to improve.
+            and score your CV against them - so you know exactly what to improve.
           </p>
 
           <div className="hero-actions">

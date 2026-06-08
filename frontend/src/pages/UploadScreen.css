@@ -283,14 +283,25 @@
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--color-primary);
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
+  display: block;
 }
 
 .field-required {
   color: var(--color-error);
   font-weight: 700;
+}
+
+.field-label--stacked {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.field-label--stacked .field-hint {
+  display: block;
+  width: 100%;
+  line-height: 1.45;
 }
 
 .field-hint {
@@ -441,6 +452,49 @@
   font-size: 0.8125rem;
   color: var(--color-secondary);
   text-align: center;
+}
+
+.jd-mode-tabs {
+  display: flex;
+  gap: 0;
+  margin-top: 0.25rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.jd-mode-tab {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-secondary);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+  font-family: inherit;
+  margin-bottom: -1px;
+}
+
+.jd-mode-tab--active {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent-start);
+}
+
+.jd-mode-tab:hover:not(.jd-mode-tab--active) {
+  color: var(--color-primary);
+}
+
+.cv-only-mode-hint {
+  margin: 0.5rem 0 0;
+  padding: 0.875rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--color-secondary);
+  background: rgba(139, 124, 246, 0.06);
+  border: 1px solid rgba(139, 124, 246, 0.15);
+  border-radius: var(--radius-input);
 }
 
 .job-description-warning {

@@ -11,6 +11,8 @@ import { ValidationError } from '../errors';
 import type { IJob } from '../models/job.model';
 import { logAnalyzeOk } from '../utils/pocLog';
 import { isGibberish } from '../utils/gibberishDetector';
+import { looksLikeJobUrl } from '../utils/jobUrl';
+import { fetchJobPostingFromUrl } from '../services/jobPostingFetcher.service';
 import { authenticate } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -155,6 +157,13 @@ export function mergeTenSkills(jobTitle: string, core: string[], dynamic: string
 
 const MIN_JOB_DESCRIPTION_CHARS = 40;
 
+async function resolveJobDescriptionInput(raw: string): Promise<string> {
+  const trimmed = raw.trim();
+  if (!looksLikeJobUrl(trimmed)) return trimmed;
+  const fetched = await fetchJobPostingFromUrl(trimmed);
+  return fetched.description.trim();
+}
+
 /**
  * POST /api/analyze
  *
@@ -177,14 +186,23 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 
     if (jobId && cvText) {
       job = await validateJobById(jobId);
-      const jd =
-        typeof jobDescription === 'string' ? jobDescription.trim() : '';
-      if (jd.length < MIN_JOB_DESCRIPTION_CHARS) {
-        throw new ValidationError(
-          `jobDescription is required (at least ${MIN_JOB_DESCRIPTION_CHARS} characters) — paste the job posting for skill extraction`
-        );
+      if (skipGibberish) {
+        descriptionForDynamic = '';
+      } else {
+        const jd =
+          typeof jobDescription === 'string' ? jobDescription.trim() : '';
+        if (!jd) {
+          throw new ValidationError(
+            'jobDescription is required — paste the job posting text or a link'
+          );
+        }
+        descriptionForDynamic = await resolveJobDescriptionInput(jd);
+        if (descriptionForDynamic.length < MIN_JOB_DESCRIPTION_CHARS) {
+          throw new ValidationError(
+            `jobDescription is required (at least ${MIN_JOB_DESCRIPTION_CHARS} characters) — paste the job posting for skill extraction`
+          );
+        }
       }
-      descriptionForDynamic = jd;
     } else if (jobTitle && jobDescription && cvText) {
       job = await validateJobTitle(jobTitle);
       descriptionForDynamic = jobDescription;
