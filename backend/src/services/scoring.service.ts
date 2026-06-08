@@ -135,11 +135,12 @@ export async function scoreAndPersist(req: ScoreRequest): Promise<ICvAnalysis> {
     rawAgentOutput: '',
     expectedSkillCount,
     cvOnlyMode: req.cvOnlyMode ?? false,
-    isEstimated: req.keywordOnly ?? false,
+    isEstimated: false,
   };
 
   if (req.keywordOnly) {
     baseInput.rawAgentOutput = buildKeywordFallbackJson(validatedSkills, req.cvText);
+    baseInput.isEstimated = true;
     return parseAndSaveAnalysis(baseInput);
   }
 
@@ -167,6 +168,7 @@ export async function scoreAndPersist(req: ScoreRequest): Promise<ICvAnalysis> {
     logFallbackScoring();
     baseInput.isEstimated = true;
     baseInput.rawAgentOutput = buildKeywordFallbackJson(validatedSkills, req.cvText);
-    return parseAndSaveAnalysis(baseInput);
+    baseInput.isEstimated = true;
+    return await parseAndSaveAnalysis(baseInput);
   }
 }

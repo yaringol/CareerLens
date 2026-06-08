@@ -332,22 +332,28 @@ const SkillsMatchDashboard = () => {
   const [params] = useSearchParams()
   const [result, setResult] = useState<AnalyzeResponse | null>(null)
   const [parseError, setParseError] = useState<string | null>(null)
+  const leavingRef = useRef(false)
 
   useEffect(() => {
+    if (leavingRef.current) return
     const mock = params.get('mock')
     if (mock && MOCK_DATA[mock]) {
       setResult(MOCK_DATA[mock] as AnalyzeResponse)
       return
     }
     const raw = sessionStorage.getItem(RESULT_KEY)
-    if (!raw) { navigate('/', { replace: true }); return }
+    if (!raw) {
+      navigate('/upload', { replace: true })
+      return
+    }
     try { setResult(JSON.parse(raw) as AnalyzeResponse) }
     catch { setParseError('Invalid results data') }
   }, [navigate, params])
 
   const handleBack = () => {
+    leavingRef.current = true
     sessionStorage.removeItem(RESULT_KEY)
-    navigate('/')
+    navigate('/upload', { replace: true })
   }
 
   if (parseError) return (
@@ -401,13 +407,20 @@ const SkillsMatchDashboard = () => {
 
           {/* ── Overall score card ── */}
           <ScoreCard className="score-card--main">
-            <p className="card-eyebrow">Overall match</p>
-            {result.cvOnlyMode && (
-              <span className="cv-only-badge">CV-only analysis (5 skills)</span>
-            )}
-            {result.isEstimated && (
-              <span className="cv-only-badge">Estimated from keyword overlap</span>
-            )}
+            <div className="card-eyebrow-row">
+              <p className="card-eyebrow">Overall match</p>
+              {result.cvOnlyMode && (
+                <span className="cv-only-badge">CV-only analysis (5 skills)</span>
+              )}
+              {result.isEstimated && (
+                <span
+                  className="estimated-badge"
+                  title="Scores were computed with keyword matching because the AI service was unavailable"
+                >
+                  Estimated score (AI unavailable)
+                </span>
+              )}
+            </div>
             <HalfCircleGauge value={matchPercent} max={100} animate />
             <p className="card-description">
               Your CV matches <strong>{result.jobTitle}</strong> requirements
