@@ -72,7 +72,7 @@ export function HalfCircleGauge({ value, max, animate = true }: HalfCircleGaugeP
   return (
     <div className="hcg-root">
       <div className="hcg-svg-wrap">
-        <svg viewBox="0 0 100 50" className="hcg-svg" aria-hidden="true">
+        <svg viewBox="0 0 100 100" className="hcg-svg" aria-hidden="true">
           <defs>
             <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="0">
               {colorStops.map((c, i) => (
@@ -84,7 +84,8 @@ export function HalfCircleGauge({ value, max, animate = true }: HalfCircleGaugeP
               ))}
             </linearGradient>
           </defs>
-          <g fill="none" strokeWidth="10" transform="translate(50,50.5)">
+          {/* rotate(-90) starts the arc at 12 o'clock */}
+          <g fill="none" strokeWidth="10" transform="translate(50,50) rotate(-90)">
             <circle className="hcg-track" r={radius} />
             <circle
               ref={strokeRef}
@@ -92,7 +93,6 @@ export function HalfCircleGauge({ value, max, animate = true }: HalfCircleGaugeP
               strokeDasharray={dasharray}
               strokeDashoffset={circumference}
               strokeLinecap="round"
-              transform="rotate(-90)"
               r={radius}
             />
           </g>

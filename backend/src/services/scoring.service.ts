@@ -15,7 +15,7 @@ const MIN_CV_TEXT_LENGTH = 50;
 const SCORE_MIN = 0;
 const SCORE_MAX = 10;
 
-/** Keyword overlap 0-10; varies per skill string so different jobs diverge on the same CV. */
+/** Keyword overlap 0-10; no keyword match returns 0, full match returns 10. */
 function overlapScoreForSkill(skill: string, cvText: string): number {
   const cv = cvText.toLowerCase();
   const tokens = skill
@@ -31,8 +31,8 @@ function overlapScoreForSkill(skill: string, cvText: string): number {
   return Math.min(SCORE_MAX, Math.max(SCORE_MIN, score));
 }
 
-/** When LLM is unavailable, score from token overlap so different jobs (different skills) differentiate on the same CV. */
-function buildKeywordOverlapJson(skills: string[], cvText: string): string {
+/** Keyword-overlap fallback used when LLM is unavailable or returns uniform scores. */
+function buildKeywordFallbackJson(skills: string[], cvText: string): string {
   const scored = skills.map((skill) => ({
     skill,
     score: overlapScoreForSkill(skill, cvText),
@@ -40,18 +40,13 @@ function buildKeywordOverlapJson(skills: string[], cvText: string): string {
   return JSON.stringify({ skills: scored });
 }
 
-/** Last-resort fallback when LLM scoring is unavailable. */
-function buildMockAgentJson(skills: string[], cvText: string): string {
-  return buildKeywordOverlapJson(skills, cvText);
-}
-
 function detectUniformScores(scores: number[]): boolean {
   return scores.length > 0 && scores.every((n) => n === scores[0]);
 }
 
 /**
- * Map LLM JSON to our 10 skills in order; fill gaps with overlap scores.
- * If the model returns the same score for every skill (common with low-variance outputs), use keyword scores instead.
+ * Map LLM JSON to our skills in order; fill gaps with overlap scores.
+ * If the model returns the same score for every skill, use keyword scores instead.
  */
 function normalizeLlmScoringJson(
   raw: string,
@@ -98,7 +93,7 @@ function normalizeLlmScoringJson(
   const values = aligned.map((a) => a.score);
   if (detectUniformScores(values)) {
     return {
-      json: buildKeywordOverlapJson(expectedSkills, cvText),
+      json: buildKeywordFallbackJson(expectedSkills, cvText),
       uniformReplacedWithKeywords: true,
     };
   }
@@ -144,7 +139,7 @@ export async function scoreAndPersist(req: ScoreRequest): Promise<ICvAnalysis> {
   };
 
   if (req.keywordOnly) {
-    baseInput.rawAgentOutput = buildKeywordOverlapJson(validatedSkills, req.cvText);
+    baseInput.rawAgentOutput = buildKeywordFallbackJson(validatedSkills, req.cvText);
     return parseAndSaveAnalysis(baseInput);
   }
 
@@ -171,7 +166,7 @@ export async function scoreAndPersist(req: ScoreRequest): Promise<ICvAnalysis> {
   } catch {
     logFallbackScoring();
     baseInput.isEstimated = true;
-    baseInput.rawAgentOutput = buildMockAgentJson(validatedSkills, req.cvText);
+    baseInput.rawAgentOutput = buildKeywordFallbackJson(validatedSkills, req.cvText);
     return parseAndSaveAnalysis(baseInput);
   }
 }

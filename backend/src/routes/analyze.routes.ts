@@ -11,8 +11,10 @@ import { ValidationError } from '../errors';
 import type { IJob } from '../models/job.model';
 import { logAnalyzeOk } from '../utils/pocLog';
 import { isGibberish } from '../utils/gibberishDetector';
+import { authenticate } from '../middleware/auth.middleware';
 
 const router = Router();
+router.use(authenticate);
 
 function tokenSet(s: string): Set<string> {
   return new Set(

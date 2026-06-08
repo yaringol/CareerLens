@@ -7,8 +7,24 @@ function apiBase(): string {
   return '/api'
 }
 
-/** Alias for apiBase — avoids ReferenceError if any code or cached bundle still calls `base()`. */
 const base = apiBase
+
+function getToken(): string | null {
+  return localStorage.getItem('auth_token')
+}
+
+function authHeaders(): Record<string, string> {
+  const token = getToken()
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+async function handleUnauthorized(res: Response): Promise<void> {
+  if (res.status === 401) {
+    localStorage.removeItem('auth_token')
+    sessionStorage.setItem('auth_redirect', window.location.pathname + window.location.search)
+    window.location.href = '/login'
+  }
+}
 
 export interface PocJob {
   id: string
@@ -17,7 +33,9 @@ export interface PocJob {
 }
 
 export interface UploadPdfResponse {
+  cvId: string
   cvText: string
+  fileName: string
 }
 
 export interface AnalyzeResponse {
@@ -27,6 +45,13 @@ export interface AnalyzeResponse {
   id: string
   cvOnlyMode?: boolean
   isEstimated?: boolean
+}
+
+export interface SavedCv {
+  cvId: string
+  fileName: string
+  uploadedAt: string
+  fileSizeBytes: number
 }
 
 const jsonHeaders = { 'Content-Type': 'application/json' }
@@ -39,7 +64,10 @@ export class ApiError extends Error {
 }
 
 export async function fetchJobs(): Promise<PocJob[]> {
-  const res = await fetch(`${base()}/jobs`)
+  const res = await fetch(`${base()}/jobs`, {
+    headers: { ...authHeaders() },
+  })
+  await handleUnauthorized(res)
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
     throw new Error((err as { error?: string }).error || `Failed to load jobs (${res.status})`)
@@ -47,18 +75,70 @@ export async function fetchJobs(): Promise<PocJob[]> {
   return res.json() as Promise<PocJob[]>
 }
 
-export async function uploadPdf(file: File): Promise<UploadPdfResponse> {
+export async function uploadPdf(file: File, saveToLibrary = true): Promise<UploadPdfResponse> {
   const formData = new FormData()
   formData.append('file', file)
-  const res = await fetch(`${base()}/upload`, {
+  const url = saveToLibrary ? `${base()}/upload` : `${base()}/upload?save=false`
+  const res = await fetch(url, {
     method: 'POST',
+    headers: { ...authHeaders() },
     body: formData,
   })
+  await handleUnauthorized(res)
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
     throw new Error((err as { error?: string }).error || `Upload failed (${res.status})`)
   }
   return res.json() as Promise<UploadPdfResponse>
+}
+
+export async function deleteCv(cvId: string): Promise<void> {
+  const res = await fetch(`${base()}/cv/${cvId}`, {
+    method: 'DELETE',
+    headers: { ...authHeaders() },
+  })
+  await handleUnauthorized(res)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || `Delete failed (${res.status})`)
+  }
+}
+
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  const res = await fetch(`${base()}/auth/password`, {
+    method: 'PUT',
+    headers: { ...jsonHeaders, ...authHeaders() },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  })
+  await handleUnauthorized(res)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || `Password change failed (${res.status})`)
+  }
+}
+
+export async function getMyCVs(): Promise<SavedCv[]> {
+  const res = await fetch(`${base()}/cv`, {
+    headers: { ...authHeaders() },
+  })
+  await handleUnauthorized(res)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || `Failed to load CVs (${res.status})`)
+  }
+  return res.json() as Promise<SavedCv[]>
+}
+
+export async function getCvText(cvId: string): Promise<{ cvId: string; cvText: string; fileName: string }> {
+  const res = await fetch(`${base()}/cv/${cvId}`, {
+    headers: { ...authHeaders() },
+  })
+  await handleUnauthorized(res)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || `Failed to load CV (${res.status})`)
+  }
+  return res.json()
 }
 
 const MIN_JOB_DESCRIPTION_CHARS = 40
@@ -77,14 +157,40 @@ export async function analyzeCv(
     method: 'POST',
     headers: {
       ...jsonHeaders,
+      ...authHeaders(),
       ...(options.skipGibberish ? { 'X-Skip-Gibberish': 'true' } : {}),
     },
     body: JSON.stringify({ jobId, cvText, jobDescription: jd }),
   })
+  await handleUnauthorized(res)
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
     const body = err as { error?: string; code?: string }
     throw new ApiError(body.error || `Analyze failed (${res.status})`, res.status, body.code)
   }
   return res.json() as Promise<AnalyzeResponse>
+}
+
+export async function fetchAdminAnalyses(filters?: {
+  jobTitle?: string
+  minScore?: number
+  startDate?: string
+  endDate?: string
+}): Promise<Array<{ id: string; jobTitle: string; matchScore: number; createdAt: string; userEmail: string | null }>> {
+  const params = new URLSearchParams()
+  if (filters?.jobTitle) params.set('jobTitle', filters.jobTitle)
+  if (filters?.minScore !== undefined) params.set('minScore', String(filters.minScore))
+  if (filters?.startDate) params.set('startDate', filters.startDate)
+  if (filters?.endDate) params.set('endDate', filters.endDate)
+
+  const query = params.toString() ? `?${params.toString()}` : ''
+  const res = await fetch(`${base()}/admin/analyses${query}`, {
+    headers: { ...authHeaders() },
+  })
+  await handleUnauthorized(res)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || `Failed to load analyses (${res.status})`)
+  }
+  return res.json()
 }
