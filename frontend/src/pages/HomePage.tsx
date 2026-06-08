@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
-import { analyzeCv, fetchJobs, uploadPdf, getMyCVs, getCvText, type PocJob, type SavedCv } from '../services/api'
+import { ApiError, analyzeCv, fetchJobs, uploadPdf, getMyCVs, getCvText, type PocJob, type SavedCv } from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../contexts/ToastContext'
 import ShaderBackground from '../components/ui/ShaderBackground'
 import ScanLoader from '../components/ui/ScanLoader'
+import { isGibberish } from '../utils/gibberishDetector'
 import './HomePage.css'
 import './UploadScreen.css'
 
@@ -37,6 +38,14 @@ const HomePage = () => {
   const [isLoading, setIsLoading]         = useState(false)
   const [loadError, setLoadError]         = useState<string | null>(null)
   const [uploadVisible, setUploadVisible] = useState(false)
+  const [gibberishWarning, setGibberishWarning] = useState(false)
+
+  const trimmedJobDescription = jobDescription.trim()
+  const hasEnoughDescription = trimmedJobDescription.length >= 40
+  const hasGibberishDescription = useMemo(
+    () => hasEnoughDescription && isGibberish(trimmedJobDescription),
+    [hasEnoughDescription, trimmedJobDescription]
+  )
 
   // CV library state
   const [cvTab, setCvTab]           = useState<'upload' | 'my-cvs'>('upload')
@@ -131,10 +140,24 @@ const HomePage = () => {
     }
   }
 
+  const saveResultAndNavigate = (result: Awaited<ReturnType<typeof analyzeCv>>) => {
+    sessionStorage.setItem(RESULT_KEY, JSON.stringify(result))
+    navigate('/dashboard')
+  }
+
+  const runAnalysis = async (cvText: string) => {
+    const result = await analyzeCv(jobId, cvText, jobDescription)
+    saveResultAndNavigate(result)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const hasFile = cvFile || selectedCvText
-    if (!hasFile || !jobId || jobDescription.trim().length < 40) return
+    if (!hasFile || !jobId || !hasEnoughDescription) return
+    if (hasGibberishDescription) {
+      setGibberishWarning(true)
+      return
+    }
     setIsLoading(true)
     try {
       let cvText: string
@@ -145,18 +168,24 @@ const HomePage = () => {
       } else {
         cvText = selectedCvText!
       }
-      const result = await analyzeCv(jobId, cvText, jobDescription)
-      sessionStorage.setItem(RESULT_KEY, JSON.stringify(result))
-      navigate('/dashboard')
+      await runAnalysis(cvText)
     } catch (err) {
+      if (err instanceof ApiError && err.code === 'GIBBERISH_DETECTED') {
+        setGibberishWarning(true)
+        return
+      }
       showToast(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
       setIsLoading(false)
     }
   }
 
+  useEffect(() => {
+    setGibberishWarning(hasGibberishDescription)
+  }, [hasGibberishDescription])
+
   const activeCvName = cvFile ? cvFile.name : selectedCvName
-  const canSubmit = !!(cvFile || selectedCvText) && !!jobId && jobDescription.trim().length >= 40 && !loadError
+  const canSubmit = !!(cvFile || selectedCvText) && !!jobId && hasEnoughDescription && !hasGibberishDescription && !loadError
 
   return (
     <div className="home-page">
@@ -437,7 +466,7 @@ const HomePage = () => {
                   </label>
                   <textarea
                     id="job-description"
-                    className="field-textarea"
+                    className={`field-textarea${gibberishWarning ? ' field-textarea--error' : ''}`}
                     value={jobDescription}
                     onChange={(e) => setJobDescription(e.target.value)}
                     placeholder="Paste the full job description of the position you want to get hired for. We'll score your CV against it and show exactly what to improve."
@@ -445,8 +474,21 @@ const HomePage = () => {
                     required
                     maxLength={700}
                     minLength={40}
+                    aria-invalid={gibberishWarning}
+                    aria-describedby={gibberishWarning ? 'job-description-warning' : undefined}
                   />
                   <span className="char-counter">{jobDescription.length} / 700</span>
+                  {gibberishWarning && (
+                    <div id="job-description-warning" className="job-description-warning" role="alert">
+                      <div className="job-description-warning__icon" aria-hidden="true">!</div>
+                      <div className="job-description-warning__content">
+                        <p className="job-description-warning__title">This description looks unreadable.</p>
+                        <p className="job-description-warning__text">
+                          Please replace it with a readable English job posting before analyzing.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                   {jobDescription.length > 0 && jobDescription.length < 40 && (
                     <span className="field-inline-error">Minimum 40 characters required</span>
                   )}
@@ -461,7 +503,13 @@ const HomePage = () => {
               </button>
               {!canSubmit && !isLoading && (
                 <p className="cta-hint">
-                  {!(cvFile || selectedCvText) ? 'Upload or select a CV to continue' : !jobId ? 'Select a role' : 'Paste at least 40 characters of job description'}
+                  {!(cvFile || selectedCvText)
+                    ? 'Upload or select a CV to continue'
+                    : !jobId
+                      ? 'Select a role'
+                      : hasGibberishDescription
+                        ? 'Enter a readable English job description to continue'
+                        : 'Paste at least 40 characters of job description'}
                 </p>
               )}
             </div>
