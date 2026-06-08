@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useRef, useState } from 'react'
+import { forwardRef, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useError } from '../../context/ErrorContext'
 import {
@@ -7,24 +7,32 @@ import {
   fetchJobs,
   getCvText,
   getMyCVs,
+  MAX_JOB_DESCRIPTION_CHARS,
   MIN_JOB_DESCRIPTION_CHARS,
   uploadPdf,
   type PocJob,
   type SavedCv,
 } from '../../services/api'
 import ScanLoader from '../ui/ScanLoader'
+import { isGibberish } from '../../utils/gibberishDetector'
+import { looksLikeJobUrl } from '../../utils/jobUrl'
 import '../../pages/UploadScreen.css'
 
 const RESULT_KEY = 'pocAnalysisResult'
 const CV_EXTRACT_ERROR = 'Could not extract text from this PDF'
+
+type JobInputMode = 'posting' | 'cv-only'
 
 type UploadFieldErrors = {
   jobDescription?: string
   cv?: string
 }
 
-function jobDescriptionError(text: string): string | undefined {
+function jobDescriptionError(text: string, mode: JobInputMode): string | undefined {
+  if (mode === 'cv-only') return undefined
   const trimmed = text.trim()
+  if (!trimmed) return 'Paste a job description or posting link'
+  if (looksLikeJobUrl(trimmed)) return undefined
   if (trimmed.length < MIN_JOB_DESCRIPTION_CHARS) {
     return `Minimum ${MIN_JOB_DESCRIPTION_CHARS} characters required`
   }
@@ -53,13 +61,10 @@ function formatDate(iso: string): string {
 }
 
 export interface CvUploadSectionProps {
-  /** Fade/slide-in on the home page when scrolled into view */
   visible?: boolean
-  /** Show ùBack to homeù link (used on /upload route) */
   showBackLink?: boolean
 }
 
-/** Single upload + analyze form ù used on home page and /upload route */
 const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function CvUploadSection(
   { visible = true, showBackLink = false },
   ref,
@@ -74,6 +79,8 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
   const [jobId, setJobId] = useState('')
   const [jobDescription, setJobDescription] = useState('')
   const [fieldErrors, setFieldErrors] = useState<UploadFieldErrors>({})
+  const [jobInputMode, setJobInputMode] = useState<JobInputMode>('posting')
+  const [gibberishWarning, setGibberishWarning] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [cvTab, setCvTab] = useState<'upload' | 'my-cvs'>('upload')
@@ -159,17 +166,47 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
     }
   }
 
+  const trimmedJobDescription = jobDescription.trim()
+  const isPostingMode = jobInputMode === 'posting'
+  const isJobUrlInput = isPostingMode && looksLikeJobUrl(trimmedJobDescription)
+  const hasEnoughDescription =
+    !isPostingMode
+    || isJobUrlInput
+    || trimmedJobDescription.length >= MIN_JOB_DESCRIPTION_CHARS
+  const hasGibberishDescription = useMemo(
+    () =>
+      isPostingMode
+      && !isJobUrlInput
+      && hasEnoughDescription
+      && isGibberish(trimmedJobDescription),
+    [hasEnoughDescription, isJobUrlInput, isPostingMode, trimmedJobDescription],
+  )
+
+  useEffect(() => {
+    setGibberishWarning(hasGibberishDescription)
+  }, [hasGibberishDescription])
+
+  function switchJobInputMode(mode: JobInputMode) {
+    setJobInputMode(mode)
+    setGibberishWarning(false)
+    setFieldErrors((prev) => ({ ...prev, jobDescription: undefined }))
+  }
+
   const jdError = fieldErrors.jobDescription
   const hasCv = !!(cvFile || selectedCvText)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const nextErrors: UploadFieldErrors = {
-      jobDescription: jobDescriptionError(jobDescription),
+      jobDescription: jobDescriptionError(jobDescription, jobInputMode),
       cv: hasCv ? undefined : 'Upload or select a CV to continue',
     }
     setFieldErrors(nextErrors)
     if (nextErrors.jobDescription || nextErrors.cv || !jobId) return
+    if (hasGibberishDescription) {
+      setGibberishWarning(true)
+      return
+    }
     setIsLoading(true)
     try {
       let cvText: string
@@ -180,14 +217,27 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
       } else {
         cvText = selectedCvText!
       }
-      const result = await analyzeCv(jobId, cvText, jobDescription)
+      const result = await analyzeCv(
+        jobId,
+        cvText,
+        isPostingMode ? trimmedJobDescription : '',
+        { skipGibberish: !isPostingMode },
+      )
       sessionStorage.setItem(RESULT_KEY, JSON.stringify(result))
       navigate('/dashboard', { replace: true })
     } catch (err) {
-      if (err instanceof ApiError && err.code === 'VALIDATION') {
+      if (err instanceof ApiError && err.code === 'GIBBERISH_DETECTED') {
+        setGibberishWarning(true)
+        return
+      }
+      if (
+        err instanceof ApiError
+        && (err.code === 'VALIDATION' || err.code === 'UNPROCESSABLE' || err.status === 422)
+        && isPostingMode
+      ) {
         setFieldErrors((prev) => ({
           ...prev,
-          jobDescription: err.message || jobDescriptionError(jobDescription),
+          jobDescription: err.message || jobDescriptionError(jobDescription, jobInputMode),
         }))
         return
       }
@@ -202,7 +252,9 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
   }
 
   const activeCvName = cvFile ? cvFile.name : selectedCvName
-  const canSubmit = hasCv && !!jobId && !jdError && !loadError
+  const canSubmit = isPostingMode
+    ? hasCv && !!jobId && !jdError && !hasGibberishDescription && !loadError
+    : hasCv && !!jobId && !loadError
 
   return (
     <section
@@ -268,7 +320,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                         </div>
                         <p className="dropzone-filename">{cvFile.name}</p>
-                        <p className="dropzone-meta">{formatFileSize(cvFile.size)} ù PDF</p>
+                        <p className="dropzone-meta">{formatFileSize(cvFile.size)} &middot; PDF</p>
                         <button type="button" className="btn-ghost" onClick={() => fileInputRef.current?.click()} disabled={isLoading}>Change file</button>
                       </div>
                       <label className="save-toggle">
@@ -297,7 +349,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
                       </div>
                       <p className="dropzone-primary">Drop your CV here</p>
-                      <p className="dropzone-secondary">or <span className="dropzone-browse">browse</span> to upload ù PDF only</p>
+                      <p className="dropzone-secondary">or <span className="dropzone-browse">browse</span> to upload &middot; PDF only</p>
                     </div>
                   )}
                   {fieldErrors.cv && cvTab === 'upload' && (
@@ -309,7 +361,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
               {cvTab === 'my-cvs' && (
                 <div className="saved-cvs">
                   {cvsLoading ? (
-                    <p className="saved-cvs-empty">Loadingù</p>
+                    <p className="saved-cvs-empty">Loading...</p>
                   ) : savedCVs.length === 0 ? (
                     <p className="saved-cvs-empty">No saved CVs yet. Upload one first.</p>
                   ) : (
@@ -325,7 +377,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                           </div>
                           <div className="saved-cv-info">
                             <p className="saved-cv-name">{cv.fileName}</p>
-                            <p className="saved-cv-meta">{formatFileSize(cv.fileSizeBytes)} ù {formatDate(cv.uploadedAt)}</p>
+                            <p className="saved-cv-meta">{formatFileSize(cv.fileSizeBytes)} &middot; {formatDate(cv.uploadedAt)}</p>
                           </div>
                           {selectedCvId === cv.cvId && (
                             <svg className="saved-cv-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -360,54 +412,101 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                 </label>
                 <select id="job-select" className="field-select" value={jobId} onChange={(e) => setJobId(e.target.value)} disabled={isLoading || jobs.length === 0} required>
                   {jobs.length === 0 && !loadError
-                    ? <option value="">Loading rolesù</option>
+                    ? <option value="">Loading roles...</option>
                     : jobs.map((j) => <option key={j.id} value={j.id}>{j.title}</option>)}
                 </select>
               </div>
 
-              <div className="field-group field-group--grow">
-                <label className="field-label" htmlFor="job-description">
-                  <span>
-                    Your Dream Job Posting
-                    <span className="field-required" aria-hidden="true"> *</span>
-                  </span>
-                  <span className="field-hint">Found the job? Copy the full description from LinkedIn / company site and paste here.</span>
-                </label>
-                <textarea
-                  id="job-description"
-                  className={`field-textarea${jdError ? ' field-textarea--invalid' : ''}`}
-                  value={jobDescription}
-                  onChange={(e) => {
-                    const value = e.target.value
-                    setJobDescription(value)
-                    setFieldErrors((prev) => ({
-                      ...prev,
-                      jobDescription: jobDescriptionError(value),
-                    }))
-                  }}
-                  onBlur={() => {
-                    setFieldErrors((prev) => ({
-                      ...prev,
-                      jobDescription: jobDescriptionError(jobDescription),
-                    }))
-                  }}
-                  placeholder="Paste the full job description of the position you want to get hired for. We'll score your CV against it and show exactly what to improve."
+              <div className="jd-mode-tabs" role="tablist" aria-label="Job analysis mode">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={isPostingMode}
+                  className={`jd-mode-tab${isPostingMode ? ' jd-mode-tab--active' : ''}`}
+                  onClick={() => switchJobInputMode('posting')}
                   disabled={isLoading}
-                  required
-                  maxLength={700}
-                  minLength={MIN_JOB_DESCRIPTION_CHARS}
-                  aria-invalid={!!jdError}
-                  aria-describedby={jdError ? 'job-description-error' : undefined}
-                />
-                <span className={`char-counter${jdError ? ' char-counter--warn' : ''}`}>
-                  {jobDescription.length} / 700
-                </span>
-                {jdError && (
-                  <span id="job-description-error" className="field-inline-error" role="alert">
-                    {jdError}
-                  </span>
-                )}
+                >
+                  Job description or URL
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={!isPostingMode}
+                  className={`jd-mode-tab${!isPostingMode ? ' jd-mode-tab--active' : ''}`}
+                  onClick={() => switchJobInputMode('cv-only')}
+                  disabled={isLoading}
+                >
+                  CV only
+                </button>
               </div>
+
+              {isPostingMode ? (
+                <div className="field-group field-group--grow">
+                  <label className="field-label field-label--stacked" htmlFor="job-description">
+                    <span>
+                      Your Dream Job Posting <span className="field-required" aria-hidden="true">*</span>
+                    </span>
+                    <span className="field-hint">
+                      Paste the full description or a job link - the backend fetches the posting when you analyze.
+                    </span>
+                  </label>
+                  <textarea
+                    id="job-description"
+                    className={`field-textarea${jdError ? ' field-textarea--invalid' : ''}${gibberishWarning ? ' field-textarea--error' : ''}`}
+                    value={jobDescription}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      setJobDescription(value)
+                      setFieldErrors((prev) => ({
+                        ...prev,
+                        jobDescription: jobDescriptionError(value, 'posting'),
+                      }))
+                    }}
+                    onBlur={() => {
+                      setFieldErrors((prev) => ({
+                        ...prev,
+                        jobDescription: jobDescriptionError(jobDescription, 'posting'),
+                      }))
+                    }}
+                    placeholder="Paste job description text, or a link like https://www.comeet.com/jobs/company/..."
+                    disabled={isLoading}
+                    required
+                    maxLength={MAX_JOB_DESCRIPTION_CHARS}
+                    minLength={MIN_JOB_DESCRIPTION_CHARS}
+                    aria-invalid={!!jdError || gibberishWarning}
+                    aria-describedby={
+                      gibberishWarning
+                        ? 'job-description-warning'
+                        : jdError
+                          ? 'job-description-error'
+                          : undefined
+                    }
+                  />
+                  <span className={`char-counter${jdError || gibberishWarning ? ' char-counter--warn' : ''}`}>
+                    {isJobUrlInput ? 'Job link ù will import on analyze' : `${jobDescription.length} / ${MAX_JOB_DESCRIPTION_CHARS}`}
+                  </span>
+                  {jdError && (
+                    <span id="job-description-error" className="field-inline-error" role="alert">
+                      {jdError}
+                    </span>
+                  )}
+                  {gibberishWarning && (
+                    <div id="job-description-warning" className="job-description-warning" role="alert">
+                      <div className="job-description-warning__icon" aria-hidden="true">!</div>
+                      <div className="job-description-warning__content">
+                        <p className="job-description-warning__title">This description looks unreadable.</p>
+                        <p className="job-description-warning__text">
+                          Please replace it with a readable English job posting before analyzing.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="cv-only-mode-hint">
+                  Score your CV against <strong>5 core skills</strong> for the selected role - no job posting needed.
+                </p>
+              )}
             </div>
           </div>
 
@@ -418,7 +517,15 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
             </button>
             {!canSubmit && !isLoading && !jdError && !fieldErrors.cv && (
               <p className="cta-hint">
-                {!hasCv ? 'Upload or select a CV to continue' : !jobId ? 'Select a role' : null}
+                {!hasCv
+                  ? 'Upload or select a CV to continue'
+                  : !jobId
+                    ? 'Select a role'
+                    : isPostingMode && hasGibberishDescription
+                      ? 'Enter a readable English job description to continue'
+                      : isPostingMode && !hasEnoughDescription
+                        ? `Paste at least ${MIN_JOB_DESCRIPTION_CHARS} characters or a job link`
+                        : null}
               </p>
             )}
           </div>

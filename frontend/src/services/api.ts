@@ -168,8 +168,25 @@ export async function getCvText(cvId: string): Promise<{ cvId: string; cvText: s
 }
 
 export const MIN_JOB_DESCRIPTION_CHARS = 40
+export const MAX_JOB_DESCRIPTION_CHARS = 12_000
 
 export const JOB_DESCRIPTION_MIN_MESSAGE = `Paste at least ${MIN_JOB_DESCRIPTION_CHARS} characters of job description`
+
+export interface FetchedJobPosting {
+  title?: string
+  description: string
+  source: 'comeet' | 'json-ld' | 'html'
+  sourceUrl: string
+}
+
+export async function fetchJobDescriptionFromUrl(url: string): Promise<FetchedJobPosting> {
+  const res = await apiFetch(`${base()}/jobs/fetch-description`, {
+    method: 'POST',
+    headers: { ...jsonHeaders, ...authHeaders() },
+    body: JSON.stringify({ url: url.trim() }),
+  })
+  return res.json() as Promise<FetchedJobPosting>
+}
 
 export async function analyzeCv(
   jobId: string,
@@ -178,7 +195,7 @@ export async function analyzeCv(
   options: { skipGibberish?: boolean } = {}
 ): Promise<AnalyzeResponse> {
   const jd = jobDescription.trim()
-  if (jd.length < MIN_JOB_DESCRIPTION_CHARS) {
+  if (!options.skipGibberish && jd.length < MIN_JOB_DESCRIPTION_CHARS && !/^https?:\/\//i.test(jd)) {
     throw new ApiError(JOB_DESCRIPTION_MIN_MESSAGE, 400, 'VALIDATION')
   }
   const res = await apiFetch(`${base()}/analyze`, {

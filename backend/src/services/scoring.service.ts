@@ -140,7 +140,6 @@ export async function scoreAndPersist(req: ScoreRequest): Promise<ICvAnalysis> {
 
   if (req.keywordOnly) {
     baseInput.rawAgentOutput = buildKeywordFallbackJson(validatedSkills, req.cvText);
-    baseInput.isEstimated = true;
     return parseAndSaveAnalysis(baseInput);
   }
 
@@ -154,7 +153,6 @@ export async function scoreAndPersist(req: ScoreRequest): Promise<ICvAnalysis> {
       );
       baseInput.rawAgentOutput = json;
       if (uniformReplacedWithKeywords) {
-        baseInput.isEstimated = true;
         logLlmScoringUniformReplaced(req.jobTitle);
       } else {
         logLlmScoringOk(req.jobTitle);
@@ -168,7 +166,6 @@ export async function scoreAndPersist(req: ScoreRequest): Promise<ICvAnalysis> {
     logFallbackScoring();
     baseInput.isEstimated = true;
     baseInput.rawAgentOutput = buildKeywordFallbackJson(validatedSkills, req.cvText);
-    baseInput.isEstimated = true;
     return await parseAndSaveAnalysis(baseInput);
   }
 }
