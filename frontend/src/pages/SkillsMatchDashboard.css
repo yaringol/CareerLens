@@ -18,6 +18,34 @@
   justify-content: space-between;
 }
 
+.dashboard-nav-left {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-width: 140px;
+}
+
+.btn-nav-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--color-secondary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.btn-nav-pill:hover {
+  color: var(--color-primary);
+  border-color: rgba(30,27,110,0.25);
+}
+
+
 .btn-back {
   display: inline-flex;
   align-items: center;
@@ -171,13 +199,42 @@
   box-shadow: 0 4px 20px rgba(139,124,246,0.4);
 }
 
+/* ─── Bottom actions row ───────────────────────────────────────────── */
+.dashboard-bottom-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
 /* ─── Standalone back button — must come after btn-card-action ─────── */
 /* (same specificity, later wins — ensures width:auto overrides 100%) */
 .btn-back-standalone {
   width: auto;
   padding: 0.5rem 1.25rem;
   font-size: 0.875rem;
-  margin-top: 0.5rem;
+}
+
+/* ─── Improve button ───────────────────────────────────────────────── */
+.btn-improve {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #fff;
+  background: var(--gradient-accent);
+  border: none;
+  border-radius: var(--radius-input);
+  cursor: pointer;
+  transition: box-shadow 0.15s, opacity 0.15s;
+}
+.btn-improve:hover {
+  box-shadow: 0 4px 14px rgba(99,102,241,0.35);
 }
 
 /* ─── Skills list ──────────────────────────────────────────────────── */

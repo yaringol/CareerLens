@@ -1,10 +1,21 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { analyzeCv, fetchJobs, uploadPdf, type PocJob } from '../services/api'
+import {
+  analyzeCv,
+  fetchJobs,
+  uploadPdf,
+  extractCvTitle,
+  matchTitle,
+  type PocJob,
+  type ExtractTitleResponse,
+  type TitleMatchResponse,
+} from '../services/api'
 import ScanLoader from '../components/ui/ScanLoader'
 import './UploadScreen.css'
 
 const RESULT_KEY = 'pocAnalysisResult'
+const JD_KEY = 'pocJobDescription'
+const CV_FILENAME_KEY = 'pocCvFileName'
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
@@ -15,13 +26,37 @@ function formatFileSize(bytes: number): string {
 const UploadScreen = () => {
   const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const [cvFile, setCvFile] = useState<File | null>(null)
+  const [cvText, setCvText] = useState<string | null>(null)       // cached from first upload
+  const [cvId, setCvId] = useState<string | null>(null)           // saved CV id (from submit upload)
   const [isDragging, setIsDragging] = useState(false)
   const [jobs, setJobs] = useState<PocJob[]>([])
   const [jobId, setJobId] = useState('')
   const [jobDescription, setJobDescription] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
+
+  const [detectedTitle, setDetectedTitle] = useState<ExtractTitleResponse | null>(null)
+  const [titleMatches, setTitleMatches] = useState<TitleMatchResponse | null>(null)
+  const [showTitleDropdown, setShowTitleDropdown] = useState(false)
+  const [isDetecting, setIsDetecting] = useState(false)
+
+  const [titleMatch, setTitleMatch] = useState(0.0)
+  const [showPreferences, setShowPreferences] = useState(false)
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowTitleDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -38,24 +73,71 @@ const UploadScreen = () => {
     return () => { cancelled = true }
   }, [])
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const handleFileChange = async (file: File) => {
     if (file.type !== 'application/pdf') {
       alert('Please upload a PDF file')
-      e.target.value = ''
       return
     }
     setCvFile(file)
+    setCvText(null)
+    setCvId(null)
+    setDetectedTitle(null)
+    setTitleMatches(null)
+    setShowTitleDropdown(false)
+
+    // Upload once (no save) — cache cvText, then detect title
+    setIsDetecting(true)
+    try {
+      const uploaded = await uploadPdf(file, false)
+      setCvText(uploaded.cvText)                // cache — reused on submit
+      const result = await extractCvTitle(uploaded.cvText)
+      setDetectedTitle(result)
+    } catch {
+      // title detection is optional — silent failure
+    } finally {
+      setIsDetecting(false)
+    }
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) handleFileChange(file)
   }
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     setIsDragging(false)
     const file = e.dataTransfer.files[0]
-    if (!file) return
-    if (file.type !== 'application/pdf') { alert('Please upload a PDF file'); return }
-    setCvFile(file)
+    if (file) handleFileChange(file)
+  }
+
+  const handleOpenTitleDropdown = useCallback(async () => {
+    setShowTitleDropdown(true)
+    const titleToMatch = detectedTitle?.canonical_title
+    if (!titleToMatch) return
+    try {
+      const result = await matchTitle(titleToMatch)
+      setTitleMatches(result)
+    } catch { /* silent */ }
+  }, [detectedTitle])
+
+  const handleTitleSelect = (canonical: string) => {
+    setDetectedTitle((prev) =>
+      prev ? { ...prev, canonical_title: canonical, low_confidence: false } : prev
+    )
+    setShowTitleDropdown(false)
+  }
+
+  const handleManualTitleInput = (value: string) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(async () => {
+      if (value.trim().length < 3) return
+      try {
+        const result = await matchTitle(value.trim())
+        setTitleMatches(result)
+        setShowTitleDropdown(true)
+      } catch { /* silent */ }
+    }, 300)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -63,9 +145,23 @@ const UploadScreen = () => {
     if (!cvFile || !jobId || jobDescription.trim().length < 40) return
     setIsLoading(true)
     try {
-      const { cvText } = await uploadPdf(cvFile)
-      const result = await analyzeCv(jobId, cvText, jobDescription)
-      sessionStorage.setItem(RESULT_KEY, JSON.stringify(result))
+      // Reuse cached cvText if available; otherwise upload + save now
+      let text = cvText
+      if (!text) {
+        const uploaded = await uploadPdf(cvFile)
+        text = uploaded.cvText
+        setCvId(uploaded.cvId)
+        setCvText(text)
+      } else if (!cvId) {
+        // cvText already fetched (no-save), now save it to library
+        const saved = await uploadPdf(cvFile)
+        setCvId(saved.cvId)
+      }
+
+      const result = await analyzeCv(jobId, text, jobDescription, titleMatch)
+      sessionStorage.setItem(RESULT_KEY, JSON.stringify({ ...result, cvText: text }))
+      sessionStorage.setItem(JD_KEY, jobDescription.trim())
+      sessionStorage.setItem(CV_FILENAME_KEY, cvFile.name)
       navigate('/dashboard')
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Something went wrong')
@@ -76,18 +172,19 @@ const UploadScreen = () => {
 
   const canSubmit = !!cvFile && !!jobId && jobDescription.trim().length >= 40 && !loadError
 
+  const dataConfidence = (detectedTitle as (ExtractTitleResponse & { data_confidence?: string }) | null)
+    ?.data_confidence
+
   return (
     <div className="upload-screen">
       {isLoading && <ScanLoader />}
 
       <div className="upload-wrapper">
-        {/* Header */}
         <header className="upload-header">
           <img src="/logo.png" alt="Career Lens" className="upload-logo" />
           <p className="upload-tagline">Data-driven skill insights</p>
         </header>
 
-        {/* Step indicator */}
         <div className="step-indicator">
           <div className="step step--active">
             <div className="step-dot">1</div>
@@ -100,7 +197,6 @@ const UploadScreen = () => {
           </div>
         </div>
 
-        {/* Form card */}
         <form onSubmit={handleSubmit} className="upload-card">
           <div className="upload-columns">
 
@@ -115,7 +211,7 @@ const UploadScreen = () => {
                 ref={fileInputRef}
                 type="file"
                 accept=".pdf"
-                onChange={handleFileChange}
+                onChange={handleInputChange}
                 className="file-input-hidden"
                 disabled={isLoading}
               />
@@ -154,9 +250,75 @@ const UploadScreen = () => {
                   <p className="dropzone-secondary">or <span className="dropzone-browse">browse</span> to upload · PDF only</p>
                 </div>
               )}
+
+              {/* Detected title section */}
+              {isDetecting && (
+                <p className="title-detect-status">Detecting your role…</p>
+              )}
+
+              {!isDetecting && detectedTitle?.canonical_title && (
+                <div className="title-detect-badge" ref={dropdownRef}>
+                  <span className="title-detect-label">
+                    Detected role: <strong>{detectedTitle.canonical_title}</strong>
+                    <span className="badge-auto">Auto-detected</span>
+                  </span>
+                  <div className="title-detect-actions">
+                    <button type="button" className="btn-ghost btn-ghost--sm" onClick={handleOpenTitleDropdown}>
+                      Change
+                    </button>
+                  </div>
+                  {detectedTitle.low_confidence && (
+                    <p className="title-detect-warning">
+                      We're not sure we recognize this title — results may be less accurate
+                    </p>
+                  )}
+                  {dataConfidence === 'low' && !detectedTitle.low_confidence && (
+                    <p className="title-detect-warning title-detect-warning--info">
+                      Limited data for this role — skill suggestions may be less precise
+                    </p>
+                  )}
+                  {showTitleDropdown && titleMatches && (
+                    <ul className="title-match-dropdown">
+                      {titleMatches.matches.map((m) => (
+                        <li key={m.canonical}>
+                          <button type="button" onClick={() => handleTitleSelect(m.canonical)}>
+                            {m.canonical}
+                            <span className="match-confidence">{Math.round(m.confidence * 100)}%</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+
+              {!isDetecting && cvFile && !detectedTitle?.canonical_title && (
+                <div className="title-detect-manual" ref={dropdownRef}>
+                  <label className="field-label" htmlFor="manual-title">Your current role (optional)</label>
+                  <input
+                    id="manual-title"
+                    type="text"
+                    className="field-input"
+                    placeholder="e.g. Software Engineer"
+                    onChange={(e) => handleManualTitleInput(e.target.value)}
+                    disabled={isLoading}
+                  />
+                  {showTitleDropdown && titleMatches && (
+                    <ul className="title-match-dropdown">
+                      {titleMatches.matches.map((m) => (
+                        <li key={m.canonical}>
+                          <button type="button" onClick={() => handleTitleSelect(m.canonical)}>
+                            {m.canonical}
+                            <span className="match-confidence">{Math.round(m.confidence * 100)}%</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
             </div>
 
-            {/* Divider */}
             <div className="upload-divider" />
 
             {/* Right — Job */}
@@ -201,10 +363,40 @@ const UploadScreen = () => {
                   minLength={40}
                 />
               </div>
+
+              <details
+                className="preferences-section"
+                open={showPreferences}
+                onToggle={(e) => setShowPreferences((e.target as HTMLDetailsElement).open)}
+              >
+                <summary className="preferences-toggle">Customize skill priorities (optional)</summary>
+                <div className="preferences-body">
+                  <div className="slider-row">
+                    <span className="slider-label-end">Most common</span>
+                    <input
+                      type="range"
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      value={titleMatch}
+                      onChange={(e) => setTitleMatch(Number(e.target.value))}
+                      className="pref-slider"
+                      disabled={isLoading}
+                    />
+                    <span className="slider-label-end">Role-specific</span>
+                  </div>
+                  <p className="slider-hint">
+                    {titleMatch === 0
+                      ? 'Showing the most common skills across all tech roles'
+                      : titleMatch >= 0.8
+                      ? 'Showing skills most specific to this role'
+                      : 'Balanced between common and role-specific skills'}
+                  </p>
+                </div>
+              </details>
             </div>
           </div>
 
-          {/* CTA */}
           <div className="upload-cta">
             <button
               type="submit"

@@ -1,8 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import HalfCircleGauge, { getStrength } from '../components/ui/HalfCircleGauge'
+import ImproveCVScreen from './ImproveCVScreen'
+import AppLogo from '../components/ui/AppLogo'
 import type { AnalyzeResponse } from '../services/api'
 import './SkillsMatchDashboard.css'
+
 
 const RESULT_KEY = 'pocAnalysisResult'
 
@@ -332,6 +335,7 @@ const SkillsMatchDashboard = () => {
   const [params] = useSearchParams()
   const [result, setResult] = useState<AnalyzeResponse | null>(null)
   const [parseError, setParseError] = useState<string | null>(null)
+  const [showImprove, setShowImprove] = useState(false)
 
   useEffect(() => {
     const mock = params.get('mock')
@@ -371,12 +375,18 @@ const SkillsMatchDashboard = () => {
 
   return (
     <div className="dashboard-screen">
-      {/* Nav */}
+      {/* App header — logo right, nav left */}
       <div className="dashboard-nav">
-        <button className="btn-back" onClick={handleBack}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-          Back
-        </button>
+        <div className="dashboard-nav-left">
+          <button className="btn-nav-pill" onClick={handleBack}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            Home
+          </button>
+          <button className="btn-nav-pill" onClick={() => navigate('/account')}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Account
+          </button>
+        </div>
         <div className="step-indicator">
           <div className="step step--done">
             <div className="step-dot">✓</div>
@@ -388,7 +398,7 @@ const SkillsMatchDashboard = () => {
             <span className="step-label">Results</span>
           </div>
         </div>
-        <div style={{ width: 80 }} />
+        <AppLogo size="sm" />
       </div>
 
       {/* Job title */}
@@ -438,10 +448,29 @@ const SkillsMatchDashboard = () => {
 
         </div>
 
-        <button className="btn-card-action btn-back-standalone" onClick={handleBack}>
-          ← Try another role
-        </button>
+        <div className="dashboard-bottom-actions">
+          <button className="btn-card-action btn-back-standalone" onClick={handleBack}>
+            ← Try another role
+          </button>
+          <button
+            className="btn-improve"
+            onClick={() => setShowImprove(true)}
+          >
+            Improve your CV →
+          </button>
+        </div>
       </CounterProvider>
+
+      {/* Improvement modal — rendered inline so the dashboard is visible behind */}
+      {showImprove && (
+        <ImproveCVScreen
+          onClose={() => setShowImprove(false)}
+          onReanalyze={(newResult) => {
+            setResult(newResult as AnalyzeResponse)
+            setShowImprove(false)
+          }}
+        />
+      )}
     </div>
   )
 }

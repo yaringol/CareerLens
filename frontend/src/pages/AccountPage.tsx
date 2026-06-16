@@ -2,7 +2,12 @@ import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../contexts/ToastContext'
-import { getMyCVs, deleteCv, changePassword, type SavedCv } from '../services/api'
+import {
+  getMyCVs, deleteCv, changePassword,
+  getImprovementSessions, deleteImprovementSession,
+  type SavedCv, type ImprovementSession,
+} from '../services/api'
+import AppLogo from '../components/ui/AppLogo'
 import './AccountPage.css'
 
 function formatFileSize(bytes: number): string {
@@ -15,7 +20,7 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-type Tab = 'cvs' | 'security'
+type Tab = 'cvs' | 'plans' | 'security'
 
 const AccountPage = () => {
   const { user, logout } = useAuth()
@@ -28,6 +33,11 @@ const AccountPage = () => {
   const [cvsLoading, setCvsLoading] = useState(true)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
+  // Improvement Plans
+  const [plans, setPlans] = useState<ImprovementSession[]>([])
+  const [plansLoading, setPlansLoading] = useState(true)
+  const [deletingPlanId, setDeletingPlanId] = useState<string | null>(null)
+
   // Password change
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -39,6 +49,11 @@ const AccountPage = () => {
       .then(setCvs)
       .catch((err) => showToast(err instanceof Error ? err.message : 'Could not load CVs'))
       .finally(() => setCvsLoading(false))
+
+    getImprovementSessions()
+      .then(setPlans)
+      .catch(() => {/* non-critical */})
+      .finally(() => setPlansLoading(false))
   }, [showToast])
 
   async function handleDeleteCv(cvId: string) {
@@ -52,6 +67,20 @@ const AccountPage = () => {
       showToast(err instanceof Error ? err.message : 'Could not delete CV')
     } finally {
       setDeletingId(null)
+    }
+  }
+
+  async function handleDeletePlan(id: string) {
+    if (!confirm('Delete this improvement plan?')) return
+    setDeletingPlanId(id)
+    try {
+      await deleteImprovementSession(id)
+      setPlans((prev) => prev.filter((p) => p.id !== id))
+      showToast('Plan deleted', 'success')
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Could not delete plan')
+    } finally {
+      setDeletingPlanId(null)
     }
   }
 
@@ -82,18 +111,23 @@ const AccountPage = () => {
   return (
     <div className="account-page">
       <header className="account-header">
-        <Link to="/" className="account-back">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-          Back
-        </Link>
-        <div className="account-header-info">
-          <div className="account-avatar">{user?.email?.[0]?.toUpperCase() ?? '?'}</div>
-          <div>
-            <p className="account-email">{user?.email}</p>
-            <p className="account-role">{user?.role}</p>
+        <div className="account-header-left">
+          <Link to="/" className="account-back">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            Home
+          </Link>
+          <div className="account-header-info">
+            <div className="account-avatar">{user?.email?.[0]?.toUpperCase() ?? '?'}</div>
+            <div>
+              <p className="account-email">{user?.email}</p>
+              <p className="account-role">{user?.role}</p>
+            </div>
           </div>
         </div>
-        <button className="account-logout" onClick={() => { logout(); navigate('/login') }}>Sign out</button>
+        <div className="account-header-right">
+          <button className="account-logout" onClick={() => { logout(); navigate('/login') }}>Sign out</button>
+          <AppLogo size="sm" />
+        </div>
       </header>
 
       <div className="account-body">
@@ -105,6 +139,14 @@ const AccountPage = () => {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
             CV Library
             {cvs.length > 0 && <span className="account-badge">{cvs.length}</span>}
+          </button>
+          <button
+            className={`account-tab${tab === 'plans' ? ' account-tab--active' : ''}`}
+            onClick={() => setTab('plans')}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            Improvement Plans
+            {plans.length > 0 && <span className="account-badge">{plans.length}</span>}
           </button>
           <button
             className={`account-tab${tab === 'security' ? ' account-tab--active' : ''}`}
@@ -142,6 +184,47 @@ const AccountPage = () => {
                       title="Delete CV"
                     >
                       {deletingId === cv.cvId ? (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+                      ) : (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                      )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
+
+        {tab === 'plans' && (
+          <section className="account-section">
+            <h2 className="account-section-title">Improvement Plans</h2>
+            <p className="account-section-sub">CV improvement sessions based on your analysis results.</p>
+
+            {plansLoading ? (
+              <p className="account-empty">Loading…</p>
+            ) : plans.length === 0 ? (
+              <p className="account-empty">No improvement plans yet. Analyze a CV and click "Improve your CV" to get started.</p>
+            ) : (
+              <ul className="account-cv-list">
+                {plans.map((plan) => (
+                  <li key={plan.id} className="account-cv-item">
+                    <div className="account-cv-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                    </div>
+                    <div className="account-cv-info">
+                      <p className="account-cv-name">{plan.jobTitle}</p>
+                      <p className="account-cv-meta">
+                        {plan.skillCount} skill{plan.skillCount !== 1 ? 's' : ''} improved · {formatDate(plan.createdAt)}
+                      </p>
+                    </div>
+                    <button
+                      className="account-cv-delete"
+                      onClick={() => handleDeletePlan(plan.id)}
+                      disabled={deletingPlanId === plan.id}
+                      title="Delete plan"
+                    >
+                      {deletingPlanId === plan.id ? (
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/></svg>
                       ) : (
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>

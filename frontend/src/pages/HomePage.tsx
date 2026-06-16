@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../contexts/ToastContext'
 import ShaderBackground from '../components/ui/ShaderBackground'
 import ScanLoader from '../components/ui/ScanLoader'
+import AppLogo from '../components/ui/AppLogo'
 import './HomePage.css'
 import './UploadScreen.css'
 
@@ -146,7 +147,9 @@ const HomePage = () => {
         cvText = selectedCvText!
       }
       const result = await analyzeCv(jobId, cvText, jobDescription)
-      sessionStorage.setItem(RESULT_KEY, JSON.stringify(result))
+      sessionStorage.setItem(RESULT_KEY, JSON.stringify({ ...result, cvText }))
+      sessionStorage.setItem('pocJobDescription', jobDescription.trim())
+      sessionStorage.setItem('pocCvFileName', cvFile ? cvFile.name : (selectedCvName ?? 'cv.pdf'))
       navigate('/dashboard')
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Something went wrong')
@@ -290,6 +293,21 @@ const HomePage = () => {
         className={`upload-section${uploadVisible ? ' upload-section--visible' : ''}`}
       >
         <div className="upload-wrapper">
+          {/* App header: nav left, logo right */}
+          <div className="upload-app-header">
+            <div className="upload-app-nav">
+              <button className="btn-nav-pill" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Home
+              </button>
+              <button className="btn-nav-pill" onClick={() => navigate('/account')}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                Account
+              </button>
+            </div>
+            <AppLogo size="sm" />
+          </div>
+
           <div className="step-indicator">
             <div className="step step--active">
               <div className="step-dot">1</div>

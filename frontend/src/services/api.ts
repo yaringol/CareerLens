@@ -134,10 +134,49 @@ export async function getCvText(cvId: string): Promise<{ cvId: string; cvText: s
 
 const MIN_JOB_DESCRIPTION_CHARS = 40
 
+export interface ExtractTitleResponse {
+  extracted_title: string | null
+  canonical_title: string | null
+  confidence: number
+  low_confidence: boolean
+}
+
+export interface TitleMatchResponse {
+  matches: Array<{ canonical: string; confidence: number }>
+  low_confidence: boolean
+}
+
+export async function extractCvTitle(cvText: string): Promise<ExtractTitleResponse> {
+  const res = await fetch(`${base()}/cv/extract-title`, {
+    method: 'POST',
+    headers: { ...jsonHeaders, ...authHeaders() },
+    body: JSON.stringify({ cvText }),
+  })
+  await handleUnauthorized(res)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || `Title extraction failed (${res.status})`)
+  }
+  return res.json() as Promise<ExtractTitleResponse>
+}
+
+export async function matchTitle(title: string): Promise<TitleMatchResponse> {
+  const res = await fetch(`${base()}/title/match?title=${encodeURIComponent(title)}`, {
+    headers: { ...authHeaders() },
+  })
+  await handleUnauthorized(res)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || `Title match failed (${res.status})`)
+  }
+  return res.json() as Promise<TitleMatchResponse>
+}
+
 export async function analyzeCv(
   jobId: string,
   cvText: string,
-  jobDescription: string
+  jobDescription: string,
+  titleMatch = 0.0
 ): Promise<AnalyzeResponse> {
   const jd = jobDescription.trim()
   if (jd.length < MIN_JOB_DESCRIPTION_CHARS) {
@@ -146,7 +185,7 @@ export async function analyzeCv(
   const res = await fetch(`${base()}/analyze`, {
     method: 'POST',
     headers: { ...jsonHeaders, ...authHeaders() },
-    body: JSON.stringify({ jobId, cvText, jobDescription: jd }),
+    body: JSON.stringify({ jobId, cvText, jobDescription: jd, titleMatch }),
   })
   await handleUnauthorized(res)
   if (!res.ok) {
@@ -154,6 +193,162 @@ export async function analyzeCv(
     throw new Error((err as { error?: string }).error || `Analyze failed (${res.status})`)
   }
   return res.json() as Promise<AnalyzeResponse>
+}
+
+// ── CV Improve ────────────────────────────────────────────────────────
+
+export type Proficiency = 'no_knowledge' | 'beginner' | 'intermediate' | 'proficient' | 'expert'
+
+export interface Occurrence {
+  sectionId: string
+  text: string
+}
+
+export interface SkillContext {
+  skill: string
+  score: number
+  found: boolean
+  occurrences: Occurrence[]
+  primaryOccurrence: Occurrence | null
+  sharedWith: string[]
+}
+
+export interface PrepareResponse {
+  skills: SkillContext[]
+}
+
+export interface ImprovementSession {
+  id: string
+  jobTitle: string
+  analysisId: string
+  createdAt: string
+  skillCount: number
+}
+
+export async function prepareImprovement(
+  cvText: string,
+  weakSkills: Array<{ skill: string; score: number }>
+): Promise<PrepareResponse> {
+  const res = await fetch(`${base()}/cv-improve/prepare`, {
+    method: 'POST',
+    headers: { ...jsonHeaders, ...authHeaders() },
+    body: JSON.stringify({ cvText, weakSkills }),
+  })
+  await handleUnauthorized(res)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || `Prepare failed (${res.status})`)
+  }
+  return res.json() as Promise<PrepareResponse>
+}
+
+export async function getSuggestion(
+  skill: string,
+  proficiency: Proficiency,
+  oldText: string | null,
+  jobTitle: string,
+  found: boolean
+): Promise<string> {
+  const res = await fetch(`${base()}/cv-improve/suggest`, {
+    method: 'POST',
+    headers: { ...jsonHeaders, ...authHeaders() },
+    body: JSON.stringify({ skill, proficiency, oldText, jobTitle, found }),
+  })
+  await handleUnauthorized(res)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || `Suggest failed (${res.status})`)
+  }
+  const data = await res.json() as { suggestedText: string }
+  return data.suggestedText
+}
+
+export async function reanalyzeCv(
+  jobTitle: string,
+  cvText: string,
+  jobDescription: string
+): Promise<AnalyzeResponse> {
+  const res = await fetch(`${base()}/analyze/skillner`, {
+    method: 'POST',
+    headers: { ...jsonHeaders, ...authHeaders() },
+    body: JSON.stringify({ jobTitle, cvText, jobDescription }),
+  })
+  await handleUnauthorized(res)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || `Re-analyze failed (${res.status})`)
+  }
+  return res.json() as Promise<AnalyzeResponse>
+}
+
+export async function mergeCv(
+  originalCvText: string,
+  jobTitle: string,
+  improvements: Array<{
+    skill: string
+    proficiency: string
+    sectionId: string | null
+    originalText: string | null
+    finalText: string
+    found: boolean
+  }>
+): Promise<string> {
+  const res = await fetch(`${base()}/cv-improve/merge`, {
+    method: 'POST',
+    headers: { ...jsonHeaders, ...authHeaders() },
+    body: JSON.stringify({ originalCvText, jobTitle, improvements }),
+  })
+  await handleUnauthorized(res)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || `Merge failed (${res.status})`)
+  }
+  const data = await res.json() as { mergedCvText: string }
+  return data.mergedCvText
+}
+
+export async function saveImprovementSession(payload: {
+  jobTitle: string
+  analysisId: string
+  originalCvText: string
+  finalCvText: string
+  improvements: unknown[]
+}): Promise<{ id: string }> {
+  const res = await fetch(`${base()}/cv-improve/sessions`, {
+    method: 'POST',
+    headers: { ...jsonHeaders, ...authHeaders() },
+    body: JSON.stringify(payload),
+  })
+  await handleUnauthorized(res)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || `Save session failed (${res.status})`)
+  }
+  return res.json() as Promise<{ id: string }>
+}
+
+export async function getImprovementSessions(): Promise<ImprovementSession[]> {
+  const res = await fetch(`${base()}/cv-improve/sessions`, {
+    headers: { ...authHeaders() },
+  })
+  await handleUnauthorized(res)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || `Failed to load sessions (${res.status})`)
+  }
+  return res.json() as Promise<ImprovementSession[]>
+}
+
+export async function deleteImprovementSession(id: string): Promise<void> {
+  const res = await fetch(`${base()}/cv-improve/sessions/${id}`, {
+    method: 'DELETE',
+    headers: { ...authHeaders() },
+  })
+  await handleUnauthorized(res)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || `Delete failed (${res.status})`)
+  }
 }
 
 export async function fetchAdminAnalyses(filters?: {

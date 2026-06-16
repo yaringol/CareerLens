@@ -9,6 +9,7 @@ import SkillsMatchDashboard from './pages/SkillsMatchDashboard'
 import LoginPage from './pages/LoginPage'
 import AdminPage from './pages/AdminPage'
 import AccountPage from './pages/AccountPage'
+import ImproveCVScreen from './pages/ImproveCVScreen'
 import ErrorBoundary from './components/ui/ErrorBoundary'
 import SplashScreen from './components/ui/SplashScreen'
 import './App.css'
@@ -58,6 +59,14 @@ function App() {
                   element={
                     <RequireAuth>
                       <AccountPage />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/improve"
+                  element={
+                    <RequireAuth>
+                      <ImproveCVScreen />
                     </RequireAuth>
                   }
                 />
