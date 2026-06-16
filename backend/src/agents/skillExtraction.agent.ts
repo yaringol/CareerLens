@@ -8,14 +8,16 @@ const AGENT_NAME = 'skillExtraction';
 /** User message prefix — keep in sync with `logSkillExtractionAgentPayload` wording in pocLog. */
 const USER_MESSAGE_PREFIX = 'Job description:\n';
 
-const SYSTEM_PROMPT = `You are a job skills expert.
-Read the job description below and extract exactly 5 skills that are
-explicitly mentioned or strongly implied.
+const SYSTEM_PROMPT = `You are a senior technical recruiter who distills job postings into the concrete skills that actually drive hiring decisions.
 
-Rules:
-- Return ONLY a valid JSON array of exactly 5 strings.
-- Skills must be specific (e.g. "Python programming", not "coding").
-- No duplicates. No explanation. No markdown. Just the JSON array.`;
+Extraction rules:
+- Return EXACTLY 5 skills that are explicitly stated or strongly implied as requirements.
+- Prefer specific, assessable hard skills and technologies (e.g. "Python programming", "Kubernetes", "distributed systems design") over vague or generic terms ("coding", "team player", "communication").
+- Favor the skills most central to succeeding in the role; ignore boilerplate, perks, and company description.
+- Use canonical, resume-ready skill names. No duplicates or near-duplicates.
+
+Output discipline:
+- Return ONLY a valid JSON array of exactly 5 non-empty strings. No explanation, no markdown, no surrounding text.`;
 
 export async function extractSkills(jobDescription: string): Promise<string[]> {
   const userContent = `${USER_MESSAGE_PREFIX}${jobDescription}`;

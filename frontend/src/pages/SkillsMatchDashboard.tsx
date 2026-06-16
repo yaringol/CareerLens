@@ -1,7 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import HalfCircleGauge, { getStrength } from '../components/ui/HalfCircleGauge'
-import ImproveCVScreen from './ImproveCVScreen'
 import AppLogo from '../components/ui/AppLogo'
 import type { AnalyzeResponse } from '../services/api'
 import './SkillsMatchDashboard.css'
@@ -335,7 +334,6 @@ const SkillsMatchDashboard = () => {
   const [params] = useSearchParams()
   const [result, setResult] = useState<AnalyzeResponse | null>(null)
   const [parseError, setParseError] = useState<string | null>(null)
-  const [showImprove, setShowImprove] = useState(false)
   const leavingRef = useRef(false)
 
   useEffect(() => {
@@ -403,6 +401,11 @@ const SkillsMatchDashboard = () => {
           <div className="step step--active">
             <div className="step-dot">2</div>
             <span className="step-label">Results</span>
+          </div>
+          <div className="step-line" />
+          <div className="step">
+            <div className="step-dot">3</div>
+            <span className="step-label">Improve</span>
           </div>
         </div>
         <AppLogo size="sm" />
@@ -476,26 +479,12 @@ const SkillsMatchDashboard = () => {
           </button>
           <button
             className="btn-improve"
-            onClick={() => setShowImprove(true)}
+            onClick={() => navigate('/improve')}
           >
             Improve your CV →
           </button>
         </div>
       </CounterProvider>
-
-      {/* Improvement modal — rendered inline so the dashboard is visible behind */}
-      {showImprove && (
-        <ImproveCVScreen
-          onClose={() => {
-            leavingRef.current = false
-            setShowImprove(false)
-          }}
-          onReanalyze={(newResult) => {
-            setResult(newResult as AnalyzeResponse)
-            setShowImprove(false)
-          }}
-        />
-      )}
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   prepareImprovement,
@@ -6,9 +6,11 @@ import {
   mergeCv,
   reanalyzeCv,
   saveImprovementSession,
+  type CvSection,
   type Proficiency,
   type SkillContext,
 } from '../services/api'
+import AppLogo from '../components/ui/AppLogo'
 import './ImproveCVScreen.css'
 
 const RESULT_KEY = 'pocAnalysisResult'
@@ -18,15 +20,23 @@ const CV_FILENAME_KEY = 'pocCvFileName'
 type Phase = 'proficiency' | 'improvement' | 'result'
 
 interface OccurrenceEdit {
-  suggestedText: string | null
-  finalText: string | null
+  sectionId: string
+  candidateText: string | null
+  generatedFromSectionVersion: number | null
   isLoading: boolean
   isEditing: boolean
   editDraft: string
+  requestSeq: number
 }
 
-const emptyEdit = (): OccurrenceEdit => ({
-  suggestedText: null, finalText: null, isLoading: false, isEditing: false, editDraft: '',
+const emptyEdit = (sectionId = ''): OccurrenceEdit => ({
+  sectionId,
+  candidateText: null,
+  generatedFromSectionVersion: null,
+  isLoading: false,
+  isEditing: false,
+  editDraft: '',
+  requestSeq: 0,
 })
 
 interface SkillState extends SkillContext {
@@ -52,6 +62,40 @@ function updateOccEdit(
     const edits = s.occurrenceEdits.map((e, j) => j === occIdx ? { ...e, ...patch } : e)
     return { ...s, occurrenceEdits: edits }
   })
+}
+
+function sectionsToMap(sections: CvSection[]): Record<string, CvSection> {
+  return Object.fromEntries(sections.map((section) => [section.sectionId, section]))
+}
+
+function orderedSections(sectionsById: Record<string, CvSection>): CvSection[] {
+  return Object.values(sectionsById).sort((a, b) => a.order - b.order)
+}
+
+function isCandidateSaved(edit: OccurrenceEdit, section: CvSection | null): boolean {
+  if (!section || edit.candidateText === null) return false
+  return edit.candidateText === section.currentText && edit.generatedFromSectionVersion === section.version
+}
+
+function fallbackSections(cvText: string): CvSection[] {
+  return [{
+    sectionId: 'sec_000',
+    label: 'Section 1',
+    originalText: cvText,
+    currentText: cvText,
+    order: 0,
+    kind: 'other',
+    version: 0,
+  }]
+}
+
+function buildImprovementDisplayName(jobTitle: string, skills: SkillState[]): string {
+  const active = skills.filter((s) => !s.skipped).map((s) => s.skill)
+  const date = new Date().toLocaleDateString('en-GB')
+  if (active.length > 0 && active.length <= 2) {
+    return `${jobTitle} CV Improvement - ${active.join(' & ')} - ${date}`
+  }
+  return `${jobTitle} CV Improvement - ${active.length} Weak Skills`
 }
 
 const PROFICIENCY_LABELS: Record<Proficiency, string> = {
@@ -214,6 +258,7 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
   const [phase, setPhase] = useState<Phase>('proficiency')
   const [activeTab, setActiveTab] = useState(0)
   const [skills, setSkills] = useState<SkillState[]>([])
+  const [sectionsById, setSectionsById] = useState<Record<string, CvSection>>({})
   const [jobTitle, setJobTitle] = useState('')
   const [analysisId, setAnalysisId] = useState('')
   const [originalCvText, setOriginalCvText] = useState('')
@@ -223,6 +268,15 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
   const [isReanalyzing, setIsReanalyzing] = useState(false)
   const [copied, setCopied] = useState(false)
   const [isPreparing, setIsPreparing] = useState(true)
+  const requestSeqRef = useRef(0)
+
+  // Refs mirror the latest committed state so async callbacks (fetchSuggestion)
+  // never read a stale section/skill snapshot — critical when one tab's save
+  // must be visible to the next tab that shares the same section.
+  const sectionsRef = useRef(sectionsById)
+  sectionsRef.current = sectionsById
+  const skillsRef = useRef(skills)
+  skillsRef.current = skills
 
   // Load from sessionStorage and call /prepare on mount
   useEffect(() => {
@@ -268,19 +322,24 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
     setIsPreparing(true)
     prepareImprovement(cvText, weakest)
       .then((prepared) => {
+        const preparedSections = prepared.sections.length > 0 ? prepared.sections : fallbackSections(cvText)
+        setSectionsById(sectionsToMap(preparedSections))
+        const defaultSectionId = preparedSections[0]?.sectionId ?? 'sec_000'
         setSkills(
           prepared.skills.map((ctx) => ({
             ...ctx,
             proficiency: null,
             occurrenceEdits: (ctx.found && ctx.occurrences.length > 0)
-              ? ctx.occurrences.map(() => emptyEdit())
-              : [emptyEdit()],
+              ? ctx.occurrences.map((occ) => emptyEdit(occ.sectionId))
+              : [emptyEdit(ctx.targetSectionId ?? defaultSectionId)],
             activeOccurrenceTab: 0,
             skipped: false,
           }))
         )
       })
       .catch(() => {
+        const sections = fallbackSections(cvText)
+        setSectionsById(sectionsToMap(sections))
         setSkills(
           weakest.map((s) => ({
             skill: s.skill,
@@ -289,8 +348,9 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
             occurrences: [],
             primaryOccurrence: null,
             sharedWith: [],
+            targetSectionId: sections[0].sectionId,
             proficiency: null,
-            occurrenceEdits: [emptyEdit()],
+            occurrenceEdits: [emptyEdit(sections[0].sectionId)],
             activeOccurrenceTab: 0,
             skipped: false,
           }))
@@ -311,59 +371,76 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
 
   const allProficienciesSelected = skills.length > 0 && skills.every((s) => s.proficiency !== null)
 
-  const fetchSuggestion = useCallback(async (skillIdx: number, occIdx: number, skill: SkillState, jt: string) => {
+  const fetchSuggestion = useCallback(async (skillIdx: number, occIdx: number, force = false) => {
+    // Always read the LATEST committed state from refs — not a render-time closure.
+    const skill = skillsRef.current[skillIdx]
+    if (!skill) return
+    const edit = skill.occurrenceEdits[occIdx]
+    const sectionId = edit?.sectionId || skill.occurrences[occIdx]?.sectionId || skill.targetSectionId
+    const section = sectionId ? sectionsRef.current[sectionId] : null
+    if (!edit || !section || !jobTitle || !skill.proficiency) return
+
     if (skill.skipped || (skill.proficiency === 'no_knowledge' && !skill.found)) {
       setSkills((prev) =>
         prev.map((s, i) => i === skillIdx
-          ? { ...s, skipped: true, occurrenceEdits: s.occurrenceEdits.map(() => ({ ...emptyEdit(), finalText: '' })) }
+          ? { ...s, skipped: true, occurrenceEdits: s.occurrenceEdits.map((e) => ({ ...e, candidateText: '', isLoading: false })) }
           : s)
       )
       return
     }
 
-    setSkills((prev) => updateOccEdit(prev, skillIdx, occIdx, { isLoading: true }))
+    if (!force && edit.candidateText !== null && edit.generatedFromSectionVersion === section.version) return
+
+    // Snapshot the version we generate from, so the result is tagged correctly
+    // even if the section changes again while the request is in flight.
+    const generatedVersion = section.version
+    const requestSeq = ++requestSeqRef.current
+    setSkills((prev) => updateOccEdit(prev, skillIdx, occIdx, { isLoading: true, requestSeq }))
 
     try {
-      const oldText = skill.occurrences[occIdx]?.text ?? null
-      const suggested = await getSuggestion(
-        skill.skill,
-        skill.proficiency!,
-        oldText,
-        jt,
-        skill.found
-      )
-      setSkills((prev) => updateOccEdit(prev, skillIdx, occIdx, {
-        suggestedText: suggested, finalText: suggested, isLoading: false,
-      }))
+      const suggested = await getSuggestion({
+        skill: skill.skill,
+        proficiency: skill.proficiency,
+        sectionId: section.sectionId,
+        originalSectionText: section.originalText,
+        currentSectionText: section.currentText,
+        jobTitle,
+        found: skill.found,
+      })
+      setSkills((prev) => {
+        const latest = prev[skillIdx]?.occurrenceEdits[occIdx]
+        if (!latest || latest.requestSeq !== requestSeq) return prev
+        return updateOccEdit(prev, skillIdx, occIdx, {
+          candidateText: suggested,
+          generatedFromSectionVersion: generatedVersion,
+          isLoading: false,
+          isEditing: false,
+          editDraft: '',
+        })
+      })
     } catch {
-      setSkills((prev) => updateOccEdit(prev, skillIdx, occIdx, {
-        suggestedText: null, finalText: null, isLoading: false,
-      }))
+      setSkills((prev) => {
+        const latest = prev[skillIdx]?.occurrenceEdits[occIdx]
+        if (!latest || latest.requestSeq !== requestSeq) return prev
+        return updateOccEdit(prev, skillIdx, occIdx, {
+          candidateText: null,
+          generatedFromSectionVersion: null,
+          isLoading: false,
+        })
+      })
     }
-  }, [])
+  }, [jobTitle])
 
   const handleContinue = useCallback(() => {
     setPhase('improvement')
     setActiveTab(0)
-    // Fetch primary occurrence (index 0) only if not already loaded — preserves edits on return
-    skills.forEach((skill, i) => {
-      const primary = skill.occurrenceEdits[0]
-      if (primary && primary.suggestedText === null && !primary.isLoading && !skill.skipped) {
-        fetchSuggestion(i, 0, skill, jobTitle)
-      }
-    })
-  }, [skills, jobTitle, fetchSuggestion])
+  }, [])
 
   const handleOccurrenceTabChange = useCallback((skillIdx: number, occIdx: number) => {
     setSkills((prev) =>
       prev.map((s, i) => i === skillIdx ? { ...s, activeOccurrenceTab: occIdx } : s)
     )
-    const skill = skills[skillIdx]
-    const edit = skill?.occurrenceEdits[occIdx]
-    if (edit && edit.suggestedText === null && !edit.isLoading && !skill.skipped) {
-      fetchSuggestion(skillIdx, occIdx, skill, jobTitle)
-    }
-  }, [skills, jobTitle, fetchSuggestion])
+  }, [])
 
   const handleSkip = useCallback((index: number) => {
     setSkills((prev) =>
@@ -377,17 +454,45 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
       const e = s.occurrenceEdits[occIdx]
       return updateOccEdit(prev, skillIdx, occIdx, {
         isEditing: true,
-        editDraft: e.finalText ?? e.suggestedText ?? '',
+        editDraft: e.candidateText ?? '',
       })
     })
   }, [])
 
   const handleSaveEdit = useCallback((skillIdx: number, occIdx: number) => {
-    setSkills((prev) => {
-      const draft = prev[skillIdx]?.occurrenceEdits[occIdx]?.editDraft ?? ''
-      return updateOccEdit(prev, skillIdx, occIdx, { isEditing: false, finalText: draft })
-    })
-  }, [])
+    const skill = skills[skillIdx]
+    const edit = skill?.occurrenceEdits[occIdx]
+    if (!edit) return
+
+    const nextText = (edit.isEditing ? edit.editDraft : edit.candidateText) ?? ''
+    if (!nextText.trim()) return
+
+    const section = edit.sectionId ? sectionsById[edit.sectionId] : null
+    if (!section) return
+
+    // Compute the next version ONCE so both state updates agree, even when
+    // React StrictMode invokes the updaters twice in development.
+    const changed = section.currentText !== nextText
+    const nextVersion = changed ? section.version + 1 : section.version
+
+    if (changed) {
+      setSectionsById((current) => {
+        const s = current[edit.sectionId]
+        if (!s) return current
+        return {
+          ...current,
+          [edit.sectionId]: { ...s, currentText: nextText, version: nextVersion },
+        }
+      })
+    }
+
+    setSkills((prev) => updateOccEdit(prev, skillIdx, occIdx, {
+      isEditing: false,
+      candidateText: nextText,
+      generatedFromSectionVersion: nextVersion,
+      editDraft: '',
+    }))
+  }, [skills, sectionsById])
 
   const handleEditDraftChange = useCallback((skillIdx: number, occIdx: number, value: string) => {
     setSkills((prev) => updateOccEdit(prev, skillIdx, occIdx, { editDraft: value }))
@@ -401,7 +506,7 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
               ...s,
               proficiency: null,
               skipped: false,
-              occurrenceEdits: s.occurrenceEdits.map(() => emptyEdit()),
+              occurrenceEdits: s.occurrenceEdits.map((edit) => emptyEdit(edit.sectionId)),
               activeOccurrenceTab: 0,
             }
           : s
@@ -410,41 +515,79 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
     setPhase('proficiency')
   }, [])
 
-  // Ready when no primary occurrence is still loading
+  // ── Occurrence-aware navigation ──────────────────────────────────────
+  // Next/Previous step through every occurrence of a skill before moving
+  // to the adjacent skill, so multi-mention skills are fully reviewed.
+  const handleNext = useCallback(() => {
+    const skill = skills[activeTab]
+    if (!skill) return
+    const occCount = skill.occurrenceEdits.length
+    if (skill.activeOccurrenceTab < occCount - 1) {
+      setSkills((prev) => prev.map((s, i) =>
+        i === activeTab ? { ...s, activeOccurrenceTab: s.activeOccurrenceTab + 1 } : s))
+    } else if (activeTab < skills.length - 1) {
+      setActiveTab(activeTab + 1)
+    }
+  }, [skills, activeTab])
+
+  const handlePrevious = useCallback(() => {
+    const skill = skills[activeTab]
+    if (!skill) return
+    if (skill.activeOccurrenceTab > 0) {
+      setSkills((prev) => prev.map((s, i) =>
+        i === activeTab ? { ...s, activeOccurrenceTab: s.activeOccurrenceTab - 1 } : s))
+    } else if (activeTab > 0) {
+      const prevIdx = activeTab - 1
+      const lastOcc = Math.max(0, (skills[prevIdx]?.occurrenceEdits.length ?? 1) - 1)
+      setSkills((prev) => prev.map((s, i) =>
+        i === prevIdx ? { ...s, activeOccurrenceTab: lastOcc } : s))
+      setActiveTab(prevIdx)
+    }
+  }, [skills, activeTab])
+
+  useEffect(() => {
+    if (phase !== 'improvement') return
+    const skill = skills[activeTab]
+    if (!skill || skill.skipped) return
+    const occIdx = skill.activeOccurrenceTab
+    const edit = skill.occurrenceEdits[occIdx]
+    if (!edit) return
+    if (edit.isLoading) return
+    const section = edit.sectionId ? sectionsById[edit.sectionId] : null
+    if (!section) return
+
+    const isStale = edit.generatedFromSectionVersion !== null
+      && edit.generatedFromSectionVersion !== section.version
+
+    if (edit.candidateText === null || isStale) {
+      void fetchSuggestion(activeTab, occIdx, isStale)
+    }
+  }, [phase, activeTab, skills, sectionsById, fetchSuggestion])
+
+  // Ready when no occurrence is still loading
   const allSuggestionsReady = skills.length > 0 &&
-    skills.every((s) => s.skipped || !(s.occurrenceEdits[0]?.isLoading))
+    skills.every((s) => s.skipped || !s.occurrenceEdits.some((edit) => edit.isLoading))
 
   const handleSubmit = useCallback(async () => {
     setIsMerging(true)
     setMergeError(null)
     try {
-      // Collect one improvement per accepted occurrence across all skills
-      const improvements: Array<{
-        skill: string; proficiency: string; sectionId: string | null;
-        originalText: string | null; finalText: string; found: boolean;
-      }> = []
-
-      for (const s of skills) {
-        if (s.skipped) continue
-        s.occurrenceEdits.forEach((edit, oi) => {
-          const finalText = edit.finalText ?? edit.suggestedText
-          if (!finalText?.trim()) return
-          improvements.push({
-            skill: s.skill,
-            proficiency: s.proficiency ?? 'beginner',
-            sectionId: s.occurrences[oi]?.sectionId ?? null,
-            originalText: s.occurrences[oi]?.text ?? null,
-            finalText,
-            found: s.found,
-          })
-        })
-      }
-
-      const merged = await mergeCv(originalCvText, jobTitle, improvements)
+      const sections = orderedSections(sectionsById)
+      const merged = await mergeCv(sections)
       setMergedCvText(merged)
       setPhase('result')
 
-      saveImprovementSession({
+      const sectionUpdates = sections.map((section) => ({
+        sectionId: section.sectionId,
+        label: section.label,
+        originalText: section.originalText,
+        finalText: section.currentText,
+        order: section.order,
+        version: section.version,
+      }))
+
+      void saveImprovementSession({
+        displayName: buildImprovementDisplayName(jobTitle, skills),
         jobTitle,
         analysisId,
         originalCvText,
@@ -453,20 +596,21 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
           skill: s.skill,
           score: s.score,
           proficiency: s.proficiency ?? '',
-          sectionId: s.occurrences[0]?.sectionId ?? null,
-          originalText: s.occurrences[0]?.text ?? null,
-          suggestedText: s.occurrenceEdits[0]?.suggestedText ?? '',
-          finalText: s.occurrenceEdits[0]?.finalText ?? '',
+          sectionId: s.occurrenceEdits[s.activeOccurrenceTab]?.sectionId ?? s.targetSectionId ?? null,
+          originalText: s.targetSectionId ? sectionsById[s.targetSectionId]?.originalText ?? null : null,
+          suggestedText: s.occurrenceEdits[s.activeOccurrenceTab]?.candidateText ?? '',
+          finalText: s.targetSectionId ? sectionsById[s.targetSectionId]?.currentText ?? '' : '',
           found: s.found,
           skipped: s.skipped,
         })),
+        sectionUpdates,
       }).catch(() => {/* non-critical */})
     } catch (err) {
       setMergeError(err instanceof Error ? err.message : 'Merge failed')
     } finally {
       setIsMerging(false)
     }
-  }, [skills, originalCvText, jobTitle, analysisId])
+  }, [sectionsById, skills, jobTitle, analysisId, originalCvText])
 
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(mergedCvText).then(() => {
@@ -523,29 +667,54 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
     }
   }, [phase, navigate, onClose])
 
-  // ── Shared header (shown in every phase) ─────────────────────────────
+  // ── Shared page header (topbar + 3-step indicator) ───────────────────
   const PHASE_TITLES: Record<Phase, string> = {
     proficiency: 'Rate your skill levels',
     improvement: `Skill ${activeTab + 1} of ${skills.length}`,
     result: 'Your improved CV is ready',
   }
 
-  const modalHeader = (
-    <div className="improve-modal-header">
-      <span className="improve-modal-title">{PHASE_TITLES[phase] ?? ''}</span>
-      <button className="improve-modal-close" onClick={handleClose} title="Close">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
+  const topbar = (
+    <header className="improve-topbar">
+      <div className="improve-topbar-nav">
+        <button className="btn-nav-pill" onClick={() => navigate('/')}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Home
+        </button>
+        <button className="btn-nav-pill" onClick={() => navigate('/account')}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Account
+        </button>
+      </div>
+
+      <div className="improve-steps">
+        <div className="improve-step improve-step--done">
+          <span className="improve-step-dot">✓</span>
+          <span className="improve-step-label">Upload</span>
+        </div>
+        <div className="improve-step-line" />
+        <button className="improve-step improve-step--done improve-step--link" onClick={handleClose}>
+          <span className="improve-step-dot">✓</span>
+          <span className="improve-step-label">Results</span>
+        </button>
+        <div className="improve-step-line" />
+        <div className="improve-step improve-step--active">
+          <span className="improve-step-dot">3</span>
+          <span className="improve-step-label">Improve</span>
+        </div>
+      </div>
+
+      <AppLogo size="sm" />
+    </header>
   )
 
   // ── Render ────────────────────────────────────────────────────────────
 
   if (isPreparing) {
     return (
-      <div className="improve-overlay">
-        <div className="improve-modal">
-          {modalHeader}
+      <div className="improve-page">
+        {topbar}
+        <div className="improve-shell">
           <div className="improve-modal-body improve-modal-body--center">
             <div className="improve-spinner" />
             <p className="improve-loading-text">Analyzing your CV…</p>
@@ -557,10 +726,11 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
 
   if (phase === 'proficiency') {
     return (
-      <div className="improve-overlay">
-        <div className="improve-modal">
-          {modalHeader}
+      <div className="improve-page">
+        {topbar}
+        <div className="improve-shell">
           <div className="improve-modal-body">
+            <h1 className="improve-page-title">{PHASE_TITLES.proficiency}</h1>
             <p className="improve-subtitle">
               We found <strong>{skills.length}</strong> skills to work on. Tell us your actual level for each.
             </p>
@@ -606,9 +776,9 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
     const skill = skills[activeTab]
 
     return (
-      <div className="improve-overlay">
-        <div className="improve-modal improve-modal--wide">
-          {modalHeader}
+      <div className="improve-page">
+        {topbar}
+        <div className="improve-shell improve-shell--wide">
           <div className="improve-modal-body">
 
             {/* Back to proficiency + skill tabs */}
@@ -684,7 +854,7 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
                         >
                           Mention {oi + 1}
                           {edit?.isLoading && <span className="improve-tab-dot" />}
-                          {edit?.finalText && !edit.isLoading && <span className="improve-occ-done">✓</span>}
+                          {edit?.candidateText && !edit.isLoading && <span className="improve-occ-done">✓</span>}
                         </button>
                       )
                     })}
@@ -693,63 +863,90 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
 
                 {(() => {
                   const occIdx = skill.activeOccurrenceTab
-                  const activeOcc = skill.occurrences[occIdx] ?? null
-                  const activeEdit = getActiveEdit(skill)
+                  const currentEdit = getActiveEdit(skill)
+                  const currentSection = currentEdit.sectionId ? sectionsById[currentEdit.sectionId] : null
+                  const candidateSaved = isCandidateSaved(currentEdit, currentSection)
                   return (
                     <div className="improve-compare">
-                      <div className="improve-panel improve-panel--old">
-                        <p className="improve-panel-label">
-                          Original
-                          {skill.occurrences.length > 1 && (
-                            <span className="improve-panel-count"> · mention {occIdx + 1} of {skill.occurrences.length}</span>
-                          )}
-                        </p>
-                        {skill.found && activeOcc ? (
-                          <div className="improve-panel-content">
-                            <p className="improve-old-text improve-old-text--primary">{activeOcc.text}</p>
-                          </div>
-                        ) : (
-                          <p className="improve-panel-empty">
-                            No mention of <strong>{skill.skill}</strong> found in your CV.
-                            {skill.proficiency !== 'no_knowledge' && (
-                              <span> The improvement will be added to your Skills section.</span>
+                      {(() => {
+                        const hasSavedChanges = !!currentSection
+                          && currentSection.currentText !== currentSection.originalText
+                        return (
+                          <div className="improve-panel improve-panel--old">
+                            <p className="improve-panel-label">
+                              {hasSavedChanges ? 'Current section (saved)' : 'Original'}
+                              {skill.occurrences.length > 1 && (
+                                <span className="improve-panel-count"> · mention {occIdx + 1} of {skill.occurrences.length}</span>
+                              )}
+                            </p>
+                            {currentSection ? (
+                              <div className="improve-panel-content">
+                                {/* Show the latest saved section text — this is what the next rephrase builds on */}
+                                <p className="improve-old-text improve-old-text--primary">{currentSection.currentText}</p>
+                                {hasSavedChanges && (
+                                  <details className="improve-original-toggle">
+                                    <summary>Show original section</summary>
+                                    <p className="improve-old-text improve-old-text--secondary">{currentSection.originalText}</p>
+                                  </details>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="improve-panel-empty">
+                                No mention of <strong>{skill.skill}</strong> found in your CV.
+                                {skill.proficiency !== 'no_knowledge' && (
+                                  <span> The improvement will be added to your Skills section.</span>
+                                )}
+                              </p>
                             )}
-                          </p>
-                        )}
-                      </div>
+                          </div>
+                        )
+                      })()}
 
                       <div className="improve-panel improve-panel--new">
                         <p className="improve-panel-label">Rephrased</p>
-                        {activeEdit.isLoading ? (
+                        {currentEdit.isLoading ? (
                           <div className="improve-suggestion-loading">
                             <div className="improve-spinner improve-spinner--sm" />
                             <span>Generating suggestion…</span>
                           </div>
-                        ) : activeEdit.suggestedText === null ? (
+                        ) : currentEdit.candidateText === null ? (
                           <div className="improve-suggestion-failed">
                             <p className="improve-panel-empty">Could not generate suggestion.</p>
                             <div className="improve-notice-actions">
-                              <button className="improve-link-btn" onClick={() => fetchSuggestion(activeTab, occIdx, skill, jobTitle)}>Retry</button>
+                              <button className="improve-link-btn" onClick={() => fetchSuggestion(activeTab, occIdx, true)}>Retry</button>
                               <button className="improve-link-btn" onClick={() => handleSkip(activeTab)}>Skip this skill</button>
                             </div>
                           </div>
                         ) : (
                           <div className="improve-panel-content">
-                            {activeEdit.isEditing ? (
+                            {currentEdit.isEditing ? (
                               <>
                                 <textarea
                                   className="improve-edit-textarea"
-                                  value={activeEdit.editDraft}
+                                  value={currentEdit.editDraft}
                                   onChange={(e) => handleEditDraftChange(activeTab, occIdx, e.target.value)}
                                   rows={5}
                                   autoFocus
                                 />
-                                <button className="improve-done-btn" onClick={() => handleSaveEdit(activeTab, occIdx)}>Done</button>
+                                <div className="improve-inline-actions">
+                                  <button className="improve-edit-btn" onClick={() => fetchSuggestion(activeTab, occIdx, true)}>Rephrase Again</button>
+                                  <button className="improve-done-btn" onClick={() => handleSaveEdit(activeTab, occIdx)}>Save</button>
+                                </div>
                               </>
                             ) : (
                               <>
-                                <p className="improve-new-text">{activeEdit.finalText ?? activeEdit.suggestedText}</p>
-                                <button className="improve-edit-btn" onClick={() => handleStartEdit(activeTab, occIdx)}>Edit</button>
+                                <p className="improve-new-text">{currentEdit.candidateText}</p>
+                                <div className="improve-inline-actions">
+                                  <button className="improve-edit-btn" onClick={() => handleStartEdit(activeTab, occIdx)}>Edit</button>
+                                  <button className="improve-edit-btn" onClick={() => fetchSuggestion(activeTab, occIdx, true)}>Rephrase Again</button>
+                                  <button
+                                    className="improve-done-btn"
+                                    onClick={() => handleSaveEdit(activeTab, occIdx)}
+                                    disabled={candidateSaved}
+                                  >
+                                    {candidateSaved ? 'Saved' : 'Save'}
+                                  </button>
+                                </div>
                               </>
                             )}
                           </div>
@@ -761,21 +958,32 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
               </>
             )}
 
-            <div className="improve-nav-row">
-              <button className="improve-nav-btn" disabled={activeTab === 0} onClick={() => setActiveTab((i) => i - 1)}>
-                ← Previous
-              </button>
-              <span className="improve-step-counter">{activeTab + 1} / {skills.length}</span>
-              {activeTab < skills.length - 1 ? (
-                <button className="improve-nav-btn improve-nav-btn--next" onClick={() => setActiveTab((i) => i + 1)}>
-                  Next →
-                </button>
-              ) : (
-                <button className="improve-submit-btn" disabled={!allSuggestionsReady || isMerging} onClick={handleSubmit}>
-                  {isMerging ? 'Merging…' : 'Submit changes'}
-                </button>
-              )}
-            </div>
+            {(() => {
+              const occCount = skill.occurrenceEdits.length
+              const isFirstPosition = activeTab === 0 && skill.activeOccurrenceTab === 0
+              const isLastPosition = activeTab === skills.length - 1
+                && skill.activeOccurrenceTab === occCount - 1
+              return (
+                <div className="improve-nav-row">
+                  <button className="improve-nav-btn" disabled={isFirstPosition} onClick={handlePrevious}>
+                    ← Previous
+                  </button>
+                  <span className="improve-step-counter">
+                    {activeTab + 1} / {skills.length}
+                    {occCount > 1 && ` · mention ${skill.activeOccurrenceTab + 1}/${occCount}`}
+                  </span>
+                  {!isLastPosition ? (
+                    <button className="improve-nav-btn improve-nav-btn--next" onClick={handleNext}>
+                      Next →
+                    </button>
+                  ) : (
+                    <button className="improve-submit-btn" disabled={!allSuggestionsReady || isMerging} onClick={handleSubmit}>
+                      {isMerging ? 'Merging…' : 'Submit changes'}
+                    </button>
+                  )}
+                </div>
+              )
+            })()}
             {mergeError && <p className="improve-error">{mergeError}</p>}
           </div>
         </div>
@@ -785,10 +993,11 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
 
   // Phase: result
   return (
-    <div className="improve-overlay">
-      <div className="improve-modal improve-modal--wide">
-        {modalHeader}
+    <div className="improve-page">
+      {topbar}
+      <div className="improve-shell improve-shell--wide">
         <div className="improve-modal-body">
+          <h1 className="improve-page-title">{PHASE_TITLES.result}</h1>
           <p className="improve-subtitle">
             Review the changes below. You can copy, export, or send it for re-analysis.
           </p>

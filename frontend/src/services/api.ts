@@ -258,6 +258,16 @@ export interface Occurrence {
   text: string
 }
 
+export interface CvSection {
+  sectionId: string
+  label: string
+  originalText: string
+  currentText: string
+  order: number
+  kind: 'summary' | 'skills' | 'experience' | 'education' | 'projects' | 'other'
+  version: number
+}
+
 export interface SkillContext {
   skill: string
   score: number
@@ -265,18 +275,30 @@ export interface SkillContext {
   occurrences: Occurrence[]
   primaryOccurrence: Occurrence | null
   sharedWith: string[]
+  targetSectionId: string | null
 }
 
 export interface PrepareResponse {
+  sections: CvSection[]
   skills: SkillContext[]
 }
 
 export interface ImprovementSession {
   id: string
+  displayName: string
+  status?: 'completed'
   jobTitle: string
   analysisId: string
   createdAt: string
   skillCount: number
+  hasFinalCvText?: boolean
+}
+
+export interface ImprovementSessionDetail extends ImprovementSession {
+  originalCvText: string
+  finalCvText: string
+  improvements: unknown[]
+  sectionUpdates: unknown[]
 }
 
 export async function prepareImprovement(
@@ -297,16 +319,20 @@ export async function prepareImprovement(
 }
 
 export async function getSuggestion(
-  skill: string,
-  proficiency: Proficiency,
-  oldText: string | null,
-  jobTitle: string,
-  found: boolean
+  payload: {
+    skill: string
+    proficiency: Proficiency
+    sectionId: string
+    originalSectionText: string
+    currentSectionText: string
+    jobTitle: string
+    found: boolean
+  }
 ): Promise<string> {
   const res = await fetch(`${base()}/cv-improve/suggest`, {
     method: 'POST',
     headers: { ...jsonHeaders, ...authHeaders() },
-    body: JSON.stringify({ skill, proficiency, oldText, jobTitle, found }),
+    body: JSON.stringify(payload),
   })
   await handleUnauthorized(res)
   if (!res.ok) {
@@ -336,21 +362,12 @@ export async function reanalyzeCv(
 }
 
 export async function mergeCv(
-  originalCvText: string,
-  jobTitle: string,
-  improvements: Array<{
-    skill: string
-    proficiency: string
-    sectionId: string | null
-    originalText: string | null
-    finalText: string
-    found: boolean
-  }>
+  sections: CvSection[]
 ): Promise<string> {
   const res = await fetch(`${base()}/cv-improve/merge`, {
     method: 'POST',
     headers: { ...jsonHeaders, ...authHeaders() },
-    body: JSON.stringify({ originalCvText, jobTitle, improvements }),
+    body: JSON.stringify({ sections }),
   })
   await handleUnauthorized(res)
   if (!res.ok) {
@@ -362,11 +379,13 @@ export async function mergeCv(
 }
 
 export async function saveImprovementSession(payload: {
+  displayName?: string
   jobTitle: string
   analysisId: string
   originalCvText: string
   finalCvText: string
   improvements: unknown[]
+  sectionUpdates?: unknown[]
 }): Promise<{ id: string }> {
   const res = await fetch(`${base()}/cv-improve/sessions`, {
     method: 'POST',
@@ -391,6 +410,18 @@ export async function getImprovementSessions(): Promise<ImprovementSession[]> {
     throw new Error((err as { error?: string }).error || `Failed to load sessions (${res.status})`)
   }
   return res.json() as Promise<ImprovementSession[]>
+}
+
+export async function getImprovementSession(id: string): Promise<ImprovementSessionDetail> {
+  const res = await fetch(`${base()}/cv-improve/sessions/${id}`, {
+    headers: { ...authHeaders() },
+  })
+  await handleUnauthorized(res)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || `Failed to load session (${res.status})`)
+  }
+  return res.json() as Promise<ImprovementSessionDetail>
 }
 
 export async function deleteImprovementSession(id: string): Promise<void> {

@@ -4,6 +4,16 @@ export interface Occurrence {
   jaccardScore: number;
 }
 
+export interface CvSection {
+  sectionId: string;
+  label: string;
+  originalText: string;
+  currentText: string;
+  order: number;
+  kind: 'summary' | 'skills' | 'experience' | 'education' | 'projects' | 'other';
+  version: number;
+}
+
 export interface SkillContext {
   skill: string;
   score: number;
@@ -11,9 +21,11 @@ export interface SkillContext {
   occurrences: Occurrence[];
   primaryOccurrence: Occurrence | null;
   sharedWith: string[];
+  targetSectionId: string | null;
 }
 
 export interface PrepareResult {
+  sections: CvSection[];
   skills: SkillContext[];
 }
 
@@ -37,6 +49,10 @@ export interface MergeInput {
   }>;
 }
 
+export interface SectionComposeInput {
+  sections: CvSection[];
+}
+
 function tokenize(text: string): Set<string> {
   return new Set(
     text
@@ -55,46 +71,92 @@ function jaccard(a: Set<string>, b: Set<string>): number {
   return union ? inter / union : 0;
 }
 
-function splitParagraphs(cvText: string): Array<{ sectionId: string; text: string }> {
-  const lines = cvText.split('\n');
-  const paragraphs: Array<{ sectionId: string; text: string }> = [];
-  let sectionIndex = 0;
-  let paraIndex = 0;
-  let currentPara: string[] = [];
+function stableSectionId(order: number): string {
+  return `sec_${String(order).padStart(3, '0')}`;
+}
 
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (trimmed === '') {
-      if (currentPara.length > 0) {
-        paragraphs.push({
-          sectionId: `s${sectionIndex}_p${paraIndex}`,
-          text: currentPara.join(' ').trim(),
-        });
-        paraIndex++;
-        currentPara = [];
-      }
-    } else {
-      // Detect section headers (all caps or short lines ending with colon)
-      const isHeader =
-        (trimmed === trimmed.toUpperCase() && trimmed.length < 40 && /[A-Z]/.test(trimmed)) ||
-        (trimmed.endsWith(':') && trimmed.length < 40);
-      if (isHeader && currentPara.length > 0) {
-        paragraphs.push({
-          sectionId: `s${sectionIndex}_p${paraIndex}`,
-          text: currentPara.join(' ').trim(),
-        });
-        sectionIndex++;
-        paraIndex = 0;
-        currentPara = [];
-      }
-      currentPara.push(trimmed);
-    }
+function isHeading(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed || trimmed.length > 50) return false;
+  const letters = trimmed.replace(/[^A-Za-z]/g, '');
+  if (!letters) return false;
+  return (
+    (trimmed === trimmed.toUpperCase() && letters.length >= 3) ||
+    /^[A-Za-z][A-Za-z\s&/.-]+:$/.test(trimmed)
+  );
+}
+
+function inferKind(label: string, text: string): CvSection['kind'] {
+  const haystack = `${label}\n${text}`.toLowerCase();
+  if (/\b(skill|skills|technologies|toolbox)\b/.test(haystack)) return 'skills';
+  if (/\b(experience|employment|work history|professional experience)\b/.test(haystack)) return 'experience';
+  if (/\b(education|degree|university|college)\b/.test(haystack)) return 'education';
+  if (/\b(project|projects|portfolio)\b/.test(haystack)) return 'projects';
+  if (/\b(summary|profile|objective|about)\b/.test(haystack)) return 'summary';
+  return 'other';
+}
+
+function labelForBlock(text: string, order: number): string {
+  const firstLine = text.split('\n').map((line) => line.trim()).find(Boolean);
+  if (firstLine && isHeading(firstLine)) {
+    return firstLine.replace(/:$/, '');
   }
+  return `Section ${order + 1}`;
+}
 
-  if (currentPara.length > 0) {
+export function splitCvIntoSections(cvText: string): CvSection[] {
+  const normalized = cvText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+  if (!normalized) return [];
+
+  const rawBlocks = normalized
+    .split(/\n\s*\n+/)
+    .map((block) => block.trim())
+    .filter((block) => block.length > 0);
+
+  const blocks = rawBlocks.length > 0 ? rawBlocks : [normalized];
+
+  return blocks.map((text, order) => {
+    const label = labelForBlock(text, order);
+    return {
+      sectionId: stableSectionId(order),
+      label,
+      originalText: text,
+      currentText: text,
+      order,
+      kind: inferKind(label, text),
+      version: 0,
+    };
+  });
+}
+
+function pickDefaultSectionId(sections: CvSection[]): string | null {
+  return (
+    sections.find((section) => section.kind === 'skills')?.sectionId ??
+    sections.find((section) => section.kind === 'summary')?.sectionId ??
+    sections[0]?.sectionId ??
+    null
+  );
+}
+
+function sortSections(sections: CvSection[]): CvSection[] {
+  return [...sections].sort((a, b) => a.order - b.order);
+}
+
+export function composeCvFromSections(input: SectionComposeInput): string {
+  return sortSections(input.sections)
+    .map((section) => section.currentText.trim())
+    .filter(Boolean)
+    .join('\n\n');
+}
+
+function splitParagraphs(cvText: string): Array<{ sectionId: string; text: string }> {
+  const sections = splitCvIntoSections(cvText);
+  const paragraphs: Array<{ sectionId: string; text: string }> = [];
+
+  for (const section of sections) {
     paragraphs.push({
-      sectionId: `s${sectionIndex}_p${paraIndex}`,
-      text: currentPara.join(' ').trim(),
+      sectionId: section.sectionId,
+      text: section.originalText,
     });
   }
 
@@ -126,7 +188,12 @@ export function extractContext(
   cvText: string,
   weakSkills: Array<{ skill: string; score: number }>
 ): PrepareResult {
-  const paragraphs = splitParagraphs(cvText);
+  const sections = splitCvIntoSections(cvText);
+  const paragraphs = sections.map((section) => ({
+    sectionId: section.sectionId,
+    text: section.originalText,
+  }));
+  const defaultSectionId = pickDefaultSectionId(sections);
 
   const skillContexts: SkillContext[] = weakSkills.map(({ skill, score }) => {
     const skillTokens = tokenize(skill);           // length > 2 only (for Jaccard ranking)
@@ -149,6 +216,7 @@ export function extractContext(
       occurrences,
       primaryOccurrence: occurrences[0] ?? null,
       sharedWith: [],
+      targetSectionId: occurrences[0]?.sectionId ?? defaultSectionId,
     };
   });
 
@@ -171,7 +239,7 @@ export function extractContext(
     }
   }
 
-  return { skills: skillContexts };
+  return { sections, skills: skillContexts };
 }
 
 export function groupForMerge(input: MergeInput): {

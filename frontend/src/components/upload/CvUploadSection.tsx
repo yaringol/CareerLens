@@ -280,19 +280,23 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
               Account
             </Link>
           </div>
+          <div className="step-indicator">
+            <div className="step step--active">
+              <div className="step-dot">1</div>
+              <span className="step-label">Upload</span>
+            </div>
+            <div className="step-line" />
+            <div className="step">
+              <div className="step-dot">2</div>
+              <span className="step-label">Results</span>
+            </div>
+            <div className="step-line" />
+            <div className="step">
+              <div className="step-dot">3</div>
+              <span className="step-label">Improve</span>
+            </div>
+          </div>
           <AppLogo size="sm" />
-        </div>
-
-        <div className="step-indicator">
-          <div className="step step--active">
-            <div className="step-dot">1</div>
-            <span className="step-label">Upload</span>
-          </div>
-          <div className="step-line" />
-          <div className="step">
-            <div className="step-dot">2</div>
-            <span className="step-label">Results</span>
-          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="upload-card">

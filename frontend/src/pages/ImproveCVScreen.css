@@ -1,88 +1,108 @@
-/* ─── Modal overlay ──────────────────────────────────────────────── */
-.improve-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  background: rgba(14, 14, 50, 0.18);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 1.5rem 1rem 0;
-  overflow-y: auto;
-  animation: overlay-in 0.18s ease-out;
-}
-@keyframes overlay-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
-.improve-modal {
-  width: 100%;
-  max-width: 860px;
-  max-height: 72vh;
-  background: var(--color-surface);
-  border-radius: 16px;
-  box-shadow: 0 24px 80px rgba(30, 27, 110, 0.25), 0 2px 8px rgba(30, 27, 110, 0.08);
+/* ─── Full page (step 3) ─────────────────────────────────────────── */
+.improve-page {
+  min-height: 100vh;
+  background: var(--color-bg);
+  padding: 2.5rem 1.5rem 5rem;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  animation: modal-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.improve-modal--wide {
-  max-width: 1040px;
-}
-@keyframes modal-in {
-  from { opacity: 0; transform: scale(0.96) translateY(8px); }
-  to   { opacity: 1; transform: scale(1)    translateY(0);   }
+  align-items: center;
+  gap: 1.75rem;
 }
 
-/* ─── Modal header ───────────────────────────────────────────────── */
-.improve-modal-header {
+/* ─── Topbar: nav + 3-step indicator + logo ──────────────────────── */
+.improve-topbar {
+  width: 100%;
+  max-width: 960px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1.25rem;
-  border-bottom: 1px solid var(--color-border);
-  background: rgba(255, 255, 255, 0.97);
-  flex-shrink: 0;
+  gap: 1rem;
 }
 
-.improve-modal-title {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--color-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex: 1;
-}
-
-.improve-modal-close {
-  width: 30px;
-  height: 30px;
+.improve-topbar-nav {
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: none;
-  border: 1.5px solid var(--color-border);
-  border-radius: var(--radius-full);
-  cursor: pointer;
-  color: var(--color-secondary);
-  flex-shrink: 0;
-  transition: border-color 0.15s, color 0.15s, background 0.15s;
-}
-.improve-modal-close:hover {
-  background: rgba(239, 68, 68, 0.07);
-  border-color: #ef4444;
-  color: #dc2626;
+  gap: 0.375rem;
+  min-width: 150px;
 }
 
-/* ─── Modal body ─────────────────────────────────────────────────── */
+.btn-nav-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--color-secondary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.btn-nav-pill:hover {
+  color: var(--color-primary);
+  border-color: rgba(30, 27, 110, 0.25);
+}
+
+.improve-steps { display: flex; align-items: center; }
+.improve-step {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  font-family: inherit;
+  padding: 0;
+}
+.improve-step--link { cursor: pointer; }
+.improve-step-dot {
+  width: 28px; height: 28px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-secondary);
+  font-size: 0.75rem; font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
+}
+.improve-step--active .improve-step-dot { border-color: var(--color-accent-start); background: var(--gradient-accent); color: #fff; }
+.improve-step--done   .improve-step-dot { border-color: #10b981; background: #10b981; color: #fff; font-size: 0.8125rem; }
+.improve-step-label { font-size: 0.875rem; font-weight: 500; color: var(--color-secondary); }
+.improve-step--active .improve-step-label { color: var(--color-primary); font-weight: 600; }
+.improve-step--done   .improve-step-label { color: #10b981; }
+.improve-step--link:hover .improve-step-label { text-decoration: underline; }
+.improve-step-line { width: 48px; height: 1px; background: var(--color-border); margin: 0 0.75rem; }
+
+/* ─── Content shell ──────────────────────────────────────────────── */
+.improve-shell {
+  width: 100%;
+  max-width: 760px;
+  background: var(--color-surface);
+  border-radius: 16px;
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  animation: shell-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.improve-shell--wide {
+  max-width: 980px;
+}
+@keyframes shell-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+.improve-page-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin: 0;
+}
+
+/* ─── Body ───────────────────────────────────────────────────────── */
 .improve-modal-body {
-  overflow-y: auto;
-  flex: 1;
   padding: 1.5rem 1.75rem 1.75rem;
   display: flex;
   flex-direction: column;
@@ -495,6 +515,25 @@
   color: var(--color-secondary);
 }
 
+.improve-original-toggle {
+  margin-top: 0.5rem;
+  border-top: 1px dashed var(--color-border);
+  padding-top: 0.4rem;
+}
+.improve-original-toggle summary {
+  font-size: 0.75rem;
+  color: var(--color-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+.improve-original-toggle summary:hover {
+  color: var(--color-primary);
+}
+.improve-original-toggle .improve-old-text--secondary {
+  border-top: none;
+  padding-top: 0.4rem;
+}
+
 .improve-new-text {
   font-size: 0.9rem;
   color: #065f46;
@@ -560,6 +599,17 @@
   border: none;
   border-radius: var(--radius-input);
   cursor: pointer;
+}
+.improve-done-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.improve-inline-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 /* ─── Navigation row ─────────────────────────────────────────────── */
