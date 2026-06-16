@@ -3,13 +3,13 @@
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: rgba(14, 14, 50, 0.28);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(14, 14, 50, 0.18);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 1rem;
+  padding: 1.5rem 1rem 0;
   overflow-y: auto;
   animation: overlay-in 0.18s ease-out;
 }
@@ -20,8 +20,8 @@
 
 .improve-modal {
   width: 100%;
-  max-width: 780px;
-  max-height: 80vh;
+  max-width: 860px;
+  max-height: 72vh;
   background: var(--color-surface);
   border-radius: 16px;
   box-shadow: 0 24px 80px rgba(30, 27, 110, 0.25), 0 2px 8px rgba(30, 27, 110, 0.08);
@@ -31,7 +31,7 @@
   animation: modal-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .improve-modal--wide {
-  max-width: 980px;
+  max-width: 1040px;
 }
 @keyframes modal-in {
   from { opacity: 0; transform: scale(0.96) translateY(8px); }
