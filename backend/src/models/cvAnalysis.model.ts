@@ -13,6 +13,8 @@ export interface ICvAnalysis extends Document {
   extractedSkills: string[];
   scores: SkillScore[];
   matchScore: number;
+  cvOnlyMode?: boolean;
+  isEstimated?: boolean;
   createdAt: Date;
   rawAgentOutput: string;
 }
@@ -31,6 +33,8 @@ const CvAnalysisSchema = new Schema<ICvAnalysis>(
     extractedSkills: [{ type: String }],
     scores: [SkillScoreSchema],
     matchScore: { type: Number, required: true },
+    cvOnlyMode: { type: Boolean, default: false },
+    isEstimated: { type: Boolean, default: false },
     rawAgentOutput: { type: String, required: true },
   },
   { timestamps: { createdAt: true, updatedAt: false } }

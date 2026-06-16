@@ -246,6 +246,26 @@
   gap: 2rem;
 }
 
+.upload-page-nav {
+  display: flex;
+  align-items: center;
+}
+
+.upload-page-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-text-muted, #64748b);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.upload-page-nav-link:hover {
+  color: var(--color-primary, #7c3aed);
+}
+
 /* ─── CL-5: Hero headline + subheadline ────────────────────────────── */
 .hero-headline {
   font-size: clamp(1.6rem, 4vw, 2.4rem);
@@ -539,6 +559,10 @@
   color: var(--color-secondary);
   text-align: right;
   margin-top: 0.25rem;
+}
+
+.char-counter--warn {
+  color: var(--color-error);
 }
 
 .field-inline-error {

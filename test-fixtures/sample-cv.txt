@@ -1,0 +1,15 @@
+Alex Cohen
+Software Engineer
+
+Experience
+- 5 years building backend services in Python and Node.js
+- React and TypeScript frontend development
+- Kubernetes, Docker, AWS, Terraform, Linux administration
+- PostgreSQL, MongoDB, REST APIs, CI/CD with GitHub Actions
+- Agile teams, code review, system design
+
+Skills
+python javascript react nodejs kubernetes docker aws terraform linux sql mongodb postgresql git
+
+Education
+BSc Computer Science
