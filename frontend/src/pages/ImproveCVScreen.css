@@ -3,9 +3,9 @@
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: rgba(14, 14, 50, 0.52);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(14, 14, 50, 0.28);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
