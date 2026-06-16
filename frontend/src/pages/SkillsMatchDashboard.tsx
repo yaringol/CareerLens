@@ -347,7 +347,7 @@ const SkillsMatchDashboard = () => {
     }
     const raw = sessionStorage.getItem(RESULT_KEY)
     if (!raw) {
-      navigate('/upload', { replace: true })
+      navigate('/', { replace: true })
       return
     }
     try { setResult(JSON.parse(raw) as AnalyzeResponse) }
@@ -357,7 +357,7 @@ const SkillsMatchDashboard = () => {
   const handleBack = () => {
     leavingRef.current = true
     sessionStorage.removeItem(RESULT_KEY)
-    navigate('/upload', { replace: true })
+    navigate('/')
   }
 
   if (parseError) return (
@@ -486,7 +486,10 @@ const SkillsMatchDashboard = () => {
       {/* Improvement modal — rendered inline so the dashboard is visible behind */}
       {showImprove && (
         <ImproveCVScreen
-          onClose={() => setShowImprove(false)}
+          onClose={() => {
+            leavingRef.current = false
+            setShowImprove(false)
+          }}
           onReanalyze={(newResult) => {
             setResult(newResult as AnalyzeResponse)
             setShowImprove(false)
