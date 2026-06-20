@@ -10,6 +10,15 @@ from urllib.parse import quote_plus, urljoin
 from datetime import datetime
 from typing import List, Dict, Set, Optional
 
+import spacy
+from spacy.matcher import PhraseMatcher
+from skillNer.general_params import SKILL_DB
+from skillNer.skill_extractor_class import SkillExtractor
+
+import numpy as np
+
+PRE_PROCESSED_FILENAME= "linkedin_24_hour_preprocessed.jsonl"
+PROCESSED_FILE_NAME= "linkedin_24_hour_processed_skils.jsonl"
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -19,6 +28,15 @@ HEADERS = {
 
 LOCATION_KEYWORDS = ["תל אביב", "מרכז", "Tel Aviv", "Central Israel", "Ramat Gan", "Herzliya", "Petah Tikva"]
 
+class NpEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super(NpEncoder, self).default(obj)
 
 def generate_job_id(title: str, company: str, url: str) -> str:
     """Generate a unique ID for a job to track duplicates."""
@@ -53,6 +71,7 @@ def get_linked_job_details(job_url: str, og_title):
         addres_obj = data.get('jobLocation', {}).get('address', {})
         result["location"] = addres_obj.get('addressLocality', '')
         result["country"] = addres_obj.get('addressCountry')
+        result["datePosted"] = data.get("datePosted")
         result["source"] = "Linkedin"
         result["url"] = job_url
 
@@ -62,7 +81,7 @@ def get_linked_job_details(job_url: str, og_title):
 def search_linkedin_jobs(keyword: str):
     """Search LinkedIn for job listings."""
     query = quote_plus(f"{keyword}")
-    url = f"https://www.linkedin.com/jobs/search/?keywords={query}&location=Israel&f_TPR=r7776000"
+    url = f"https://www.linkedin.com/jobs/search/?keywords={query}&location=Israel&f_TPR=r86400"
     print(url)
 
     try:
@@ -130,7 +149,7 @@ def search_all_jobs():
         "Presales Engineer", "Security Researcher (Mobile/Android/iOS)"
     ]
 
-    with open("externl_jobs_month.jsonl", "w", encoding="utf-8") as f:
+    with open(PRE_PROCESSED_FILENAME, "w", encoding="utf-8") as f:
         for keyword in top_keywords:
             print(f"🔍 Searching: {keyword}...")
 
@@ -138,6 +157,40 @@ def search_all_jobs():
                 json_record = json.dumps(job_details, ensure_ascii=False)
                 f.write(f"{json_record}\n")
 
+def process_raw_jobs(raw_file=PRE_PROCESSED_FILENAME, output_processed=PROCESSED_FILE_NAME):
+    nlp = spacy.load("en_core_web_lg")
+    skill_extractor = SkillExtractor(nlp, SKILL_DB, PhraseMatcher)
+
+    def get_skills(text):
+        if not text or len(text.strip()) < 5:
+            return {}
+        
+        #english_text = translate_to_english(text)
+        
+        try:
+            annotations = skill_extractor.annotate(text)
+            full_matches = annotations['results']['full_matches']
+            ngram_matches = annotations['results']['ngram_scored']
+            
+            return { "full_matches": full_matches, "ngram_matches": ngram_matches }
+        except:
+            return {}
+
+    with open(raw_file, "r") as source_f, open(output_processed, "w") as dest_f:
+        for count, line in enumerate(source_f):
+            try:
+                job = json.loads(line)
+                description = job.get("description", "")
+                job["skills"] = get_skills(description)
+                dest_f.write(json.dumps(job, ensure_ascii=False, cls=NpEncoder) + "\n")
+                if count % 5 == 0:
+                    print(f"Processed {count} lines...")
+            except Exception as e:
+                print(f"Error on line {count}: {e}")
+
+    print(f"Done! Results saved to {output_processed}")
+        
 
 if __name__ == "__main__":
     search_all_jobs()
+    process_raw_jobs()
