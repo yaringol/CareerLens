@@ -1,0 +1,37 @@
+.cv-favorite-star {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-input);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--color-accent-start);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.15s;
+  flex-shrink: 0;
+}
+
+.cv-favorite-star:hover:not(:disabled) {
+  background: rgba(139, 124, 246, 0.08);
+  border-color: rgba(139, 124, 246, 0.25);
+}
+
+.cv-favorite-star--active {
+  color: #eab308;
+}
+
+.cv-favorite-star--active:hover:not(:disabled) {
+  background: rgba(234, 179, 8, 0.1);
+  border-color: rgba(234, 179, 8, 0.25);
+}
+
+.cv-favorite-star:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.cv-favorite-star:active:not(:disabled) {
+  transform: scale(0.94);
+}

@@ -3,10 +3,11 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../contexts/ToastContext'
 import {
-  getMyCVs, deleteCv, changePassword,
+  getMyCVs, deleteCv, changePassword, setCvFavorite,
   getImprovementSession, getImprovementSessions, deleteImprovementSession,
   type SavedCv, type ImprovementSession,
 } from '../services/api'
+import FavoriteStarButton from '../components/cv/FavoriteStarButton'
 import AppLogo from '../components/ui/AppLogo'
 import './AccountPage.css'
 
@@ -32,6 +33,7 @@ const AccountPage = () => {
   const [cvs, setCvs] = useState<SavedCv[]>([])
   const [cvsLoading, setCvsLoading] = useState(true)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [favoritingId, setFavoritingId] = useState<string | null>(null)
 
   // Improvement Plans
   const [plans, setPlans] = useState<ImprovementSession[]>([])
@@ -67,6 +69,22 @@ const AccountPage = () => {
       showToast(err instanceof Error ? err.message : 'Could not delete CV')
     } finally {
       setDeletingId(null)
+    }
+  }
+
+  async function handleToggleFavorite(cv: SavedCv) {
+    setFavoritingId(cv.cvId)
+    try {
+      const next = !cv.isFavorite
+      await setCvFavorite(cv.cvId, next)
+      setCvs((prev) =>
+        prev.map((item) => (item.cvId === cv.cvId ? { ...item, isFavorite: next } : item)),
+      )
+      showToast(next ? 'Added to favorites' : 'Removed from favorites', 'success')
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Could not update favorite')
+    } finally {
+      setFavoritingId(null)
     }
   }
 
@@ -179,7 +197,7 @@ const AccountPage = () => {
         {tab === 'cvs' && (
           <section className="account-section">
             <h2 className="account-section-title">My CV Library</h2>
-            <p className="account-section-sub">CVs you've saved while analyzing. Select one on the home page to re-use without re-uploading.</p>
+            <p className="account-section-sub">CVs you've saved while analyzing. Star up to 3 favorites for background job-fit comparisons.</p>
 
             {cvsLoading ? (
               <p className="account-empty">Loading…</p>
@@ -196,6 +214,11 @@ const AccountPage = () => {
                       <p className="account-cv-name">{cv.fileName}</p>
                       <p className="account-cv-meta">{formatFileSize(cv.fileSizeBytes)} · {formatDate(cv.uploadedAt)}</p>
                     </div>
+                    <FavoriteStarButton
+                      isFavorite={cv.isFavorite}
+                      disabled={favoritingId === cv.cvId}
+                      onToggle={() => handleToggleFavorite(cv)}
+                    />
                     <button
                       className="account-cv-delete"
                       onClick={() => handleDeleteCv(cv.cvId)}

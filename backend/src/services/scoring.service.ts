@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { scoreSkills } from '../agents/scoring.agent';
-import { parseAndSaveAnalysis } from '../dal/cvAnalysis.dal';
+import { parseAndSaveAnalysis, computeMatchScoreFromRaw, parseSkillScoresFromRaw } from '../dal/cvAnalysis.dal';
 import { ICvAnalysis } from '../models/cvAnalysis.model';
 import { validateSkillArray } from '../utils/validateSkills';
 import { ValidationError } from '../errors';
@@ -29,6 +29,19 @@ function overlapScoreForSkill(skill: string, cvText: string): number {
   const ratio = hits / tokens.length;
   const score = Math.round(SCORE_MIN + ratio * (SCORE_MAX - SCORE_MIN));
   return Math.min(SCORE_MAX, Math.max(SCORE_MIN, score));
+}
+
+function calcMatchScoreFromSkillScores(scores: number[]): number {
+  if (scores.length === 0) return 0;
+  const sum = scores.reduce((acc, s) => acc + s, 0);
+  return Math.round((sum / scores.length) * 10) / 10;
+}
+
+/** Fast keyword-only scoring for background saved-CV comparisons (no LLM, no persist). */
+export function scoreCvKeywordOnly(cvText: string, skills: string[]): number {
+  const json = buildKeywordFallbackJson(skills, cvText);
+  const parsed = JSON.parse(json) as { skills: Array<{ score: number }> };
+  return calcMatchScoreFromSkillScores(parsed.skills.map((s) => s.score));
 }
 
 /** Keyword-overlap fallback used when LLM is unavailable or returns uniform scores. */
@@ -115,6 +128,82 @@ export interface ScoreRequest {
   keywordOnly?: boolean;
 }
 
+export interface ScoreMatchResult {
+  matchScore: number;
+  isEstimated: boolean;
+  skills: Array<{ name: string; score: number }>;
+  rawAgentOutput: string;
+}
+
+async function buildScoringRawOutput(
+  cvText: string,
+  validatedSkills: string[],
+  jobTitle: string,
+  keywordOnly: boolean
+): Promise<{ rawAgentOutput: string; isEstimated: boolean }> {
+  if (keywordOnly) {
+    return {
+      rawAgentOutput: buildKeywordFallbackJson(validatedSkills, cvText),
+      isEstimated: true,
+    };
+  }
+
+  try {
+    const raw = await scoreSkills(cvText, validatedSkills);
+    try {
+      const { json, uniformReplacedWithKeywords } = normalizeLlmScoringJson(
+        raw,
+        validatedSkills,
+        cvText
+      );
+      if (uniformReplacedWithKeywords) {
+        logLlmScoringUniformReplaced(jobTitle);
+      } else {
+        logLlmScoringOk(jobTitle);
+      }
+      return { rawAgentOutput: json, isEstimated: false };
+    } catch {
+      logLlmScoringRawUnnormalized(jobTitle);
+      return { rawAgentOutput: raw, isEstimated: false };
+    }
+  } catch {
+    logFallbackScoring();
+    return {
+      rawAgentOutput: buildKeywordFallbackJson(validatedSkills, cvText),
+      isEstimated: true,
+    };
+  }
+}
+
+/** Score a CV against skills using the same pipeline as POST /analyze, without persisting. */
+export async function scoreCvMatchOnly(req: ScoreRequest): Promise<ScoreMatchResult> {
+  if (!mongoose.isValidObjectId(req.jobId)) {
+    throw new ValidationError('Invalid job ID format');
+  }
+  if (!req.cvText || req.cvText.trim().length < MIN_CV_TEXT_LENGTH) {
+    throw new ValidationError('cvText is too short to analyze');
+  }
+
+  const expectedSkillCount = req.expectedSkillCount ?? 10;
+  const validatedSkills = validateSkillArray(req.skills, expectedSkillCount);
+  const { rawAgentOutput, isEstimated } = await buildScoringRawOutput(
+    req.cvText,
+    validatedSkills,
+    req.jobTitle,
+    req.keywordOnly ?? false
+  );
+
+  return {
+    matchScore: computeMatchScoreFromRaw(rawAgentOutput, expectedSkillCount),
+    isEstimated,
+    skills: parseSkillScoresFromRaw(rawAgentOutput, expectedSkillCount).map(({ skill, score }) => ({
+      name: skill,
+      score,
+    })),
+    rawAgentOutput,
+  };
+}
+
 export async function scoreAndPersist(req: ScoreRequest): Promise<ICvAnalysis> {
   if (!mongoose.isValidObjectId(req.jobId)) {
     throw new ValidationError('Invalid job ID format');
@@ -138,34 +227,13 @@ export async function scoreAndPersist(req: ScoreRequest): Promise<ICvAnalysis> {
     isEstimated: false,
   };
 
-  if (req.keywordOnly) {
-    baseInput.rawAgentOutput = buildKeywordFallbackJson(validatedSkills, req.cvText);
-    return parseAndSaveAnalysis(baseInput);
-  }
-
-  try {
-    const raw = await scoreSkills(req.cvText, validatedSkills);
-    try {
-      const { json, uniformReplacedWithKeywords } = normalizeLlmScoringJson(
-        raw,
-        validatedSkills,
-        req.cvText
-      );
-      baseInput.rawAgentOutput = json;
-      if (uniformReplacedWithKeywords) {
-        logLlmScoringUniformReplaced(req.jobTitle);
-      } else {
-        logLlmScoringOk(req.jobTitle);
-      }
-    } catch {
-      baseInput.rawAgentOutput = raw;
-      logLlmScoringRawUnnormalized(req.jobTitle);
-    }
-    return await parseAndSaveAnalysis(baseInput);
-  } catch {
-    logFallbackScoring();
-    baseInput.isEstimated = true;
-    baseInput.rawAgentOutput = buildKeywordFallbackJson(validatedSkills, req.cvText);
-    return await parseAndSaveAnalysis(baseInput);
-  }
+  const { rawAgentOutput, isEstimated } = await buildScoringRawOutput(
+    req.cvText,
+    validatedSkills,
+    req.jobTitle,
+    req.keywordOnly ?? false
+  );
+  baseInput.rawAgentOutput = rawAgentOutput;
+  baseInput.isEstimated = isEstimated;
+  return parseAndSaveAnalysis(baseInput);
 }

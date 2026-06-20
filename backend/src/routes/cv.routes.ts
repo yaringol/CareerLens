@@ -5,6 +5,11 @@ import { authenticate } from '../middleware/auth.middleware';
 import { processUpload } from '../services/cv.service';
 import { CvFile } from '../models/cvFile.model';
 import { ValidationError } from '../errors';
+import {
+  enforceSavedCvLimit,
+  MAX_SAVED_CVS,
+  setCvFavorite,
+} from '../services/compareSaved.service';
 
 const router = Router();
 router.use(authenticate);
@@ -24,11 +29,15 @@ router.post('/upload', uploadMiddleware.single('file'), async (req: Request, res
       return;
     }
 
+    const userId = new Types.ObjectId(req.user!.id);
+    await enforceSavedCvLimit(userId);
+
     const cvFile = await CvFile.create({
-      userId: new Types.ObjectId(req.user!.id),
+      userId,
       fileName: req.file.originalname,
       cvText,
       fileSizeBytes: req.file.size,
+      isFavorite: false,
     });
 
     res.json({
@@ -41,12 +50,13 @@ router.post('/upload', uploadMiddleware.single('file'), async (req: Request, res
   }
 });
 
-// GET /api/cv — List current user's saved CVs (no cvText — too heavy)
+// GET /api/cv — List current user's saved CVs (no cvText — too heavy), max 10
 router.get('/cv', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const files = await CvFile.find({ userId: req.user!.id })
-      .select('_id fileName uploadedAt fileSizeBytes')
+      .select('_id fileName uploadedAt fileSizeBytes isFavorite')
       .sort({ uploadedAt: -1 })
+      .limit(MAX_SAVED_CVS)
       .lean();
 
     res.json(
@@ -55,8 +65,23 @@ router.get('/cv', async (req: Request, res: Response, next: NextFunction): Promi
         fileName: f.fileName,
         uploadedAt: f.uploadedAt,
         fileSizeBytes: f.fileSizeBytes,
+        isFavorite: f.isFavorite ?? false,
       }))
     );
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /api/cv/:id/favorite — Star or unstar a saved CV (max 3 favorites)
+router.patch('/cv/:id/favorite', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { favorite } = req.body as { favorite?: unknown };
+    if (typeof favorite !== 'boolean') {
+      throw new ValidationError('favorite must be a boolean');
+    }
+    const result = await setCvFavorite(req.user!.id, req.params.id, favorite);
+    res.json(result);
   } catch (err) {
     next(err);
   }

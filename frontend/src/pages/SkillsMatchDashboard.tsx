@@ -2,11 +2,20 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import HalfCircleGauge, { getStrength } from '../components/ui/HalfCircleGauge'
 import AppLogo from '../components/ui/AppLogo'
-import type { AnalyzeResponse } from '../services/api'
+import { useError } from '../context/ErrorContext'
+import type { AnalyzeResponse, CompareSavedResponse } from '../services/api'
+import { getCvText } from '../services/api'
 import './SkillsMatchDashboard.css'
 
 
 const RESULT_KEY = 'pocAnalysisResult'
+const CV_FILENAME_KEY = 'pocCvFileName'
+
+type StoredAnalysisResult = AnalyzeResponse & {
+  cvText?: string
+  cvFileName?: string
+  bestSavedCv?: CompareSavedResponse['bestSavedCv']
+}
 
 // ─── Stagger context (CounterProvider pattern from reference) ────────
 const CounterCtx = createContext<(() => number) | null>(null)
@@ -331,9 +340,12 @@ const MOCK_DATA: Record<string, MockEntry> = {
 // ─── Main dashboard ──────────────────────────────────────────────────
 const SkillsMatchDashboard = () => {
   const navigate = useNavigate()
+  const { reportError } = useError()
   const [params] = useSearchParams()
   const [result, setResult] = useState<AnalyzeResponse | null>(null)
   const [parseError, setParseError] = useState<string | null>(null)
+  const [betterSavedCv, setBetterSavedCv] = useState<CompareSavedResponse['bestSavedCv']>(null)
+  const [displayedCvFileName, setDisplayedCvFileName] = useState<string | null>(null)
   const leavingRef = useRef(false)
 
   useEffect(() => {
@@ -341,27 +353,81 @@ const SkillsMatchDashboard = () => {
     const mock = params.get('mock')
     if (mock && MOCK_DATA[mock]) {
       setResult(MOCK_DATA[mock] as AnalyzeResponse)
+      setDisplayedCvFileName(null)
       return
     }
     const raw = sessionStorage.getItem(RESULT_KEY)
     if (!raw) {
-      navigate('/', { replace: true })
+      navigate('/upload', { replace: true })
       return
     }
-    try { setResult(JSON.parse(raw) as AnalyzeResponse) }
+    try {
+      const parsed = JSON.parse(raw) as StoredAnalysisResult
+      setResult(parsed)
+      setBetterSavedCv(parsed.bestSavedCv ?? null)
+      setDisplayedCvFileName(
+        parsed.cvFileName
+        ?? sessionStorage.getItem(CV_FILENAME_KEY)
+        ?? 'cv.pdf',
+      )
+    }
     catch { setParseError('Invalid results data') }
   }, [navigate, params])
 
-  const handleBack = () => {
+  const handleGoHome = () => {
     leavingRef.current = true
     sessionStorage.removeItem(RESULT_KEY)
     navigate('/')
   }
 
+  const handleTryAnotherRole = () => {
+    leavingRef.current = true
+    sessionStorage.removeItem(RESULT_KEY)
+    navigate('/upload')
+  }
+
+  async function handleViewBetterCv() {
+    if (!betterSavedCv || !result) return
+
+    const saved = betterSavedCv
+    const analysis: AnalyzeResponse = {
+      id: saved.analysisId,
+      jobTitle: saved.jobTitle,
+      skills: saved.skills,
+      matchScore: saved.matchScore,
+      cvOnlyMode: saved.cvOnlyMode,
+      isEstimated: saved.isEstimated,
+    }
+
+    sessionStorage.setItem('pocExcludeCvId', saved.cvId)
+    sessionStorage.setItem(CV_FILENAME_KEY, saved.fileName)
+
+    setBetterSavedCv(null)
+    setResult(analysis)
+    setDisplayedCvFileName(saved.fileName)
+
+    try {
+      const { cvText } = await getCvText(saved.cvId)
+      sessionStorage.setItem(RESULT_KEY, JSON.stringify({
+        ...analysis,
+        cvText,
+        cvFileName: saved.fileName,
+        bestSavedCv: null,
+      }))
+    } catch (err) {
+      sessionStorage.setItem(RESULT_KEY, JSON.stringify({
+        ...analysis,
+        cvFileName: saved.fileName,
+        bestSavedCv: null,
+      }))
+      reportError(err)
+    }
+  }
+
   if (parseError) return (
     <div className="dashboard-screen">
       <p className="dashboard-error">{parseError}</p>
-      <button className="btn-back" onClick={handleBack}>← Back</button>
+      <button className="btn-back" onClick={handleTryAnotherRole}>← Back</button>
     </div>
   )
 
@@ -383,7 +449,7 @@ const SkillsMatchDashboard = () => {
       {/* App header — logo right, nav left */}
       <div className="dashboard-nav">
         <div className="dashboard-nav-left">
-          <button className="btn-nav-pill" onClick={handleBack}>
+          <button className="btn-nav-pill" onClick={handleGoHome}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             Home
           </button>
@@ -415,7 +481,7 @@ const SkillsMatchDashboard = () => {
       <h1 className="dashboard-title">{result.jobTitle}</h1>
 
       {/* Cards */}
-      <CounterProvider>
+      <CounterProvider key={result.id}>
         <div className="cards-grid">
 
           {/* ── Overall score card ── */}
@@ -434,11 +500,50 @@ const SkillsMatchDashboard = () => {
                 </span>
               )}
             </div>
-            <HalfCircleGauge value={matchPercent} max={100} animate />
-            <p className="card-description">
-              Your CV matches <strong>{result.jobTitle}</strong> requirements
-              based on <strong>{analyzedSkillCount}</strong> analyzed skills.
-            </p>
+            <HalfCircleGauge key={result.id} value={matchPercent} max={100} animate />
+            <div className="card-results-summary">
+              {displayedCvFileName && (
+                <p className="card-cv-filename" title={displayedCvFileName}>
+                  {displayedCvFileName}
+                </p>
+              )}
+              <p className="card-description">
+                Your CV matches <strong>{result.jobTitle}</strong> requirements
+                based on <strong>{analyzedSkillCount}</strong> analyzed skills.
+              </p>
+            </div>
+            {betterSavedCv && (
+              <div className="saved-cv-banner" role="status">
+                <div className="saved-cv-banner__header">
+                  <span className="saved-cv-banner__star" aria-hidden="true">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                  </span>
+                  <p className="saved-cv-banner__title">Better match in your library</p>
+                </div>
+                <p className="saved-cv-banner__filename" title={betterSavedCv.fileName}>
+                  {betterSavedCv.fileName}
+                </p>
+                <div className="saved-cv-banner__scores" aria-label={`Saved CV score ${betterSavedCv.matchScore.toFixed(1)} versus current ${result.matchScore.toFixed(1)}`}>
+                  <span className="saved-cv-banner__score saved-cv-banner__score--better">
+                    {betterSavedCv.matchScore.toFixed(1)}
+                  </span>
+                  <span className="saved-cv-banner__vs">vs</span>
+                  <span className="saved-cv-banner__score saved-cv-banner__score--current">
+                    {result.matchScore.toFixed(1)}
+                  </span>
+                  <span className="saved-cv-banner__scale">/10</span>
+                </div>
+                  <button
+                    type="button"
+                    className="saved-cv-banner__btn"
+                    onClick={handleViewBetterCv}
+                  >
+                    Switch to this CV
+                  </button>
+              </div>
+            )}
           </ScoreCard>
 
           {/* ── Core skills card ── */}
@@ -474,7 +579,7 @@ const SkillsMatchDashboard = () => {
         </div>
 
         <div className="dashboard-bottom-actions">
-          <button className="btn-card-action btn-back-standalone" onClick={handleBack}>
+          <button className="btn-card-action btn-back-standalone" onClick={handleTryAnotherRole}>
             ← Try another role
           </button>
           <button

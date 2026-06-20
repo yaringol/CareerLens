@@ -97,3 +97,28 @@ export function logLlmScoringRawUnnormalized(jobTitle: string): void {
     `${PREFIX} LLM scoring OK (raw JSON, normalize skipped) job=${JSON.stringify(jobTitle)}`
   );
 }
+
+/** Background compare: started scoring starred CVs in parallel with main analyze. */
+export function logCompareStarredStart(starredCount: number, jobTitle: string): void {
+  console.log(
+    `${PREFIX} Checking starred CVs (parallel) job=${JSON.stringify(jobTitle)} starredCount=${starredCount}`
+  );
+}
+
+/** A starred CV beat the uploaded CV. */
+export function logCompareStarredBetter(
+  fileName: string,
+  savedScore: number,
+  currentScore: number
+): void {
+  console.log(
+    `${PREFIX} Starred CV fits better file=${JSON.stringify(fileName)} savedScore=${savedScore} currentScore=${currentScore}`
+  );
+}
+
+/** No starred CV beat the current score (or none eligible). */
+export function logCompareStarredNone(currentScore: number, starredCount: number): void {
+  console.log(
+    `${PREFIX} No starred CV beat current score currentScore=${currentScore} starredChecked=${starredCount}`
+  );
+}
