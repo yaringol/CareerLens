@@ -1,17 +1,22 @@
-import pdfParse from 'pdf-parse';
+import { PDFParse } from 'pdf-parse';
 import { ICvTextExtractor } from '../interfaces/cvExtractor.interface';
 import { CvExtractionError } from '../errors';
 
 class CvExtractor implements ICvTextExtractor {
   async extractText(fileBuffer: Buffer, fileName: string): Promise<string> {
-    let data: { text: string };
+    let text: string;
+    let parser: PDFParse | undefined;
     try {
-      data = await pdfParse(fileBuffer);
+      parser = new PDFParse({ data: fileBuffer });
+      const data = await parser.getText();
+      text = data.text;
     } catch {
       throw new CvExtractionError(`Could not extract text from PDF: ${fileName}`);
+    } finally {
+      await parser?.destroy();
     }
 
-    const normalized = data.text
+    const normalized = text
       .replace(/\r\n/g, '\n')
       .replace(/[ \t]+/g, ' ')
       .replace(/\n{3,}/g, '\n\n')

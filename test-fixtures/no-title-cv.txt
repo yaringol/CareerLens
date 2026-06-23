@@ -1,0 +1,20 @@
+Maya Levi
+maya.levi@example.com | Tel Aviv, Israel
+
+Professional Summary
+Five years of experience working with business reporting, dashboards, data quality checks,
+and stakeholder requests. Strong SQL, Excel, Power BI, Python, and documentation skills.
+
+Experience
+2022 - Present
+Built reporting dashboards, prepared recurring business reports, and maintained data pipelines.
+Partnered with finance and operations teams to define metrics and improve data accuracy.
+
+2019 - 2022
+Prepared monthly KPI reports, automated spreadsheet workflows, and supported product decisions.
+
+Skills
+SQL, Python, Excel, Power BI, Tableau, data visualization, ETL, statistics
+
+Education
+BSc in Information Systems

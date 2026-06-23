@@ -7,6 +7,7 @@ import resultsRoutes from './routes/results.routes';
 import analyzeRoutes from './routes/analyze.routes';
 import authRoutes from './routes/auth.routes';
 import adminRoutes from './routes/admin.routes';
+import titleRoutes from './routes/title.routes';
 import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
@@ -18,6 +19,7 @@ const api = Router();
 api.use('/auth', authRoutes);
 api.use('/admin', adminRoutes);
 api.use(cvRoutes);
+api.use('/title', titleRoutes);
 api.use('/jobs', jobsRoutes);
 api.use('/analyze', analyzeRoutes);
 api.use('/score', scoreRoutes);

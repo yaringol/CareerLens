@@ -101,6 +101,18 @@ export interface UploadPdfResponse {
   fileName: string
 }
 
+export interface DetectedCvTitle {
+  detectedTitle: string | null
+  confidence: number
+  source: 'headline' | 'experience' | 'none'
+}
+
+export interface TitleMatchSuggestion {
+  canonicalTitle: string
+  matchedVariant: string
+  confidence: number
+}
+
 export interface AnalyzeResponse {
   jobTitle: string
   skills: Array<{ name: string; score: number }>
@@ -136,6 +148,24 @@ export async function uploadPdf(file: File, saveToLibrary = true): Promise<Uploa
     body: formData,
   })
   return res.json() as Promise<UploadPdfResponse>
+}
+
+export async function detectCvTitle(cvText: string): Promise<DetectedCvTitle> {
+  const res = await apiFetch(`${base()}/cv/title`, {
+    method: 'POST',
+    headers: { ...jsonHeaders, ...authHeaders() },
+    body: JSON.stringify({ cvText }),
+  })
+  return res.json()
+}
+
+export async function matchTitle(title: string): Promise<{ suggestions: TitleMatchSuggestion[] }> {
+  const res = await apiFetch(`${base()}/title/match`, {
+    method: 'POST',
+    headers: { ...jsonHeaders, ...authHeaders() },
+    body: JSON.stringify({ title }),
+  })
+  return res.json()
 }
 
 export async function deleteCv(cvId: string): Promise<void> {
@@ -189,7 +219,7 @@ export async function fetchJobDescriptionFromUrl(url: string): Promise<FetchedJo
 }
 
 export async function analyzeCv(
-  jobId: string,
+  canonicalTitle: string,
   cvText: string,
   jobDescription: string,
   options: { skipGibberish?: boolean } = {}
@@ -205,7 +235,7 @@ export async function analyzeCv(
       ...authHeaders(),
       ...(options.skipGibberish ? { 'X-Skip-Gibberish': 'true' } : {}),
     },
-    body: JSON.stringify({ jobId, cvText, jobDescription: jd }),
+    body: JSON.stringify({ canonicalTitle, cvText, jobDescription: jd }),
   })
   return res.json() as Promise<AnalyzeResponse>
 }

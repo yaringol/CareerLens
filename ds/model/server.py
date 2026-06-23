@@ -25,6 +25,10 @@ artifacts = joblib.load(f'{os.path.dirname(__file__)}/model.joblib')
 vectorizer = artifacts['vectorizer']
 knn = artifacts['knn_model']
 skills_data = artifacts['skills']
+canonical_titles = artifacts['titles']
+variant_titles = artifacts['variant_titles']
+canonical_titles = artifacts['titles']
+variant_titles = artifacts['variant_titles']
 
 class NpEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -63,6 +67,32 @@ def predict_skills(title: str):
     return {
         "suggested_skills": top_5
     }
+
+@app.get("/title/match")
+def match_title(title: str):
+    normalized_title = title.strip()
+    if not normalized_title:
+        return {"suggestions": []}
+
+    vec = vectorizer.transform([normalized_title])
+    distances, indices = knn.kneighbors(vec, n_neighbors=len(canonical_titles))
+
+    suggestions = []
+    seen_titles = set()
+    for distance, index in zip(distances[0], indices[0]):
+        canonical_title = canonical_titles[index]
+        if canonical_title in seen_titles:
+            continue
+        seen_titles.add(canonical_title)
+        suggestions.append({
+            "canonical_title": canonical_title,
+            "matched_variant": variant_titles[index],
+            "confidence": round(max(0.0, 1.0 - float(distance)) * 100),
+        })
+        if len(suggestions) == 3:
+            break
+
+    return {"suggestions": suggestions}
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')

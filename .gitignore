@@ -2,6 +2,7 @@
 __pycache__/
 *.pyc
 .venv/
+.venv311/
 .env
 
 # Data outputs
@@ -25,6 +26,7 @@ ds/model/model_*.joblib
 ds/model/token_dist.json
 ds/model/tsne_map.html
 ds/model/.ipynb_checkpoints/
+ds/model/skill_db_relax_*.json
 
 *.md
 !README.md
