@@ -1,0 +1,43 @@
+.app-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--color-primary);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.app-logo-icon {
+  flex-shrink: 0;
+}
+
+.app-logo--md .app-logo-icon {
+  height: 32px;
+  width: 32px;
+}
+
+.app-logo--sm .app-logo-icon {
+  height: 24px;
+  width: 24px;
+}
+
+.app-logo-text {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--color-primary);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.app-logo--md .app-logo-text {
+  font-size: 1.125rem;
+}
+
+.app-logo--sm .app-logo-text {
+  font-size: 0.9rem;
+}
+
+.app-logo-text--light {
+  font-weight: 300;
+  color: var(--color-secondary);
+}

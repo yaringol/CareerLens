@@ -1,3 +1,164 @@
+/* ─── UI-1: Detected title ──────────────────────────────────────────── */
+.title-detect-status {
+  font-size: 0.78rem;
+  color: var(--color-muted, #9b8ec4);
+  margin-top: 0.5rem;
+}
+
+.title-detect-badge {
+  position: relative;
+  margin-top: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--color-surface, #f5f5ff);
+  border: 1px solid var(--color-border, #e0dff0);
+  border-radius: 8px;
+  font-size: 0.83rem;
+}
+
+.title-detect-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.badge-auto {
+  font-size: 0.7rem;
+  background: var(--color-accent, #8b7cf6);
+  color: #fff;
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+  font-weight: 600;
+}
+
+.title-detect-actions {
+  margin-top: 0.35rem;
+}
+
+.btn-ghost--sm {
+  font-size: 0.78rem;
+  padding: 0.2rem 0.5rem;
+}
+
+.title-detect-warning {
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  color: #b45309;
+}
+
+.title-detect-warning--info {
+  color: var(--color-muted, #9b8ec4);
+}
+
+.title-match-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: #fff;
+  border: 1px solid var(--color-border, #e0dff0);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(30, 27, 110, 0.1);
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem 0;
+}
+
+.title-match-dropdown li button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.83rem;
+  text-align: left;
+  color: inherit;
+}
+
+.title-match-dropdown li button:hover {
+  background: var(--color-surface, #f5f5ff);
+}
+
+.match-confidence {
+  font-size: 0.72rem;
+  color: var(--color-muted, #9b8ec4);
+}
+
+.title-detect-manual {
+  margin-top: 0.75rem;
+  position: relative;
+}
+
+.field-input {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--color-border, #e0dff0);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background: var(--color-surface, #fff);
+  color: inherit;
+  margin-top: 0.25rem;
+}
+
+/* ─── UI-2: Preference slider ───────────────────────────────────────── */
+.preferences-section {
+  margin-top: 1rem;
+  border: 1px solid var(--color-border, #e0dff0);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.preferences-toggle {
+  padding: 0.55rem 0.75rem;
+  font-size: 0.83rem;
+  cursor: pointer;
+  list-style: none;
+  color: var(--color-muted, #9b8ec4);
+  user-select: none;
+}
+
+.preferences-toggle::-webkit-details-marker { display: none; }
+
+.preferences-body {
+  padding: 0.75rem;
+  border-top: 1px solid var(--color-border, #e0dff0);
+  background: var(--color-surface, #f9f9ff);
+}
+
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.slider-label-end {
+  font-size: 0.75rem;
+  color: var(--color-muted, #9b8ec4);
+  white-space: nowrap;
+  min-width: 70px;
+}
+
+.slider-label-end:last-child {
+  text-align: right;
+}
+
+.pref-slider {
+  flex: 1;
+  accent-color: var(--color-accent, #8b7cf6);
+  cursor: pointer;
+}
+
+.slider-hint {
+  margin-top: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--color-muted, #9b8ec4);
+  text-align: center;
+}
+
 /* ─── Page ─────────────────────────────────────────────────────────── */
 .upload-screen {
   min-height: 100vh;
@@ -12,6 +173,44 @@
 @keyframes page-in {
   from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── App header inside upload section ────────────────────────────── */
+.upload-app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 1rem;
+}
+.upload-app-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-width: 140px;
+}
+
+
+/* ─── Shared nav pill (also used in dashboard) ───────────────────── */
+.btn-nav-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--color-secondary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.btn-nav-pill:hover {
+  color: var(--color-primary);
+  border-color: rgba(30,27,110,0.25);
 }
 
 /* ─── Wrapper ──────────────────────────────────────────────────────── */
@@ -551,6 +750,11 @@
 
 /* ─── Responsive ───────────────────────────────────────────────────── */
 @media (max-width: 700px) {
+  .upload-app-header {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
   .upload-screen {
     padding: 2rem 1rem 3rem;
   }

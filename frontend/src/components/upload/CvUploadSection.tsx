@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import AppLogo from '../ui/AppLogo'
 import { useError } from '../../context/ErrorContext'
 import {
   analyzeCv,
@@ -66,7 +67,7 @@ export interface CvUploadSectionProps {
 }
 
 const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function CvUploadSection(
-  { visible = true, showBackLink = false },
+  { visible = true },
   ref,
 ) {
   const { reportError } = useError()
@@ -221,9 +222,12 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
         jobId,
         cvText,
         isPostingMode ? trimmedJobDescription : '',
+        0.0,
         { skipGibberish: !isPostingMode },
       )
-      sessionStorage.setItem(RESULT_KEY, JSON.stringify(result))
+      sessionStorage.setItem(RESULT_KEY, JSON.stringify({ ...result, cvText }))
+      sessionStorage.setItem('pocJobDescription', isPostingMode ? trimmedJobDescription : '')
+      sessionStorage.setItem('pocCvFileName', cvFile ? cvFile.name : (selectedCvName ?? 'cv.pdf'))
       navigate('/dashboard', { replace: true })
     } catch (err) {
       if (err instanceof ApiError && err.code === 'GIBBERISH_DETECTED') {
@@ -264,25 +268,35 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
       {isLoading && <ScanLoader />}
 
       <div className="upload-wrapper">
-        {showBackLink && (
-          <nav className="upload-page-nav">
-            <Link to="/" className="upload-page-nav-link">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-              Back to home
+        {/* App header: nav left, logo right */}
+        <div className="upload-app-header">
+          <div className="upload-app-nav">
+            <Link to="/" className="btn-nav-pill">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              Home
             </Link>
-          </nav>
-        )}
-
-        <div className="step-indicator">
-          <div className="step step--active">
-            <div className="step-dot">1</div>
-            <span className="step-label">Upload</span>
+            <Link to="/account" className="btn-nav-pill">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              Account
+            </Link>
           </div>
-          <div className="step-line" />
-          <div className="step">
-            <div className="step-dot">2</div>
-            <span className="step-label">Results</span>
+          <div className="step-indicator">
+            <div className="step step--active">
+              <div className="step-dot">1</div>
+              <span className="step-label">Upload</span>
+            </div>
+            <div className="step-line" />
+            <div className="step">
+              <div className="step-dot">2</div>
+              <span className="step-label">Results</span>
+            </div>
+            <div className="step-line" />
+            <div className="step">
+              <div className="step-dot">3</div>
+              <span className="step-label">Improve</span>
+            </div>
           </div>
+          <AppLogo size="sm" />
         </div>
 
         <form onSubmit={handleSubmit} className="upload-card">
@@ -483,7 +497,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                     }
                   />
                   <span className={`char-counter${jdError || gibberishWarning ? ' char-counter--warn' : ''}`}>
-                    {isJobUrlInput ? 'Job link ù will import on analyze' : `${jobDescription.length} / ${MAX_JOB_DESCRIPTION_CHARS}`}
+                    {isJobUrlInput ? 'Job link ÔøΩ will import on analyze' : `${jobDescription.length} / ${MAX_JOB_DESCRIPTION_CHARS}`}
                   </span>
                   {jdError && (
                     <span id="job-description-error" className="field-inline-error" role="alert">
