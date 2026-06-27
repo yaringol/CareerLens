@@ -3,6 +3,7 @@ import { Types } from 'mongoose';
 import { uploadMiddleware } from '../middleware/upload';
 import { authenticate } from '../middleware/auth.middleware';
 import { processUpload } from '../services/cv.service';
+import { detectTitleFromCv } from '../services/titleDetection.service';
 import { CvFile } from '../models/cvFile.model';
 import { ValidationError } from '../errors';
 import {
@@ -13,6 +14,20 @@ import {
 
 const router = Router();
 router.use(authenticate);
+
+// POST /api/cv/title — Detect the primary role stated in raw CV text.
+router.post('/cv/title', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { cvText } = req.body as { cvText?: unknown };
+    if (typeof cvText !== 'string' || cvText.trim().length < 50) {
+      throw new ValidationError('cvText must contain at least 50 characters');
+    }
+
+    res.json(detectTitleFromCv(cvText));
+  } catch (err) {
+    next(err);
+  }
+});
 
 // POST /api/upload — Upload PDF, extract text, optionally save to CVFile library
 // Query param: ?save=false to skip saving (just extract text)

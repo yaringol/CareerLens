@@ -14,6 +14,20 @@ interface SkillNerResponse {
   ngram_matches: SkillMatch[];
 }
 
+export interface TitleMatchSuggestion {
+  canonicalTitle: string;
+  matchedVariant: string;
+  confidence: number;
+}
+
+interface DsTitleMatchResponse {
+  suggestions?: Array<{
+    canonical_title?: unknown;
+    matched_variant?: unknown;
+    confidence?: unknown;
+  }>;
+}
+
 /**
  * Calls /text/skills (SkillNer) — extracts skills from raw job description text.
  * Returns top N deduplicated skills, full matches first then ngram by score.
@@ -89,6 +103,37 @@ export async function getCoreSkills(jobTitle: string): Promise<string[] | null> 
     }
 
     return skills;
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      if (err.code === 'ECONNREFUSED' || err.code === 'ECONNABORTED') {
+        throw new DsModelError('DS model service is unavailable', 503);
+      }
+      throw new DsModelError(`DS model request failed: ${err.message}`);
+    }
+    throw err;
+  }
+}
+
+export async function getTitleMatches(title: string): Promise<{ suggestions: TitleMatchSuggestion[] }> {
+  try {
+    const response = await axios.get<DsTitleMatchResponse>(`${DS_MODEL_URL}/title/match`, {
+      params: { title },
+      timeout: DS_MODEL_TIMEOUT_MS,
+    });
+    const suggestions = (response.data?.suggestions ?? [])
+      .map((suggestion) => ({
+        canonicalTitle: typeof suggestion.canonical_title === 'string' ? suggestion.canonical_title.trim() : '',
+        matchedVariant: typeof suggestion.matched_variant === 'string' ? suggestion.matched_variant.trim() : '',
+        confidence: typeof suggestion.confidence === 'number' ? suggestion.confidence : 0,
+      }))
+      .filter((suggestion) => suggestion.canonicalTitle && suggestion.matchedVariant)
+      .slice(0, 3);
+
+    if (suggestions.length === 0) {
+      throw new DsModelError(`DS model returned no title matches for "${title}"`);
+    }
+
+    return { suggestions };
   } catch (err) {
     if (axios.isAxiosError(err)) {
       if (err.code === 'ECONNREFUSED' || err.code === 'ECONNABORTED') {

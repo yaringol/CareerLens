@@ -101,6 +101,18 @@ export interface UploadPdfResponse {
   fileName: string
 }
 
+export interface DetectedCvTitle {
+  detectedTitle: string | null
+  confidence: number
+  source: 'headline' | 'experience' | 'none'
+}
+
+export interface TitleMatchSuggestion {
+  canonicalTitle: string
+  matchedVariant: string
+  confidence: number
+}
+
 export interface AnalyzeResponse {
   jobTitle: string
   skills: Array<{ name: string; score: number }>
@@ -151,6 +163,24 @@ export async function uploadPdf(file: File, saveToLibrary = true): Promise<Uploa
     body: formData,
   })
   return res.json() as Promise<UploadPdfResponse>
+}
+
+export async function detectCvTitle(cvText: string): Promise<DetectedCvTitle> {
+  const res = await apiFetch(`${base()}/cv/title`, {
+    method: 'POST',
+    headers: { ...jsonHeaders, ...authHeaders() },
+    body: JSON.stringify({ cvText }),
+  })
+  return res.json()
+}
+
+export async function matchTitle(title: string): Promise<{ suggestions: TitleMatchSuggestion[] }> {
+  const res = await apiFetch(`${base()}/title/match`, {
+    method: 'POST',
+    headers: { ...jsonHeaders, ...authHeaders() },
+    body: JSON.stringify({ title }),
+  })
+  return res.json()
 }
 
 export async function deleteCv(cvId: string): Promise<void> {
@@ -229,46 +259,8 @@ export async function fetchJobDescriptionFromUrl(url: string): Promise<FetchedJo
   return res.json() as Promise<FetchedJobPosting>
 }
 
-export interface ExtractTitleResponse {
-  extracted_title: string | null
-  canonical_title: string | null
-  confidence: number
-  low_confidence: boolean
-}
-
-export interface TitleMatchResponse {
-  matches: Array<{ canonical: string; confidence: number }>
-  low_confidence: boolean
-}
-
-export async function extractCvTitle(cvText: string): Promise<ExtractTitleResponse> {
-  const res = await fetch(`${base()}/cv/extract-title`, {
-    method: 'POST',
-    headers: { ...jsonHeaders, ...authHeaders() },
-    body: JSON.stringify({ cvText }),
-  })
-  await handleUnauthorized(res)
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error((err as { error?: string }).error || `Title extraction failed (${res.status})`)
-  }
-  return res.json() as Promise<ExtractTitleResponse>
-}
-
-export async function matchTitle(title: string): Promise<TitleMatchResponse> {
-  const res = await fetch(`${base()}/title/match?title=${encodeURIComponent(title)}`, {
-    headers: { ...authHeaders() },
-  })
-  await handleUnauthorized(res)
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error((err as { error?: string }).error || `Title match failed (${res.status})`)
-  }
-  return res.json() as Promise<TitleMatchResponse>
-}
-
 export async function analyzeCv(
-  jobId: string,
+  canonicalTitle: string,
   cvText: string,
   jobDescription: string,
   titleMatch = 0.0,
@@ -286,7 +278,7 @@ export async function analyzeCv(
       ...(options.skipGibberish ? { 'X-Skip-Gibberish': 'true' } : {}),
     },
     body: JSON.stringify({
-      jobId,
+      canonicalTitle,
       cvText,
       jobDescription: jd,
       titleMatch,
