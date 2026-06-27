@@ -11,10 +11,12 @@ import {
   MAX_JOB_DESCRIPTION_CHARS,
   matchTitle,
   MIN_JOB_DESCRIPTION_CHARS,
+  setCvFavorite,
   uploadPdf,
   type SavedCv,
   type TitleMatchSuggestion,
 } from '../../services/api'
+import FavoriteStarButton from '../cv/FavoriteStarButton'
 import ScanLoader from '../ui/ScanLoader'
 import { isGibberish } from '../../utils/gibberishDetector'
 import { looksLikeJobUrl } from '../../utils/jobUrl'
@@ -101,6 +103,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
   const [selectedCvName, setSelectedCvName] = useState<string | null>(null)
   const [cvsLoading, setCvsLoading] = useState(false)
   const [saveToLibrary, setSaveToLibrary] = useState(true)
+  const [favoritingId, setFavoritingId] = useState<string | null>(null)
 
   useEffect(() => {
     if (cvTab !== 'my-cvs') return
@@ -267,6 +270,21 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
     }
   }
 
+  async function handleToggleFavorite(cv: SavedCv) {
+    setFavoritingId(cv.cvId)
+    try {
+      const next = !cv.isFavorite
+      await setCvFavorite(cv.cvId, next)
+      setSavedCVs((prev) =>
+        prev.map((item) => (item.cvId === cv.cvId ? { ...item, isFavorite: next } : item)),
+      )
+    } catch (err) {
+      reportError(err)
+    } finally {
+      setFavoritingId(null)
+    }
+  }
+
   const trimmedJobDescription = jobDescription.trim()
   const isPostingMode = jobInputMode === 'posting'
   const isJobUrlInput = isPostingMode && looksLikeJobUrl(trimmedJobDescription)
@@ -312,9 +330,13 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
     setIsLoading(true)
     try {
       let cvText: string
+      let excludeCvId = selectedCvId ?? ''
       if (cvFile) {
         const upload = await uploadPdf(cvFile, saveToLibrary)
         cvText = upload.cvText
+        if (saveToLibrary && upload.cvId) {
+          excludeCvId = upload.cvId
+        }
         if (saveToLibrary) getMyCVs().then(setSavedCVs).catch(() => { /* silent */ })
       } else {
         cvText = selectedCvText!
@@ -324,11 +346,13 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
         cvText,
         isPostingMode ? trimmedJobDescription : '',
         0.0,
-        { skipGibberish: !isPostingMode },
+        { skipGibberish: !isPostingMode, excludeCvId: excludeCvId || undefined },
       )
-      sessionStorage.setItem(RESULT_KEY, JSON.stringify({ ...result, cvText }))
+      const cvFileName = cvFile ? cvFile.name : (selectedCvName ?? 'cv.pdf')
+      sessionStorage.setItem(RESULT_KEY, JSON.stringify({ ...result, cvText, cvFileName }))
       sessionStorage.setItem('pocJobDescription', isPostingMode ? trimmedJobDescription : '')
-      sessionStorage.setItem('pocCvFileName', cvFile ? cvFile.name : (selectedCvName ?? 'cv.pdf'))
+      sessionStorage.setItem('pocCvFileName', cvFileName)
+      sessionStorage.setItem('pocExcludeCvId', excludeCvId)
       navigate('/dashboard', { replace: true })
     } catch (err) {
       if (err instanceof ApiError && err.code === 'GIBBERISH_DETECTED') {
@@ -500,6 +524,11 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                             <p className="saved-cv-name">{cv.fileName}</p>
                             <p className="saved-cv-meta">{formatFileSize(cv.fileSizeBytes)} &middot; {formatDate(cv.uploadedAt)}</p>
                           </div>
+                          <FavoriteStarButton
+                            isFavorite={cv.isFavorite}
+                            disabled={favoritingId === cv.cvId || isLoading}
+                            onToggle={() => handleToggleFavorite(cv)}
+                          />
                           {selectedCvId === cv.cvId && (
                             <svg className="saved-cv-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                           )}

@@ -14,6 +14,10 @@ import { isGibberish } from '../utils/gibberishDetector';
 import { looksLikeJobUrl } from '../utils/jobUrl';
 import { fetchJobPostingFromUrl } from '../services/jobPostingFetcher.service';
 import { authenticate } from '../middleware/auth.middleware';
+import {
+  analyzeWithParallelFavoriteCompare,
+  compareAgainstFavoriteCvs,
+} from '../services/compareSaved.service';
 
 const router = Router();
 router.use(authenticate);
@@ -174,12 +178,13 @@ async function resolveJobDescriptionInput(raw: string): Promise<string> {
  */
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { jobId, canonicalTitle, cvText, jobTitle, jobDescription } = req.body as {
+    const { jobId, canonicalTitle, cvText, jobTitle, jobDescription, excludeCvId } = req.body as {
       jobId?: string;
       canonicalTitle?: string;
       cvText?: string;
       jobTitle?: string;
       jobDescription?: string;
+      excludeCvId?: string;
     };
 
     let job: IJob;
@@ -236,15 +241,18 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         );
 
     const cvOnlyMode = skipGibberish;
+    const expectedSkillCount = cvOnlyMode ? 5 : 10;
 
-    const analysis = await scoreAndPersist({
+    const { analysis, bestSavedCv } = await analyzeWithParallelFavoriteCompare({
+      userId: req.user!.id,
       jobId: id,
       jobTitle: job.title,
       cvText: cvText.trim(),
       skills: allSkills,
-      cvFileName: id,
-      expectedSkillCount: cvOnlyMode ? 5 : 10,
       cvOnlyMode,
+      expectedSkillCount,
+      excludeCvId: typeof excludeCvId === 'string' ? excludeCvId : undefined,
+      cvFileName: id,
       keywordOnly: cvOnlyMode,
     });
 
@@ -257,6 +265,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       id: analysis._id.toString(),
       cvOnlyMode: analysis.cvOnlyMode ?? false,
       isEstimated: analysis.isEstimated ?? false,
+      bestSavedCv,
     });
   } catch (err) {
     next(err);
@@ -324,6 +333,54 @@ router.post('/skillner', async (req: Request, res: Response, next: NextFunction)
       extractor: 'skillner',
       isEstimated: analysis.isEstimated ?? false,
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * POST /api/analyze/compare-saved
+ *
+ * After a primary analysis, score starred saved CVs against the same skills using
+ * the same LLM scoring pipeline as POST /analyze (parallel, max 3 favorites).
+ */
+router.post('/compare-saved', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { jobId, jobTitle, skills, currentMatchScore, excludeCvId, expectedSkillCount, cvOnlyMode } = req.body as {
+      jobId?: string;
+      jobTitle?: string;
+      skills?: unknown;
+      currentMatchScore?: number;
+      excludeCvId?: string;
+      expectedSkillCount?: number;
+      cvOnlyMode?: boolean;
+    };
+
+    if (!jobId) {
+      throw new ValidationError('jobId is required');
+    }
+    if (!jobTitle?.trim()) {
+      throw new ValidationError('jobTitle is required');
+    }
+    if (!skills) {
+      throw new ValidationError('skills must be a non-empty array');
+    }
+    if (typeof currentMatchScore !== 'number') {
+      throw new ValidationError('currentMatchScore is required');
+    }
+
+    const result = await compareAgainstFavoriteCvs({
+      userId: req.user!.id,
+      jobId,
+      jobTitle: jobTitle.trim(),
+      skills,
+      currentMatchScore,
+      excludeCvId,
+      expectedSkillCount: expectedSkillCount ?? (cvOnlyMode ? 5 : 10),
+      cvOnlyMode,
+    });
+
+    res.json(result);
   } catch (err) {
     next(err);
   }

@@ -63,6 +63,24 @@ function calcMatchScore(scores: number[]): number {
   return Math.round((sum / scores.length) * 10) / 10; // 1 decimal place
 }
 
+/** Compute match score from raw agent JSON without persisting. */
+export function computeMatchScoreFromRaw(rawAgentOutput: string, expectedSkillCount: number): number {
+  const agentResponse = parseAgentResponse(rawAgentOutput, expectedSkillCount);
+  const scores = agentResponse.skills.map(({ score }) => clamp(score));
+  return calcMatchScore(scores);
+}
+
+export function parseSkillScoresFromRaw(
+  rawAgentOutput: string,
+  expectedSkillCount: number
+): Array<{ skill: string; score: number }> {
+  const agentResponse = parseAgentResponse(rawAgentOutput, expectedSkillCount);
+  return agentResponse.skills.map(({ skill, score }) => ({
+    skill,
+    score: clamp(score),
+  }));
+}
+
 // Parse raw agent output, validate, enforce bounds, calculate matchScore, persist
 export async function parseAndSaveAnalysis(input: SaveAnalysisInput): Promise<ICvAnalysis> {
   const expectedSkillCount = input.expectedSkillCount ?? 10;

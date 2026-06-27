@@ -6,6 +6,7 @@ export interface ICvFile extends Document {
   cvText: string;
   uploadedAt: Date;
   fileSizeBytes: number;
+  isFavorite: boolean;
 }
 
 const CvFileSchema = new Schema<ICvFile>(
@@ -14,6 +15,7 @@ const CvFileSchema = new Schema<ICvFile>(
     fileName: { type: String, required: true },
     cvText: { type: String, required: true },
     fileSizeBytes: { type: Number, required: true },
+    isFavorite: { type: Boolean, default: false },
   },
   { timestamps: { createdAt: 'uploadedAt', updatedAt: false } }
 );

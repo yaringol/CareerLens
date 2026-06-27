@@ -120,6 +120,7 @@ export interface AnalyzeResponse {
   id: string
   cvOnlyMode?: boolean
   isEstimated?: boolean
+  bestSavedCv?: CompareSavedResponse['bestSavedCv']
 }
 
 export interface SavedCv {
@@ -127,6 +128,20 @@ export interface SavedCv {
   fileName: string
   uploadedAt: string
   fileSizeBytes: number
+  isFavorite: boolean
+}
+
+export interface CompareSavedResponse {
+  bestSavedCv: {
+    cvId: string
+    fileName: string
+    matchScore: number
+    analysisId: string
+    jobTitle: string
+    skills: Array<{ name: string; score: number }>
+    cvOnlyMode: boolean
+    isEstimated: boolean
+  } | null
 }
 
 const jsonHeaders = { 'Content-Type': 'application/json' }
@@ -175,6 +190,31 @@ export async function deleteCv(cvId: string): Promise<void> {
   })
 }
 
+export async function setCvFavorite(cvId: string, favorite: boolean): Promise<{ cvId: string; isFavorite: boolean }> {
+  const res = await apiFetch(`${base()}/cv/${cvId}/favorite`, {
+    method: 'PATCH',
+    headers: { ...jsonHeaders, ...authHeaders() },
+    body: JSON.stringify({ favorite }),
+  })
+  return res.json() as Promise<{ cvId: string; isFavorite: boolean }>
+}
+
+export async function compareSavedCvs(payload: {
+  jobId: string
+  jobTitle: string
+  skills: string[]
+  currentMatchScore: number
+  excludeCvId?: string
+  cvOnlyMode?: boolean
+}): Promise<CompareSavedResponse> {
+  const res = await apiFetch(`${base()}/analyze/compare-saved`, {
+    method: 'POST',
+    headers: { ...jsonHeaders, ...authHeaders() },
+    body: JSON.stringify(payload),
+  })
+  return res.json() as Promise<CompareSavedResponse>
+}
+
 export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
   await apiFetch(`${base()}/auth/password`, {
     method: 'PUT',
@@ -187,7 +227,8 @@ export async function getMyCVs(): Promise<SavedCv[]> {
   const res = await apiFetch(`${base()}/cv`, {
     headers: { ...authHeaders() },
   })
-  return res.json() as Promise<SavedCv[]>
+  const rows = await res.json() as Array<SavedCv & { isFavorite?: boolean }>
+  return rows.map((row) => ({ ...row, isFavorite: row.isFavorite ?? false }))
 }
 
 export async function getCvText(cvId: string): Promise<{ cvId: string; cvText: string; fileName: string }> {
@@ -223,7 +264,7 @@ export async function analyzeCv(
   cvText: string,
   jobDescription: string,
   titleMatch = 0.0,
-  options: { skipGibberish?: boolean } = {}
+  options: { skipGibberish?: boolean; excludeCvId?: string } = {}
 ): Promise<AnalyzeResponse> {
   const jd = jobDescription.trim()
   if (!options.skipGibberish && jd.length < MIN_JOB_DESCRIPTION_CHARS && !/^https?:\/\//i.test(jd)) {
@@ -236,7 +277,13 @@ export async function analyzeCv(
       ...authHeaders(),
       ...(options.skipGibberish ? { 'X-Skip-Gibberish': 'true' } : {}),
     },
-    body: JSON.stringify({ canonicalTitle, cvText, jobDescription: jd, titleMatch }),
+    body: JSON.stringify({
+      canonicalTitle,
+      cvText,
+      jobDescription: jd,
+      titleMatch,
+      ...(options.excludeCvId ? { excludeCvId: options.excludeCvId } : {}),
+    }),
   })
   return res.json() as Promise<AnalyzeResponse>
 }
