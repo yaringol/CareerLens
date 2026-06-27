@@ -8,12 +8,13 @@ import analyzeRoutes from './routes/analyze.routes';
 import authRoutes from './routes/auth.routes';
 import adminRoutes from './routes/admin.routes';
 import titleRoutes from './routes/title.routes';
+import cvImproveRoutes from './routes/cvImprove.routes';
 import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '2mb' }));
 
 const api = Router();
 api.use('/auth', authRoutes);
@@ -22,6 +23,7 @@ api.use(cvRoutes);
 api.use('/title', titleRoutes);
 api.use('/jobs', jobsRoutes);
 api.use('/analyze', analyzeRoutes);
+api.use('/cv-improve', cvImproveRoutes);
 api.use('/score', scoreRoutes);
 api.use('/results', resultsRoutes);
 
