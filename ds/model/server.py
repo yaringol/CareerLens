@@ -117,16 +117,31 @@ def predict_skills(title: str, title_match: float = 0.0):
         "records_count":     record_count,
     }
 
-
 @app.get("/title/match")
 def match_title(title: str):
-    vec = vectorizer.transform([title])
-    distances, indices = knn.kneighbors(vec)
-    matches = [
-        {"canonical": variant_labels[idx], "confidence": round(float(1 - dist), 2)}
-        for dist, idx in zip(distances[0], indices[0])
-    ]
-    return {"matches": matches, "low_confidence": matches[0]["confidence"] < 0.4}
+    normalized_title = title.strip()
+    if not normalized_title:
+        return {"suggestions": []}
+
+    vec = vectorizer.transform([normalized_title])
+    distances, indices = knn.kneighbors(vec, n_neighbors=len(variant_labels))
+
+    suggestions = []
+    seen_titles = set()
+    for distance, index in zip(distances[0], indices[0]):
+        canonical_title = variant_labels[index]
+        if canonical_title in seen_titles:
+            continue
+        seen_titles.add(canonical_title)
+        suggestions.append({
+            "canonical_title": canonical_title,
+            "matched_variant": variant_titles[index],
+            "confidence": round(max(0.0, 1.0 - float(distance)) * 100),
+        })
+        if len(suggestions) == 3:
+            break
+
+    return {"suggestions": suggestions}
 
 
 class CvTitleRequest(BaseModel):
@@ -151,7 +166,6 @@ def extract_cv_title(body: CvTitleRequest):
         "confidence":      round(confidence, 2),
         "low_confidence":  confidence < 0.4,
     }
-
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')

@@ -5,14 +5,15 @@ import { useError } from '../../context/ErrorContext'
 import {
   analyzeCv,
   ApiError,
-  fetchJobs,
+  detectCvTitle,
   getCvText,
   getMyCVs,
   MAX_JOB_DESCRIPTION_CHARS,
+  matchTitle,
   MIN_JOB_DESCRIPTION_CHARS,
   uploadPdf,
-  type PocJob,
   type SavedCv,
+  type TitleMatchSuggestion,
 } from '../../services/api'
 import ScanLoader from '../ui/ScanLoader'
 import { isGibberish } from '../../utils/gibberishDetector'
@@ -21,6 +22,7 @@ import '../../pages/UploadScreen.css'
 
 const RESULT_KEY = 'pocAnalysisResult'
 const CV_EXTRACT_ERROR = 'Could not extract text from this PDF'
+const AUTO_MATCH_CONFIDENCE_MIN = 90
 
 type JobInputMode = 'posting' | 'cv-only'
 
@@ -28,6 +30,12 @@ type UploadFieldErrors = {
   jobDescription?: string
   cv?: string
 }
+
+type RoleDetection =
+  | { status: 'idle' | 'detecting' }
+  | { status: 'ready'; detectedTitle: string; canonicalTitle: string; confidence: number }
+  | { status: 'uncertain'; detectedTitle: string; suggestions: TitleMatchSuggestion[] }
+  | { status: 'not-found' | 'error' }
 
 function jobDescriptionError(text: string, mode: JobInputMode): string | undefined {
   if (mode === 'cv-only') return undefined
@@ -73,17 +81,19 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
   const { reportError } = useError()
   const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const analysisInFlightRef = useRef(false)
 
   const [cvFile, setCvFile] = useState<File | null>(null)
   const [isDragging, setIsDragging] = useState(false)
-  const [jobs, setJobs] = useState<PocJob[]>([])
-  const [jobId, setJobId] = useState('')
+  const [roleDetection, setRoleDetection] = useState<RoleDetection>({ status: 'idle' })
+  const [manualTitleQuery, setManualTitleQuery] = useState('')
+  const [manualTitleSuggestions, setManualTitleSuggestions] = useState<TitleMatchSuggestion[]>([])
+  const [isManualTitleSearching, setIsManualTitleSearching] = useState(false)
   const [jobDescription, setJobDescription] = useState('')
   const [fieldErrors, setFieldErrors] = useState<UploadFieldErrors>({})
   const [jobInputMode, setJobInputMode] = useState<JobInputMode>('posting')
   const [gibberishWarning, setGibberishWarning] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [loadError, setLoadError] = useState<string | null>(null)
   const [cvTab, setCvTab] = useState<'upload' | 'my-cvs'>('upload')
   const [savedCVs, setSavedCVs] = useState<SavedCv[]>([])
   const [selectedCvId, setSelectedCvId] = useState<string | null>(null)
@@ -91,24 +101,6 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
   const [selectedCvName, setSelectedCvName] = useState<string | null>(null)
   const [cvsLoading, setCvsLoading] = useState(false)
   const [saveToLibrary, setSaveToLibrary] = useState(true)
-
-  useEffect(() => {
-    let cancelled = false
-    ;(async () => {
-      try {
-        const list = await fetchJobs()
-        if (cancelled) return
-        setJobs(list)
-        if (list.length > 0) setJobId(list[0].id)
-      } catch (e) {
-        if (!cancelled) {
-          setLoadError(e instanceof Error ? e.message : 'Could not load jobs')
-          reportError(e)
-        }
-      }
-    })()
-    return () => { cancelled = true }
-  }, [reportError])
 
   useEffect(() => {
     if (cvTab !== 'my-cvs') return
@@ -119,8 +111,110 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
       .finally(() => setCvsLoading(false))
   }, [cvTab, reportError])
 
+  useEffect(() => {
+    if (roleDetection.status !== 'not-found') return
+    const title = manualTitleQuery.trim()
+    if (title.length < 2) {
+      setManualTitleSuggestions([])
+      setIsManualTitleSearching(false)
+      return
+    }
+
+    let cancelled = false
+    const timer = window.setTimeout(() => {
+      setIsManualTitleSearching(true)
+      matchTitle(title)
+        .then(({ suggestions }) => {
+          if (!cancelled) setManualTitleSuggestions(suggestions)
+        })
+        .catch((err) => {
+          if (!cancelled) {
+            setManualTitleSuggestions([])
+            reportError(err)
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setIsManualTitleSearching(false)
+        })
+    }, 250)
+
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
+  }, [manualTitleQuery, reportError, roleDetection.status])
+
   const clearCvFieldError = () => {
     setFieldErrors((prev) => (prev.cv ? { ...prev, cv: undefined } : prev))
+  }
+
+  const resetRoleDetection = () => {
+    setManualTitleQuery('')
+    setManualTitleSuggestions([])
+    setRoleDetection({ status: 'idle' })
+  }
+
+  async function detectRole(cvText: string) {
+    setRoleDetection({ status: 'detecting' })
+    try {
+      const detected = await detectCvTitle(cvText)
+      if (!detected.detectedTitle) {
+        setRoleDetection({ status: 'not-found' })
+        return
+      }
+
+      const { suggestions } = await matchTitle(detected.detectedTitle)
+      const bestMatch = suggestions[0]
+      if (!bestMatch) {
+        setRoleDetection({ status: 'not-found' })
+        return
+      }
+
+      if (bestMatch.confidence < AUTO_MATCH_CONFIDENCE_MIN) {
+        setRoleDetection({
+          status: 'uncertain',
+          detectedTitle: detected.detectedTitle,
+          suggestions,
+        })
+        return
+      }
+
+      setRoleDetection({
+        status: 'ready',
+        detectedTitle: detected.detectedTitle,
+        canonicalTitle: bestMatch.canonicalTitle,
+        confidence: bestMatch.confidence,
+      })
+    } catch (err) {
+      setRoleDetection({ status: 'error' })
+      reportError(err)
+    }
+  }
+
+  function selectSuggestedRole(suggestion: TitleMatchSuggestion) {
+    if (roleDetection.status !== 'uncertain' && roleDetection.status !== 'not-found') return
+    setRoleDetection({
+      status: 'ready',
+      detectedTitle: roleDetection.status === 'uncertain'
+        ? roleDetection.detectedTitle
+        : manualTitleQuery.trim(),
+      canonicalTitle: suggestion.canonicalTitle,
+      confidence: suggestion.confidence,
+    })
+  }
+
+  async function detectRoleFromFile(file: File) {
+    try {
+      const { cvText } = await uploadPdf(file, false)
+      await detectRole(cvText)
+    } catch (err) {
+      setRoleDetection({ status: 'error' })
+      if (isCvExtractFailure(err)) {
+        setFieldErrors((prev) => ({ ...prev, cv: CV_EXTRACT_ERROR }))
+        return
+      }
+      reportError(err)
+    }
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -135,7 +229,9 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
     setSelectedCvId(null)
     setSelectedCvText(null)
     setSelectedCvName(null)
+    resetRoleDetection()
     clearCvFieldError()
+    void detectRoleFromFile(file)
   }
 
   const handleDrop = (e: React.DragEvent) => {
@@ -151,7 +247,9 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
     setSelectedCvId(null)
     setSelectedCvText(null)
     setSelectedCvName(null)
+    resetRoleDetection()
     clearCvFieldError()
+    void detectRoleFromFile(file)
   }
 
   async function handleSelectSavedCv(cv: SavedCv) {
@@ -161,7 +259,9 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
       setSelectedCvText(cvText)
       setSelectedCvName(cv.fileName)
       setCvFile(null)
+      resetRoleDetection()
       clearCvFieldError()
+      await detectRole(cvText)
     } catch (err) {
       reportError(err)
     }
@@ -196,18 +296,19 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
   const jdError = fieldErrors.jobDescription
   const hasCv = !!(cvFile || selectedCvText)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const runAnalysis = async () => {
+    if (isLoading || analysisInFlightRef.current || roleDetection.status !== 'ready') return
     const nextErrors: UploadFieldErrors = {
       jobDescription: jobDescriptionError(jobDescription, jobInputMode),
       cv: hasCv ? undefined : 'Upload or select a CV to continue',
     }
     setFieldErrors(nextErrors)
-    if (nextErrors.jobDescription || nextErrors.cv || !jobId) return
+    if (nextErrors.jobDescription || nextErrors.cv) return
     if (hasGibberishDescription) {
       setGibberishWarning(true)
       return
     }
+    analysisInFlightRef.current = true
     setIsLoading(true)
     try {
       let cvText: string
@@ -219,7 +320,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
         cvText = selectedCvText!
       }
       const result = await analyzeCv(
-        jobId,
+        roleDetection.canonicalTitle,
         cvText,
         isPostingMode ? trimmedJobDescription : '',
         0.0,
@@ -251,14 +352,20 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
       }
       reportError(err)
     } finally {
+      analysisInFlightRef.current = false
       setIsLoading(false)
     }
   }
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    void runAnalysis()
+  }
+
   const activeCvName = cvFile ? cvFile.name : selectedCvName
   const canSubmit = isPostingMode
-    ? hasCv && !!jobId && !jdError && !hasGibberishDescription && !loadError
-    : hasCv && !!jobId && !loadError
+    ? hasCv && roleDetection.status === 'ready' && !jdError && !hasGibberishDescription
+    : hasCv && roleDetection.status === 'ready'
 
   return (
     <section
@@ -418,17 +525,74 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                 <h2>Job</h2>
               </div>
 
-              {loadError && <p className="field-error">{loadError}</p>}
-
               <div className="field-group">
-                <label className="field-label" htmlFor="job-select">
-                  Role <span className="field-required" aria-hidden="true">*</span>
-                </label>
-                <select id="job-select" className="field-select" value={jobId} onChange={(e) => setJobId(e.target.value)} disabled={isLoading || jobs.length === 0} required>
-                  {jobs.length === 0 && !loadError
-                    ? <option value="">Loading roles...</option>
-                    : jobs.map((j) => <option key={j.id} value={j.id}>{j.title}</option>)}
-                </select>
+                <span className="field-label">Detected role</span>
+                {roleDetection.status === 'idle' && (
+                  <p className="detected-role detected-role--idle">Choose a CV to detect your role.</p>
+                )}
+                {roleDetection.status === 'detecting' && (
+                  <p className="detected-role detected-role--loading">Detecting role from your CV...</p>
+                )}
+                {roleDetection.status === 'ready' && (
+                  <div className="detected-role detected-role--ready">
+                    <strong>{roleDetection.canonicalTitle}</strong>
+                    <span>Detected as {roleDetection.detectedTitle} · {roleDetection.confidence}% match</span>
+                  </div>
+                )}
+                {roleDetection.status === 'uncertain' && (
+                  <div className="role-suggestions">
+                    <p className="role-suggestions__hint">
+                      We found {roleDetection.detectedTitle}. Choose the closest supported role.
+                    </p>
+                    <div className="role-suggestions__list" role="list">
+                      {roleDetection.suggestions.map((suggestion) => (
+                        <button
+                          key={suggestion.canonicalTitle}
+                          type="button"
+                          className="role-suggestion"
+                          onClick={() => selectSuggestedRole(suggestion)}
+                          disabled={isLoading}
+                        >
+                          <span>{suggestion.canonicalTitle}</span>
+                          <span>{suggestion.confidence}% match</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {roleDetection.status === 'not-found' && (
+                  <div className="role-search">
+                    <p className="role-search__hint">We could not identify a role in this CV. Search for the closest supported role.</p>
+                    <input
+                      className="role-search__input"
+                      type="search"
+                      value={manualTitleQuery}
+                      onChange={(e) => setManualTitleQuery(e.target.value)}
+                      placeholder="Search a role"
+                      disabled={isLoading}
+                    />
+                    {isManualTitleSearching && <p className="role-search__status">Searching...</p>}
+                    {manualTitleSuggestions.length > 0 && (
+                      <div className="role-suggestions__list" role="list">
+                        {manualTitleSuggestions.map((suggestion) => (
+                          <button
+                            key={suggestion.canonicalTitle}
+                            type="button"
+                            className="role-suggestion"
+                            onClick={() => selectSuggestedRole(suggestion)}
+                            disabled={isLoading}
+                          >
+                            <span>{suggestion.canonicalTitle}</span>
+                            <span>{suggestion.confidence}% match</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {roleDetection.status === 'error' && (
+                  <p className="detected-role detected-role--error">Role detection is unavailable. Please try another CV.</p>
+                )}
               </div>
 
               <div className="jd-mode-tabs" role="tablist" aria-label="Job analysis mode">
@@ -497,7 +661,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                     }
                   />
                   <span className={`char-counter${jdError || gibberishWarning ? ' char-counter--warn' : ''}`}>
-                    {isJobUrlInput ? 'Job link � will import on analyze' : `${jobDescription.length} / ${MAX_JOB_DESCRIPTION_CHARS}`}
+                    {isJobUrlInput ? 'Job link  will import on analyze' : `${jobDescription.length} / ${MAX_JOB_DESCRIPTION_CHARS}`}
                   </span>
                   {jdError && (
                     <span id="job-description-error" className="field-inline-error" role="alert">
@@ -533,8 +697,12 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
               <p className="cta-hint">
                 {!hasCv
                   ? 'Upload or select a CV to continue'
-                  : !jobId
-                    ? 'Select a role'
+                  : roleDetection.status !== 'ready'
+                    ? roleDetection.status === 'detecting'
+                      ? 'Detecting your role'
+                      : roleDetection.status === 'uncertain'
+                        ? 'Choose a suggested role to continue'
+                      : 'A detected role is required to continue'
                     : isPostingMode && hasGibberishDescription
                       ? 'Enter a readable English job description to continue'
                       : isPostingMode && !hasEnoughDescription

@@ -1,4 +1,4 @@
-import pdf from 'pdf-parse';
+import { PDFParse } from 'pdf-parse';
 import { ValidationError } from '../errors';
 import { logDebugText, logUploadOk, logUploadWarn } from '../utils/pocLog';
 
@@ -14,14 +14,18 @@ export async function processUpload(
   buffer: Buffer,
   originalName: string
 ): Promise<{ cvText: string }> {
-  let data: { text?: string };
+  let raw: string;
+  let parser: PDFParse | undefined;
   try {
-    data = await pdf(buffer);
+    parser = new PDFParse({ data: buffer });
+    const data = await parser.getText();
+    raw = data.text.trim();
   } catch (err) {
     logUploadWarn(err instanceof Error ? err.message : 'PDF parse failed');
     throw new ValidationError('Could not parse PDF file');
+  } finally {
+    await parser?.destroy();
   }
-  const raw = (data.text ?? '').trim();
   if (!raw) {
     logUploadWarn('no extractable text layer');
     throw new ValidationError('No extractable text from PDF');

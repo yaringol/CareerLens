@@ -167,14 +167,16 @@ async function resolveJobDescriptionInput(raw: string): Promise<string> {
 /**
  * POST /api/analyze
  *
- * POC: { jobId, cvText, jobDescription } — user supplies the JD text for dynamic skill extraction;
- *       jobId selects role (core skills + DB record). Stored Job.description is not used for extraction.
+ * Current: { canonicalTitle, cvText, jobDescription } — a detected or user-confirmed canonical title
+ *          selects the role. The stored Job.description is not used for dynamic skill extraction.
+ * POC compatibility: { jobId, cvText, jobDescription } remains supported.
  * Legacy: { jobTitle, jobDescription, cvText }
  */
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { jobId, cvText, jobTitle, jobDescription } = req.body as {
+    const { jobId, canonicalTitle, cvText, jobTitle, jobDescription } = req.body as {
       jobId?: string;
+      canonicalTitle?: string;
       cvText?: string;
       jobTitle?: string;
       jobDescription?: string;
@@ -184,8 +186,10 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     let descriptionForDynamic: string;
     const skipGibberish = req.header('X-Skip-Gibberish')?.toLowerCase() === 'true';
 
-    if (jobId && cvText) {
-      job = await validateJobById(jobId);
+    if ((jobId || canonicalTitle) && cvText) {
+      job = jobId
+        ? await validateJobById(jobId)
+        : await validateJobTitle(canonicalTitle!.trim());
       if (skipGibberish) {
         descriptionForDynamic = '';
       } else {
@@ -208,7 +212,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       descriptionForDynamic = jobDescription;
     } else {
       throw new ValidationError(
-        'Provide jobId, cvText, and jobDescription, or jobTitle, jobDescription, and cvText'
+        'Provide canonicalTitle or jobId with cvText and jobDescription, or jobTitle, jobDescription, and cvText'
       );
     }
 
