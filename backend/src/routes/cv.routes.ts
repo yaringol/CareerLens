@@ -3,7 +3,7 @@ import { Types } from 'mongoose';
 import { uploadMiddleware } from '../middleware/upload';
 import { authenticate } from '../middleware/auth.middleware';
 import { processUpload } from '../services/cv.service';
-import { detectTitleFromCv, rolesToSuggestions } from '../services/dsModel';
+import { detectTitleFromCv } from '../services/dsModel';
 import { CvFile } from '../models/cvFile.model';
 import { ValidationError } from '../errors';
 import {
@@ -15,7 +15,7 @@ import {
 const router = Router();
 router.use(authenticate);
 
-// POST /api/cv/title — Detect the most likely role from raw CV text.
+// POST /api/cv/title — Detect 3 role suggestions based on raw CV text.
 router.post('/cv/title', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { cvText } = req.body as { cvText?: unknown };
@@ -23,15 +23,7 @@ router.post('/cv/title', async (req: Request, res: Response, next: NextFunction)
       throw new ValidationError('cvText must contain at least 50 characters');
     }
 
-    const roles = await detectTitleFromCv(cvText);
-    const suggestions = rolesToSuggestions(roles);
-    const top = suggestions[0];
-    res.json({
-      detectedTitle: top ? top.canonicalTitle : null,
-      confidence: top ? top.confidence : 0,
-      source: top ? 'experience' : 'none',
-      suggestions,
-    });
+    res.json(detectTitleFromCv(cvText));
   } catch (err) {
     next(err);
   }
