@@ -28,33 +28,6 @@ interface DsTitleMatchResponse {
   }>;
 }
 
-interface CVTitleDetectionResponse {
-  job_title: string;
-  confidence: number;
-}
-
-export async function detectTitleFromCv(text: string): Promise<string[]> {
-  try {
-    const response = await axios.get<CVTitleDetectionResponse[]>(
-      `${DS_MODEL_URL}/cv/role`,
-      {
-        params: { text },
-        timeout: DS_MODEL_TIMEOUT_MS,
-      }
-    );
-    const jobTitles: string[] = response.data.map(item => item.job_title);
-    return jobTitles;
-  } catch (err) {
-    if (axios.isAxiosError(err)) {
-      if (err.code === 'ECONNREFUSED' || err.code === 'ECONNABORTED') {
-        throw new DsModelError('DS model service is unavailable', 503);
-      }
-      throw new DsModelError(`DS model request failed: ${err.message}`);
-    }
-    throw err;
-  }
-}
-
 /**
  * Calls /text/skills (SkillNer) — extracts skills from raw job description text.
  * Returns top N deduplicated skills, full matches first then ngram by score.
