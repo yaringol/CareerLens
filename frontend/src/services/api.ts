@@ -105,6 +105,7 @@ export interface DetectedCvTitle {
   detectedTitle: string | null
   confidence: number
   source: 'headline' | 'experience' | 'none'
+  suggestions: TitleMatchSuggestion[]
 }
 
 export interface TitleMatchSuggestion {
