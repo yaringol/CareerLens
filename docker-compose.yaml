@@ -1,0 +1,58 @@
+services:
+  model-server:
+    container_name: model-server
+    image: careerlens/model:main
+    build:
+      context: ds/model
+      dockerfile: Dockerfile
+    networks:
+      - app-network
+
+  mongodb:
+    container_name: mongodb
+    image: mongo:6.0
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=secretpassword
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - app-network
+
+  backend:
+    container_name: backend
+    image: careerlens/backend:main
+    build:
+      context: backend
+      dockerfile: Dockerfile
+    environment:
+      - PORT=3000
+      - MONGODB_URI=mongodb://root:secretpassword@mongodb:27017/mydatabase?authSource=admin
+      - MODEL_SERVER_URL=http://model-server:8000
+      - JWT_SECRET=your-local-dev-secret
+      - JWT_EXPIRY=7d
+      - BCRYPT_ROUNDS=10
+    depends_on:
+      - model-server
+    networks:
+      - app-network
+
+  frontend:
+    container_name: frontend
+    image: careerlens/frontend:main
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80" # Access your app at http://localhost:8080
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongo_data:
