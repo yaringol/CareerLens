@@ -1,0 +1,6 @@
+requests
+beautifulsoup4
+spacy
+skillNer
+numpy
+pymongo

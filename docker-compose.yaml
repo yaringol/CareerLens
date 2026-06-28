@@ -1,6 +1,7 @@
 services:
   model-server:
     container_name: model-server
+    restart: always
     image: careerlens/model:main
     build:
       context: ds/model
@@ -10,6 +11,7 @@ services:
 
   mongodb:
     container_name: mongodb
+    restart: always
     image: mongo:6.0
     environment:
       - MONGO_INITDB_ROOT_USERNAME=root
@@ -18,9 +20,15 @@ services:
       - mongo_data:/data/db
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
 
   backend:
     container_name: backend
+    restart: always
     image: careerlens/backend:main
     build:
       context: backend
@@ -33,12 +41,16 @@ services:
       - JWT_EXPIRY=7d
       - BCRYPT_ROUNDS=10
     depends_on:
-      - model-server
+      model-server:
+        condition: service_started
+      mongodb:
+        condition: service_healthy
     networks:
       - app-network
 
   frontend:
     container_name: frontend
+    restart: always
     image: careerlens/frontend:main
     build:
       context: frontend
