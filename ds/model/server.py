@@ -1,7 +1,8 @@
 import os
+import re
 import logging
 import json
-
+from typing import Optional
 from fastapi import FastAPI
 import joblib
 import uvicorn
@@ -25,6 +26,8 @@ artifacts = joblib.load(f'{os.path.dirname(__file__)}/model.joblib')
 vectorizer = artifacts['vectorizer']
 knn = artifacts['knn_model']
 skills_data = artifacts['skills']
+titles_data = artifacts['titles']            # canonical title per variant row
+variant_titles = artifacts['variant_titles'] # variant phrase per row (parallel to titles_data)
 
 cv_to_title_model = joblib.load(f'{os.path.dirname(__file__)}/text_to_job_title_classifier.joblib')
 
@@ -37,6 +40,42 @@ class NpEncoder(json.JSONEncoder):
         if isinstance(obj, np.ndarray):
             return obj.tolist()
         return super(NpEncoder, self).default(obj)
+
+# ── Title extraction (regex + keyword fallback, no PDF dependency) ────────────
+_ROLE_KEYWORDS = {
+    'engineer', 'developer', 'analyst', 'manager', 'scientist',
+    'designer', 'devops', 'architect', 'lead', 'director',
+    'specialist', 'consultant', 'researcher', 'qa', 'tester',
+    'product', 'frontend', 'backend', 'fullstack', 'data',
+    'machine learning', 'ml', 'cloud', 'security',
+}
+
+_TITLE_PATTERNS = [
+    r'^([A-Za-z][A-Za-z\s/\-\.&]{3,50}?)\s*[|·,]\s*(?:[A-Z][a-z]|\d{4})',
+    r'(?:current role|position|title|role)\s*[:\-]\s*([A-Za-z][A-Za-z\s/\-\.]{3,50})',
+    r'^([A-Za-z][A-Za-z\s/\-\.]{3,50}?)\s+at\s+[A-Z]',
+]
+
+def _looks_like_title(text: str) -> bool:
+    words = text.lower().split()
+    return any(kw in ' '.join(words) for kw in _ROLE_KEYWORDS)
+
+def extract_title_from_cv(cv_text: str) -> Optional[str]:
+    for line in cv_text.splitlines():
+        line = line.strip()
+        if not line or len(line) > 80:
+            continue
+        for pattern in _TITLE_PATTERNS:
+            m = re.search(pattern, line, re.IGNORECASE)
+            if m:
+                candidate = m.group(1).strip().title()
+                if _looks_like_title(candidate):
+                    return candidate
+    for line in cv_text.splitlines():
+        line = line.strip()
+        if 2 <= len(line.split()) <= 5 and _looks_like_title(line):
+            return line.title()
+    return None
 
 @app.get("/text/skills")
 def predict_skills_from_text(text: str):
@@ -82,6 +121,31 @@ def match_role_to_cv(text: str):
     results.sort(key=lambda x: x['confidence'], reverse=True)
     top_3 = results[:3]
     return top_3
+
+@app.get("/title/match")
+def match_title(title: str):
+    # Map a free-text role to canonical model-supported titles via nearest
+    # variant phrases (cosine KNN). Returns up to 3 *distinct* canonical titles.
+    vec = vectorizer.transform([title])
+    k = min(10, knn.n_samples_fit_)
+    distances, indices = knn.kneighbors(vec, n_neighbors=k)
+
+    suggestions = []
+    seen = set()
+    for dist, idx in zip(distances[0], indices[0]):
+        canonical = titles_data[idx]
+        if canonical in seen:
+            continue
+        seen.add(canonical)
+        suggestions.append({
+            "canonical_title": canonical,
+            "matched_variant": variant_titles[idx],
+            "confidence": round(float(1.0 - dist), 4),
+        })
+        if len(suggestions) == 3:
+            break
+
+    return {"suggestions": suggestions}
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')

@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom'
 import AppLogo from '../ui/AppLogo'
 import { useError } from '../../context/ErrorContext'
 import {
-  analyzeCv,
   ApiError,
   detectCvTitle,
   getCvText,
@@ -22,7 +21,7 @@ import { isGibberish } from '../../utils/gibberishDetector'
 import { looksLikeJobUrl } from '../../utils/jobUrl'
 import '../../pages/UploadScreen.css'
 
-const RESULT_KEY = 'pocAnalysisResult'
+const PERSONALIZATION_INPUT_KEY = 'pocPersonalizationInput'
 const CV_EXTRACT_ERROR = 'Could not extract text from this PDF'
 const AUTO_MATCH_CONFIDENCE_MIN = 90
 
@@ -341,19 +340,22 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
       } else {
         cvText = selectedCvText!
       }
-      const result = await analyzeCv(
-        roleDetection.canonicalTitle,
-        cvText,
-        isPostingMode ? trimmedJobDescription : '',
-        0.0,
-        { skipGibberish: !isPostingMode, excludeCvId: excludeCvId || undefined },
-      )
       const cvFileName = cvFile ? cvFile.name : (selectedCvName ?? 'cv.pdf')
-      sessionStorage.setItem(RESULT_KEY, JSON.stringify({ ...result, cvText, cvFileName }))
-      sessionStorage.setItem('pocJobDescription', isPostingMode ? trimmedJobDescription : '')
-      sessionStorage.setItem('pocCvFileName', cvFileName)
-      sessionStorage.setItem('pocExcludeCvId', excludeCvId)
-      navigate('/dashboard', { replace: true })
+      // Hand off to the Personalization screen, which runs the analysis (personalized
+      // path, or the standard fallback) once the user confirms their preferences.
+      sessionStorage.setItem(
+        PERSONALIZATION_INPUT_KEY,
+        JSON.stringify({
+          canonicalTitle: roleDetection.canonicalTitle,
+          detectedTitle: roleDetection.detectedTitle,
+          cvText,
+          cvFileName,
+          jobDescription: isPostingMode ? trimmedJobDescription : '',
+          isPostingMode,
+          excludeCvId: excludeCvId || undefined,
+        }),
+      )
+      navigate('/personalize', { replace: true })
     } catch (err) {
       if (err instanceof ApiError && err.code === 'GIBBERISH_DETECTED') {
         setGibberishWarning(true)

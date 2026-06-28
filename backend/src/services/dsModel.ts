@@ -113,12 +113,12 @@ export async function getSkillsFromText(text: string, topN = 5): Promise<string[
   }
 }
 
-export async function getCoreSkills(jobTitle: string): Promise<string[] | null> {
+export async function getCoreSkills(jobTitle: string, titleMatch = 0.0): Promise<string[] | null> {
   try {
-    const response = await axios.get<{ suggested_skills: string[] }>(
+    const response = await axios.get<{ suggested_skills: string[]; matched_canonical?: string }>(
       `${DS_MODEL_URL}/title/skills`,
       {
-        params: { title: jobTitle },
+        params: { title: jobTitle, title_match: titleMatch },
         timeout: DS_MODEL_TIMEOUT_MS,
       }
     );
@@ -141,6 +141,57 @@ export async function getCoreSkills(jobTitle: string): Promise<string[] | null> 
   }
 }
 
+export interface TitleMatchResult {
+  canonical: string;
+  confidence: number;
+}
+
+export interface ExtractTitleResult {
+  extracted_title: string | null;
+  canonical_title: string | null;
+  confidence: number;
+  low_confidence: boolean;
+}
+
+export async function matchTitle(title: string): Promise<{ matches: TitleMatchResult[]; low_confidence: boolean }> {
+  try {
+    const response = await axios.get<{ matches: TitleMatchResult[]; low_confidence: boolean }>(
+      `${DS_MODEL_URL}/title/match`,
+      { params: { title }, timeout: DS_MODEL_TIMEOUT_MS }
+    );
+    return response.data;
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      if (err.code === 'ECONNREFUSED' || err.code === 'ECONNABORTED') {
+        throw new DsModelError('DS model service is unavailable', 503);
+      }
+      throw new DsModelError(`DS model request failed: ${err.message}`);
+    }
+    throw err;
+  }
+}
+
+export async function extractTitleFromCv(cvText: string): Promise<ExtractTitleResult> {
+  try {
+    const response = await axios.post<ExtractTitleResult>(
+      `${DS_MODEL_URL}/cv/title`,
+      { text: cvText },
+      { timeout: DS_MODEL_TIMEOUT_MS }
+    );
+    return response.data;
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      if (err.code === 'ECONNREFUSED' || err.code === 'ECONNABORTED') {
+        throw new DsModelError('DS model service is unavailable', 503);
+      }
+      throw new DsModelError(`DS model request failed: ${err.message}`);
+    }
+    throw err;
+  }
+}
+
+// Restored from master (HEAD): the frontend's POST /api/title/match consumes this.
+// Calls DS GET /title/match and returns { suggestions: [{ canonicalTitle, matchedVariant, confidence }] }.
 export async function getTitleMatches(title: string): Promise<{ suggestions: TitleMatchSuggestion[] }> {
   try {
     const response = await axios.get<DsTitleMatchResponse>(`${DS_MODEL_URL}/title/match`, {

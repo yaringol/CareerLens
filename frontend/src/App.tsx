@@ -11,6 +11,7 @@ import AdminPage from './pages/AdminPage'
 import AccountPage from './pages/AccountPage'
 import ImproveCVScreen from './pages/ImproveCVScreen'
 import UploadPage from './pages/UploadPage'
+import PersonalizationScreen from './pages/PersonalizationScreen'
 import ErrorBoundary from './components/ui/ErrorBoundary'
 import ErrorToast from './components/ui/ErrorToast'
 import SplashScreen from './components/ui/SplashScreen'
@@ -47,6 +48,14 @@ function App() {
                       element={
                         <RequireAuth>
                           <UploadPage />
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/personalize"
+                      element={
+                        <RequireAuth>
+                          <PersonalizationScreen />
                         </RequireAuth>
                       }
                     />

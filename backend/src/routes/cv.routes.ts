@@ -6,6 +6,7 @@ import { processUpload } from '../services/cv.service';
 import { detectTitleFromCv } from '../services/dsModel';
 import { CvFile } from '../models/cvFile.model';
 import { ValidationError } from '../errors';
+import { extractTitleFromCv, matchTitle } from '../services/dsModel';
 import {
   enforceSavedCvLimit,
   MAX_SAVED_CVS,
@@ -125,6 +126,34 @@ router.delete('/cv/:id', async (req: Request, res: Response, next: NextFunction)
       return;
     }
     res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/cv/extract-title — Detect user's current role from CV text
+router.post('/cv/extract-title', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { cvText } = req.body as { cvText?: string };
+    if (!cvText || typeof cvText !== 'string' || cvText.trim().length < 10) {
+      throw new ValidationError('cvText is required (min 10 chars)');
+    }
+    const result = await extractTitleFromCv(cvText);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/title/match?title=... — Return top-3 canonical title matches
+router.get('/title/match', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const title = req.query.title as string | undefined;
+    if (!title || title.trim().length < 2) {
+      throw new ValidationError('title query param is required');
+    }
+    const result = await matchTitle(title.trim());
+    res.json(result);
   } catch (err) {
     next(err);
   }

@@ -338,6 +338,78 @@ router.post('/skillner', async (req: Request, res: Response, next: NextFunction)
   }
 });
 
+const PERSONALIZATION_MODES = ['stable', 'balanced', 'trending', 'custom'] as const;
+type PersonalizationMode = (typeof PERSONALIZATION_MODES)[number];
+
+/**
+ * POST /api/analyze/personalized
+ *
+ * Contract-only endpoint for the upcoming personalized recommendation flow
+ * (Stable / Trending / Personal-Match weighting + focus-skill selection).
+ *
+ * The time-based / personalized model logic is NOT implemented yet, so a valid
+ * request is acknowledged with 501 + PERSONALIZATION_NOT_IMPLEMENTED. The
+ * frontend uses this code to offer an explicit fallback to POST /api/analyze.
+ * Validation runs first so the request contract is exercised end-to-end today.
+ */
+router.post('/personalized', (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { canonicalTitle, cvText, personalization } = req.body as {
+      canonicalTitle?: unknown;
+      cvText?: unknown;
+      personalization?: {
+        mode?: unknown;
+        weights?: { stable?: unknown; trending?: unknown; personalMatch?: unknown };
+        selectedSkillIds?: unknown;
+      };
+    };
+
+    if (typeof canonicalTitle !== 'string' || !canonicalTitle.trim()) {
+      throw new ValidationError('canonicalTitle is required');
+    }
+    if (typeof cvText !== 'string' || cvText.trim().length < 10) {
+      throw new ValidationError('cvText is required (min 10 chars)');
+    }
+    if (!personalization || typeof personalization !== 'object') {
+      throw new ValidationError('personalization is required');
+    }
+
+    const { mode, weights, selectedSkillIds } = personalization;
+    if (!PERSONALIZATION_MODES.includes(mode as PersonalizationMode)) {
+      throw new ValidationError(
+        `personalization.mode must be one of: ${PERSONALIZATION_MODES.join(', ')}`
+      );
+    }
+
+    const { stable, trending, personalMatch } = weights ?? {};
+    if (
+      typeof stable !== 'number' ||
+      typeof trending !== 'number' ||
+      typeof personalMatch !== 'number'
+    ) {
+      throw new ValidationError('personalization.weights must be numbers (stable, trending, personalMatch)');
+    }
+    if (Math.abs(stable + trending + personalMatch - 100) > 0.5) {
+      throw new ValidationError('personalization.weights must sum to 100');
+    }
+
+    if (!Array.isArray(selectedSkillIds)) {
+      throw new ValidationError('personalization.selectedSkillIds must be an array');
+    }
+    if (selectedSkillIds.length > 5) {
+      throw new ValidationError('You can select up to 5 skills only');
+    }
+
+    // Contract validated — personalized model path is not active yet.
+    res.status(501).json({
+      code: 'PERSONALIZATION_NOT_IMPLEMENTED',
+      error: 'Personalized recommendations are not available yet.',
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 /**
  * POST /api/analyze/compare-saved
  *

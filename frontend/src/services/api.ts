@@ -123,6 +123,44 @@ export interface AnalyzeResponse {
   bestSavedCv?: CompareSavedResponse['bestSavedCv']
 }
 
+// ── Personalization ───────────────────────────────────────────────────────
+
+export type SkillSource = 'cv' | 'role' | 'market'
+
+export interface SkillOption {
+  id: string
+  name: string
+  source: SkillSource
+  score: number
+  selectedByDefault: boolean
+}
+
+export interface PersonalizationOptions {
+  detectedTitle: string
+  extractedCvSkills: string[]
+  roleDerivedSkills: SkillOption[]
+}
+
+export type RecommendationMode = 'stable' | 'balanced' | 'trending' | 'custom'
+
+export interface PersonalizationWeights {
+  stable: number
+  trending: number
+  personalMatch: number
+}
+
+export interface PersonalizationContract {
+  personalizationSessionId?: string
+  canonicalTitle: string
+  cvText: string
+  jobDescription?: string
+  personalization: {
+    mode: RecommendationMode
+    weights: PersonalizationWeights
+    selectedSkillIds: string[]
+  }
+}
+
 export interface SavedCv {
   cvId: string
   fileName: string
@@ -284,6 +322,37 @@ export async function analyzeCv(
       titleMatch,
       ...(options.excludeCvId ? { excludeCvId: options.excludeCvId } : {}),
     }),
+  })
+  return res.json() as Promise<AnalyzeResponse>
+}
+
+/**
+ * Fetch the data the Personalization screen renders: detected title, the user's
+ * CV-extracted skills, and the role-derived focus-skill pool (top 5 pre-selected).
+ */
+export async function getPersonalizationOptions(payload: {
+  canonicalTitle: string
+  cvText: string
+  jobDescription?: string
+}): Promise<PersonalizationOptions> {
+  const res = await apiFetch(`${base()}/personalize/options`, {
+    method: 'POST',
+    headers: { ...jsonHeaders, ...authHeaders() },
+    body: JSON.stringify(payload),
+  })
+  return res.json() as Promise<PersonalizationOptions>
+}
+
+/**
+ * Submit the personalization contract. The personalized model path is not active
+ * yet, so this currently throws an ApiError with code PERSONALIZATION_NOT_IMPLEMENTED
+ * (HTTP 501); callers branch on that to offer the standard-analysis fallback.
+ */
+export async function analyzePersonalized(contract: PersonalizationContract): Promise<AnalyzeResponse> {
+  const res = await apiFetch(`${base()}/analyze/personalized`, {
+    method: 'POST',
+    headers: { ...jsonHeaders, ...authHeaders() },
+    body: JSON.stringify(contract),
   })
   return res.json() as Promise<AnalyzeResponse>
 }

@@ -24,11 +24,16 @@ from server import rank_skills, SkillPreferences
 
 MOCK_MATRIX = {
     "DevOps Engineer": {
+        # High prevalence, low specificity — stays in top-5 for title_match=0
         "python":        {"frequency": 200, "prevalence": 1.0,  "title_specificity": 0.1},
         "bash":          {"frequency": 140, "prevalence": 0.7,  "title_specificity": 0.9},
         "linux":         {"frequency": 130, "prevalence": 0.65, "title_specificity": 0.75},
         "kubernetes":    {"frequency": 120, "prevalence": 0.6,  "title_specificity": 0.85},
-        "terraform":     {"frequency":  80, "prevalence": 0.4,  "title_specificity": 0.9},
+        # sql: medium prevalence, near-zero specificity → rank 5 with title_match=0, rank 6 with title_match=1
+        "sql":           {"frequency":  90, "prevalence": 0.45, "title_specificity": 0.05},
+        # terraform: low prevalence, very high specificity → rank 6 with title_match=0, rank 5 with title_match=1
+        "terraform":     {"frequency":  80, "prevalence": 0.3,  "title_specificity": 0.99},
+        # Always rank 7 — should never appear in top-5
         "communication": {"frequency":  30, "prevalence": 0.15, "title_specificity": 0.05},
     }
 }

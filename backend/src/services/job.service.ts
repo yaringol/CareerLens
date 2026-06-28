@@ -13,16 +13,16 @@ import {
 
 export async function listJobs(): Promise<IJob[]> {
   const jobs = await getPocJobsForList();
-  if (jobs.length !== 5) {
+  if (jobs.length === 0) {
     throw new DsModelError(
-      `POC requires exactly 5 jobs with titles: Software Engineer, Data Scientist, Product Manager, DevOps Engineer, Frontend Developer. Found ${jobs.length}. From the backend directory run: npm run seed`,
+      'No jobs found in the database. From the backend directory run: npm run seed',
       503
     );
   }
   return jobs;
 }
 
-export async function getCoreSkillsById(jobId: string): Promise<{
+export async function getCoreSkillsById(jobId: string, titleMatch = 0.0): Promise<{
   jobId: string;
   jobTitle: string;
   coreSkills: string[];
@@ -34,7 +34,7 @@ export async function getCoreSkillsById(jobId: string): Promise<{
   const job = await getJobById(jobId);
   if (!job) throw new NotFoundError('Job not found');
 
-  const coreSkills = await getCoreSkills(job.title);
+  const coreSkills = await getCoreSkills(job.title, titleMatch);
   if (!coreSkills) {
     throw new DsModelError(`No core skills available for job title "${job.title}"`, 503);
   }
