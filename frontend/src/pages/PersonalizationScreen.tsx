@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import AppLogo from '../components/ui/AppLogo'
 import { useToast } from '../contexts/ToastContext'
 import { useError } from '../context/ErrorContext'
@@ -220,25 +220,57 @@ export default function PersonalizationScreen() {
   const selectedCount = selectedIds.length
 
   return (
-    <div className="personalize-screen">
-      <div className="personalize-card">
-        <header className="personalize-header">
-          <AppLogo />
-          <p className="personalize-eyebrow">Step 2 of 3 · Personalize</p>
-          <h1 className="personalize-title">Tailor your recommendations</h1>
-          <p className="personalize-detected">
-            Detected role: <strong>{detectedTitle}</strong>
-          </p>
-        </header>
+    <section className="upload-section upload-section--visible personalize-flow">
+      <div className="upload-wrapper">
+        <div className="upload-app-header">
+          <div className="upload-app-nav">
+            <Link to="/" className="btn-nav-pill">Home</Link>
+            <Link to="/account" className="btn-nav-pill">Account</Link>
+          </div>
+          <div className="step-indicator">
+            <div className="step step--done">
+              <div className="step-dot">✓</div>
+              <span className="step-label">Upload</span>
+            </div>
+            <div className="step-line" />
+            <div className="step step--active">
+              <div className="step-dot">2</div>
+              <span className="step-label">Personalize</span>
+            </div>
+            <div className="step-line" />
+            <div className="step">
+              <div className="step-dot">3</div>
+              <span className="step-label">Results</span>
+            </div>
+            <div className="step-line" />
+            <div className="step">
+              <div className="step-dot">4</div>
+              <span className="step-label">Improve</span>
+            </div>
+          </div>
+          <AppLogo size="sm" />
+        </div>
 
-        {/* ── Area 1: Recommendation Balance ───────────────────────── */}
-        <section className="personalize-section">
-          <h2 className="personalize-section-title">Recommendation Balance</h2>
-          <p className="personalize-section-sub">
-            Choose how much each factor should affect your recommendations.
-          </p>
+        <div className="upload-card personalize-card">
+          <div className="personalize-intro">
+            <h1 className="personalize-title">Tailor your recommendations</h1>
+            <p className="personalize-detected">
+              Detected role: <strong>{detectedTitle}</strong>
+              <span className="personalize-detected-note"> · detected from your CV in the previous step</span>
+            </p>
+          </div>
 
-          <div className="preset-grid">
+          {/* ── Area 1: Recommendation Balance ───────────────────────── */}
+          <section className="personalize-section">
+            <h2 className="personalize-section-title">Recommendation Balance</h2>
+            <p className="personalize-section-sub">
+              How the <strong>model</strong> balances its recommendations — between skills that
+              stay in demand over time (<strong>Stable</strong>), skills rising in recent job
+              postings (<strong>Trending</strong>), and how closely they fit your CV and role
+              (<strong>Personal Match</strong>).
+            </p>
+
+            <div className="preset-grid">
             {(Object.keys(MODE_LABELS) as RecommendationMode[]).map((m) => (
               <button
                 key={m}
@@ -282,7 +314,9 @@ export default function PersonalizationScreen() {
         <section className="personalize-section">
           <h2 className="personalize-section-title">Focus Skills</h2>
           <p className="personalize-section-sub">
-            Select up to {MAX_FOCUS_SKILLS} skills to focus on ({selectedCount}/{MAX_FOCUS_SKILLS} selected).
+            Skills derived from <strong>this specific role</strong> ({detectedTitle}). Pick up to{' '}
+            {MAX_FOCUS_SKILLS} to focus on — only the selected ones move to your results.{' '}
+            <span className="focus-count">({selectedCount}/{MAX_FOCUS_SKILLS} selected)</span>
           </p>
 
           {loadingOptions ? (
@@ -301,9 +335,11 @@ export default function PersonalizationScreen() {
                     aria-pressed={checked}
                   >
                     <span className="focus-skill-name">{skill.name}</span>
-                    <span className={`focus-skill-source focus-skill-source--${skill.source}`}>
-                      {skill.source === 'cv' ? 'from CV' : skill.source === 'market' ? 'from posting' : 'role'}
-                    </span>
+                    {skill.source !== 'role' && (
+                      <span className={`focus-skill-source focus-skill-source--${skill.source}`}>
+                        {skill.source === 'cv' ? 'from CV' : 'from posting'}
+                      </span>
+                    )}
                   </button>
                 )
               })}
@@ -346,11 +382,12 @@ export default function PersonalizationScreen() {
               onClick={handleContinue}
               disabled={submitting || loadingOptions}
             >
-              {submitting ? 'Submitting…' : 'Continue'}
+              {submitting ? 'Submitting…' : 'Analyse Match'}
             </button>
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </section>
   )
 }

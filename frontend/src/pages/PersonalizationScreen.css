@@ -1,45 +1,30 @@
 /* Reuse the prepared slider classes (.slider-row, .pref-slider, .slider-label-end, .slider-hint) */
 @import './UploadScreen.css';
 
-.personalize-screen {
-  min-height: 100vh;
-  background: var(--color-bg);
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 3rem 1.5rem 4rem;
-  animation: page-in 0.45s ease-out both;
+/* The screen reuses the upload flow shell (.upload-section / .upload-wrapper /
+   .upload-app-header / .upload-card) so it reads as part of the same flow. */
+
+.personalize-card.upload-card {
+  align-items: stretch;
+  gap: 0;
 }
 
-.personalize-card {
-  width: 100%;
-  max-width: 640px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-card);
-  padding: 2rem;
+.personalize-flow .step--done .step-dot {
+  border-color: var(--color-success);
+  background: var(--color-success);
+  color: #fff;
 }
 
-.personalize-header {
+.personalize-intro {
   text-align: center;
-  margin-bottom: 1.75rem;
-}
-
-.personalize-eyebrow {
-  margin-top: 0.75rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--color-secondary);
+  margin-bottom: 0.5rem;
 }
 
 .personalize-title {
   font-size: 1.6rem;
   font-weight: 700;
   color: var(--color-primary);
-  margin: 0.35rem 0;
+  margin: 0 0 0.35rem;
 }
 
 .personalize-detected {
@@ -47,8 +32,13 @@
   color: var(--color-muted);
 }
 
+.personalize-detected-note {
+  color: var(--color-secondary);
+  font-size: 0.85rem;
+}
+
 .personalize-section {
-  margin-top: 1.75rem;
+  margin-top: 1.5rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--color-border);
 }
@@ -63,6 +53,13 @@
   margin-top: 0.25rem;
   font-size: 0.85rem;
   color: var(--color-muted);
+  line-height: 1.5;
+}
+
+.focus-count {
+  font-weight: 600;
+  color: var(--color-primary);
+  white-space: nowrap;
 }
 
 /* ── Presets ──────────────────────────────────────────────────────── */
@@ -184,9 +181,15 @@
 /* ── Actions / notice ─────────────────────────────────────────────── */
 .personalize-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   gap: 0.6rem;
   margin-top: 2rem;
+}
+
+/* In the "coming soon" notice there is a single button — keep it on the right */
+.personalize-notice .personalize-actions {
+  justify-content: flex-end;
 }
 
 .personalize-notice {
