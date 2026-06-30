@@ -1,14 +1,4 @@
 services:
-  model-server:
-    container_name: model-server
-    restart: always
-    image: careerlens/model:main
-    build:
-      context: ds/model
-      dockerfile: Dockerfile
-    networks:
-      - app-network
-
   mongodb:
     container_name: mongodb
     restart: always
@@ -26,25 +16,13 @@ services:
       timeout: 5s
       retries: 3
 
-  backend:
-    container_name: backend
+  scraper:
+    container_name: scraper
     restart: always
-    image: careerlens/backend:main
-    build:
-      context: backend
-      dockerfile: Dockerfile
+    image: careerlens/scraper:main
     environment:
-      - PORT=3000
       - MONGODB_URI=mongodb://root:secretpassword@mongodb:27017/mydatabase?authSource=admin
-      - MODEL_SERVER_URL=http://model-server:8000
-      - JWT_SECRET=your-local-dev-secret
-      - JWT_EXPIRY=7d
-      - BCRYPT_ROUNDS=10
     depends_on:
-      model-server:
-        condition: service_started
-      mongodb:
-        condition: service_healthy
     networks:
       - app-network
 

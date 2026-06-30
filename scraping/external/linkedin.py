@@ -28,9 +28,9 @@ MONGO_URI = os.getenv(
     "mongodb://root:secretpassword@localhost:27017/mydatabase?authSource=admin"
 )
 
-print(f"Connecting to MongoDB using URI: {MONGO_URI.split('@')[-1]}") # Safely logs host without credentials
+print(f"Connecting to MongoDB using URI: {MONGO_URI.split('@')[-1]}") 
 client = MongoClient(MONGO_URI)
-db = client.get_default_database() # Dynamically infers the database name from the connection string URL
+db = client.get_default_database() 
 jobs_collection = db["jobs"]
 
 HEADERS = {
@@ -40,6 +40,7 @@ HEADERS = {
 
 LOCATION_KEYWORDS = ["תל אביב", "מרכז", "Tel Aviv", "Central Israel", "Ramat Gan", "Herzliya", "Petah Tikva"]
 
+# --- Updated Encoder to support Datetime Parsing ---
 class NpEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.integer):
@@ -48,6 +49,8 @@ class NpEncoder(json.JSONEncoder):
             return float(obj)
         if isinstance(obj, np.ndarray):
             return obj.tolist()
+        if isinstance(obj, datetime):
+            return obj.isoformat()  # Converts datetime to an ISO string for text log file backups
         return super(NpEncoder, self).default(obj)
 
 def generate_job_id(title: str, company: str, url: str) -> str:
@@ -174,17 +177,21 @@ def process_raw_jobs(raw_file=PRE_PROCESSED_FILENAME, output_processed=PROCESSED
                 job["skills"] = get_skills(description)
                 
                 # Add Scraping Metadata Fields
-                job["scraped_at"] = datetime.utcnow()
+                current_time = datetime.utcnow()
+                job["scraped_at"] = current_time
                 
                 # Track original identifiers
                 job_id = generate_job_id(job.get("title", ""), job.get("company", ""), job.get("url", ""))
                 job["_id"] = job_id
                 
+                # Dest_f uses custom NpEncoder, turning datetime into strings safely
                 dest_f.write(json.dumps(job, ensure_ascii=False, cls=NpEncoder) + "\n")
                 
-                # Upsert directly into MongoDB
+                # Sanitizes NumPy array types for storage using NpEncoder
                 mongo_ready_job = json.loads(json.dumps(job, cls=NpEncoder))
-                mongo_ready_job["scraped_at"] = job["scraped_at"]
+                
+                # Explicitly override the string conversion back into a true BSON datetime object for Mongo
+                mongo_ready_job["scraped_at"] = current_time
 
                 jobs_collection.replace_one(
                     {"_id": job_id},
