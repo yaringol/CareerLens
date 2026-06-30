@@ -181,7 +181,20 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  gap: 1rem;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  row-gap: 1rem;
+}
+
+/* Give the step indicator room and let it shrink so nav/steps/logo never overlap */
+.upload-app-header .step-indicator {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.upload-app-header .step-line {
+  width: 28px;
+  margin: 0 0.45rem;
 }
 .upload-app-nav {
   display: flex;
