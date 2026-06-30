@@ -21,6 +21,10 @@ CVs/
 # Frontend
 frontend/node_modules/
 
+# Playwright MCP — generated session logs/snapshots/screenshots
+.playwright-mcp/
+qa-*.png
+
 # DS model — versioned snapshots and generated outputs
 ds/model/model_*.joblib
 ds/model/token_dist.json

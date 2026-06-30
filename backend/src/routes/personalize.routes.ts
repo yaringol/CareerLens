@@ -16,46 +16,40 @@ export interface SkillOption {
   selectedByDefault: boolean;
 }
 
+const ROLE_SKILL_POOL_SIZE = 10;
+const DEFAULT_SELECTED_COUNT = 5;
+
 function skillId(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
 /**
  * Build the focus-skill candidate pool for the Personalization screen.
- * Role core skills rank highest (and are pre-selected), then job-posting skills,
- * then CV-extracted skills — deduped case-insensitively. Only EXISTING DS model
- * capabilities are used; no time-based/personalized logic here.
+ *
+ * The pool is derived ONLY from the role/job itself (deterministic top-N skills
+ * for the canonical title), so the user picks from job-relevant skills. CV- and
+ * posting-derived skills are intentionally excluded here: they are a product of
+ * the personalization the user is about to configure and are not known yet.
+ * The top DEFAULT_SELECTED_COUNT are pre-selected.
  */
-function buildSkillOptions(
-  roleSkills: string[],
-  marketSkills: string[],
-  cvSkills: string[]
-): SkillOption[] {
-  const buckets: Array<{ names: string[]; source: SkillSource }> = [
-    { names: roleSkills, source: 'role' },
-    { names: marketSkills, source: 'market' },
-    { names: cvSkills, source: 'cv' },
-  ];
-
+function buildSkillOptions(roleSkills: string[]): SkillOption[] {
   const seen = new Set<string>();
-  const ordered: Array<{ name: string; source: SkillSource }> = [];
-  for (const { names, source } of buckets) {
-    for (const raw of names) {
-      const name = raw.trim();
-      const key = name.toLowerCase();
-      if (!name || seen.has(key)) continue;
-      seen.add(key);
-      ordered.push({ name, source });
-    }
+  const ordered: string[] = [];
+  for (const raw of roleSkills) {
+    const name = raw.trim();
+    const key = name.toLowerCase();
+    if (!name || seen.has(key)) continue;
+    seen.add(key);
+    ordered.push(name);
   }
 
   const total = ordered.length || 1;
-  return ordered.map((item, i) => ({
-    id: skillId(item.name) || `skill-${i}`,
-    name: item.name,
-    source: item.source,
+  return ordered.map((name, i) => ({
+    id: skillId(name) || `skill-${i}`,
+    name,
+    source: 'role' as SkillSource,
     score: Number((1 - i / total).toFixed(2)),
-    selectedByDefault: i < 5,
+    selectedByDefault: i < DEFAULT_SELECTED_COUNT,
   }));
 }
 
@@ -63,13 +57,14 @@ function buildSkillOptions(
  * POST /api/personalize/options
  *
  * Feeds the Personalization screen with the detected title, the user's
- * CV-extracted skills, and a role-derived focus-skill pool (top 5 pre-selected).
+ * CV-extracted skills, and a role-derived focus-skill pool (top
+ * ROLE_SKILL_POOL_SIZE for the role, top 5 pre-selected).
  * jobDescription is accepted now so the contract is ready to derive skills from
- * the posting later; today it only enriches the candidate pool when provided.
+ * the posting later; it is not used to build the focus pool today.
  */
 router.post('/options', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { canonicalTitle, cvText, jobDescription } = req.body as {
+    const { canonicalTitle, cvText } = req.body as {
       canonicalTitle?: unknown;
       cvText?: unknown;
       jobDescription?: unknown;
@@ -81,19 +76,17 @@ router.post('/options', async (req: Request, res: Response, next: NextFunction):
     if (typeof cvText !== 'string' || cvText.trim().length < 10) {
       throw new ValidationError('cvText is required (min 10 chars)');
     }
-    const jd = typeof jobDescription === 'string' ? jobDescription.trim() : '';
 
-    const [titleResult, roleSkills, cvSkills, marketSkills] = await Promise.all([
+    const [titleResult, roleSkills, cvSkills] = await Promise.all([
       extractTitleFromCv(cvText).catch(() => null),
-      getCoreSkills(canonicalTitle.trim()).catch(() => null),
+      getCoreSkills(canonicalTitle.trim(), 0.0, ROLE_SKILL_POOL_SIZE).catch(() => null),
       getSkillsFromText(cvText, 15).catch(() => [] as string[]),
-      jd.length >= 40 ? getSkillsFromText(jd, 10).catch(() => [] as string[]) : Promise.resolve([] as string[]),
     ]);
 
     const detectedTitle =
       titleResult?.canonical_title || titleResult?.extracted_title || canonicalTitle.trim();
     const extractedCvSkills = cvSkills ?? [];
-    const roleDerivedSkills = buildSkillOptions(roleSkills ?? [], marketSkills ?? [], extractedCvSkills);
+    const roleDerivedSkills = buildSkillOptions(roleSkills ?? []);
 
     res.json({ detectedTitle, extractedCvSkills, roleDerivedSkills });
   } catch (err) {
