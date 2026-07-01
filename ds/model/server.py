@@ -31,6 +31,8 @@ variant_titles = artifacts['variant_titles'] # variant phrase per row (parallel 
 
 cv_to_title_model = joblib.load(f'{os.path.dirname(__file__)}/text_to_job_title_classifier.joblib')
 
+from label_map import to_supported_title
+
 class NpEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.integer):
@@ -90,7 +92,7 @@ def predict_skills_from_text(text: str):
         return {}
 
 @app.get("/title/skills")
-def predict_skills(title: str):
+def predict_skills(title: str, top_n: int = 5):
     # 1. Vectorize input title
     vec = vectorizer.transform([title])
 
@@ -98,29 +100,38 @@ def predict_skills(title: str):
     _, indices = knn.kneighbors(vec)
     matched_role = skills_data[indices[0][0]]
 
-    # Skills are pre-sorted by aggregated score — take top 5 directly
-    top_5 = matched_role[:5]
+    # Skills are pre-sorted by aggregated score — take the top N.
+    # Default 5 keeps existing callers (POC /analyze) unchanged; the
+    # Personalization screen requests more so the user has a real choice.
+    n = max(1, top_n)
+    top = matched_role[:n]
 
     return {
-        "suggested_skills": top_5
+        "suggested_skills": top
     }
 
 @app.get("/cv/role")
 def match_role_to_cv(text: str):
     probabilities = cv_to_title_model.predict_proba([text])[0]
     class_labels = cv_to_title_model.classes_
-    
-    results = [
+
+    ranked = sorted(zip(class_labels, probabilities), key=lambda lp: -lp[1])[:3]
+
+    # Renormalise the shortlist to sum to 100%. The raw softmax mass is spread
+    # across ~38 classes, so a correct top-1 is often only 15-40% — too low for
+    # a meaningful UI threshold. The renormalised "share" expresses how dominant
+    # the top guess is among the real candidates and behaves like a confidence.
+    total = sum(float(p) for _, p in ranked) or 1.0
+
+    return [
         {
-            "job_title": str(label), 
-            "confidence": round(float(prob) * 100, 2)
+            "job_title": str(label),                          # what was detected
+            "canonical_title": to_supported_title(str(label)),  # title with skill data
+            "confidence": round(float(prob) / total * 100, 2),  # normalised share
+            "raw_confidence": round(float(prob) * 100, 2),      # raw softmax prob
         }
-        for label, prob in zip(class_labels, probabilities)
+        for label, prob in ranked
     ]
-    
-    results.sort(key=lambda x: x['confidence'], reverse=True)
-    top_3 = results[:3]
-    return top_3
 
 @app.get("/title/match")
 def match_title(title: str):

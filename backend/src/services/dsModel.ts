@@ -22,12 +22,14 @@ export interface TitleMatchSuggestion {
 
 interface CVTitleDetectionResponse {
   job_title: string;
+  canonical_title?: string;
   confidence: number;
 }
 
 export interface DetectedRole {
-  jobTitle: string;
-  confidence: number;
+  jobTitle: string;       // what the classifier detected (may be unsupported by skills KNN)
+  canonicalTitle: string; // title aligned to the skills taxonomy (safe to send downstream)
+  confidence: number;     // normalised share (0-100)
 }
 
 /**
@@ -44,10 +46,18 @@ async function classifyRoles(text: string): Promise<DetectedRole[]> {
       }
     );
     return (response.data ?? [])
-      .map((item) => ({
-        jobTitle: typeof item.job_title === 'string' ? item.job_title.trim() : '',
-        confidence: typeof item.confidence === 'number' ? item.confidence : 0,
-      }))
+      .map((item) => {
+        const jobTitle = typeof item.job_title === 'string' ? item.job_title.trim() : '';
+        const canonicalTitle =
+          typeof item.canonical_title === 'string' && item.canonical_title.trim()
+            ? item.canonical_title.trim()
+            : jobTitle;
+        return {
+          jobTitle,
+          canonicalTitle,
+          confidence: typeof item.confidence === 'number' ? item.confidence : 0,
+        };
+      })
       .filter((role) => role.jobTitle);
   } catch (err) {
     if (axios.isAxiosError(err)) {
@@ -205,8 +215,8 @@ export async function extractTitleFromCv(cvText: string): Promise<ExtractTitleRe
 
 export function rolesToSuggestions(roles: DetectedRole[]): TitleMatchSuggestion[] {
   return roles.slice(0, 3).map((role) => ({
-    canonicalTitle: role.jobTitle,
-    matchedVariant: role.jobTitle,
+    canonicalTitle: role.canonicalTitle,  // aligned to skills taxonomy (used downstream)
+    matchedVariant: role.jobTitle,         // the raw detected title
     confidence: role.confidence,
   }));
 }

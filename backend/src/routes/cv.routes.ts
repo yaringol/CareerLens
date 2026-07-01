@@ -28,7 +28,7 @@ router.post('/cv/title', async (req: Request, res: Response, next: NextFunction)
     const suggestions = rolesToSuggestions(roles);
     const top = suggestions[0];
     res.json({
-      detectedTitle: top ? top.canonicalTitle : null,
+      detectedTitle: top ? top.matchedVariant : null,
       confidence: top ? top.confidence : 0,
       source: top ? 'experience' : 'none',
       suggestions,

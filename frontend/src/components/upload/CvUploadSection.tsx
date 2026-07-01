@@ -23,7 +23,10 @@ import '../../pages/UploadScreen.css'
 
 const PERSONALIZATION_INPUT_KEY = 'pocPersonalizationInput'
 const CV_EXTRACT_ERROR = 'Could not extract text from this PDF'
-const AUTO_MATCH_CONFIDENCE_MIN = 90
+// Confidence is the normalised share of the top role among the top-3 candidates
+// (see /cv/role). A dominant top-1 scores ~80-100; a genuine 2-way tie ~50-55.
+// 60 auto-accepts clear detections and routes real ambiguities to manual choice.
+const AUTO_MATCH_CONFIDENCE_MIN = 60
 
 type JobInputMode = 'posting' | 'cv-only'
 
@@ -436,11 +439,16 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
             <div className="step-line" />
             <div className="step">
               <div className="step-dot">2</div>
-              <span className="step-label">Results</span>
+              <span className="step-label">Personalize</span>
             </div>
             <div className="step-line" />
             <div className="step">
               <div className="step-dot">3</div>
+              <span className="step-label">Results</span>
+            </div>
+            <div className="step-line" />
+            <div className="step">
+              <div className="step-dot">4</div>
               <span className="step-label">Improve</span>
             </div>
           </div>
@@ -582,7 +590,12 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                 {roleDetection.status === 'ready' && (
                   <div className="detected-role detected-role--ready">
                     <strong>{roleDetection.canonicalTitle}</strong>
-                    <span>Detected as {roleDetection.detectedTitle} · {roleDetection.confidence}% match</span>
+                    <span>
+                      {roleDetection.detectedTitle &&
+                      roleDetection.detectedTitle !== roleDetection.canonicalTitle
+                        ? `Detected as ${roleDetection.detectedTitle} · ${roleDetection.confidence}% match`
+                        : `${roleDetection.confidence}% match`}
+                    </span>
                   </div>
                 )}
                 {roleDetection.status === 'uncertain' && (
@@ -805,7 +818,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
 
           <div className="upload-cta">
             <button type="submit" className="btn-primary" disabled={!canSubmit || isLoading}>
-              <span>Analyze Match</span>
+              <span>Personalize</span>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </button>
             {!canSubmit && !isLoading && !jdError && !fieldErrors.cv && (
