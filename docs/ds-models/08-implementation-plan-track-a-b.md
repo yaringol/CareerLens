@@ -25,38 +25,76 @@
   `Highlights != null`) כמקור עיקרי להרחבת הדאטה.
 - **טריגר "הרץ עכשיו" באדמין**: sidecar ייעודי קטן עם גישת docker.sock מוגבלת (לא בבקאנד הראשי).
 
+**עדכון:** נמצא ב-`origin/yarin/deploy` מימוש כבר-עובד ל-A1 (scraper עם SkillNer + כתיבה ל-Mongo) —
+פורט/מיזוג של קוד קיים במקום כתיבה מאפס. פורט בהמשך המסמך (A1) כולל את הפרטים המדויקים.
+
 ---
 
 ## Track A — Model 1: פייפליין title→skills
 
-### A1. תיקון שרשרת האיסוף (root cause)
+### A1. תיקון שרשרת האיסוף (root cause) — **יש כבר קוד עובד ל-copy, ב-`origin/yarin/deploy`**
 
-- **קולקציה חדשה `jobs.raw_postings`** (append-only, לא נדרסת): מסמך גולמי טרם חילוץ —
-  `{_id (מ-generate_job_id הקיים), source, title, og_title, description, company, location, url,
-  datePosted, scraped_at, extracted: false}`.
-- לתקן את [scraping/external/linkedin.py](../../scraping/external/linkedin.py): להחליף את הכתיבה
-  ל-JSONL (`search_all_jobs`, [שורה 133](../../scraping/external/linkedin.py#L133)) בכתיבת Mongo
-  `update_one({_id}, {$set: doc, $setOnInsert:{extracted:false}}, upsert=True)` לתוך `raw_postings` —
-  idempotent, לא דורס היסטוריה. להוסיף `scraped_at` (עכשיו, UTC) — `datePosted` אין ב-LinkedIn card,
-  אז `scraped_at` הוא ציר הזמן הראשי (כמו שכבר קורה ב-[generate_example_jobs.py](../../ds/model/generate_example_jobs.py)).
-  ה-JSONL המקומי יכול להישאר כגיבוי best-effort, לא כמקור אמת.
+**עדכון:** נמצא ב-branch מרוחק `origin/yarin/deploy` מימוש **עובד ומוכן** בדיוק לפער הזה —
+[scraping/external/linkedin.py](../../scraping/external/linkedin.py) שם כבר מכיל את
+`process_raw_jobs()` (הפונקציה שחיפשנו וב-`model-improvment` היא לא קיימת בכלל). ההמלצה: **לייבא/למזג
+את הקובץ הזה**, לא לכתוב חדש מאפס:
 
-### A2. שלב חילוץ (SkillNer) כשלב עצמאי וניתן-להרצה-מחדש
+```python
+# origin/yarin/deploy:scraping/external/linkedin.py — כבר קיים ועובד:
+def search_all_jobs():           # שורה 133 בקירוב — כמו היום, אבל עם datePosted מה-JSON-LD
+    ...
+    with open(PRE_PROCESSED_FILENAME, "w", ...) as f:   # JSONL מקומי, זמני
+        ...
 
-- סקריפט חדש `ds/model/extract_skills.py`: קורא מ-collection **ניתנת-להגדרה** (`SOURCE_COLLECTION`
-  env var — יכולה להיות `raw_postings`, אבל גם `lang-uk-job` הקיימת כבר ב-Mongo (142K, טרם חולצה, לפי
-  [03-model1-skills-model.md](03-model1-skills-model.md)), או כל batch עתידי). לכל מסמך שטרם חולץ
-  (`extracted != true` / חסר `skills`): מריץ `SkillExtractor(nlp, SKILL_DB, PhraseMatcher).annotate(description)`
-  (בדיוק כמו `/text/skills` ב-[server.py:102-112](../../ds/model/server.py#L102-L112)), כותב
-  `skills.full_matches`/`ngram_matches` ל-collection **יעד** (`TARGET_COLLECTION`, למשל `jobs.jobs`
-  לדאטה שוטף, או `lang-uk-job-skills` לדאטה חיצוני — בדיוק כפי ש-03-model1-skills-model.md כבר ממליץ),
-  ומסמן `extracted: true` במקור כדי שריצות הבאות ידלגו עליו (checkpoint/resume — קריטי כי SkillNer
-  איטי, "לעולם לא להריץ SkillNer מחדש על מה שכבר חולץ").
+def process_raw_jobs(raw_file=PRE_PROCESSED_FILENAME, output_processed=PROCESSED_FILE_NAME):
+    nlp = spacy.load("en_core_web_lg")
+    skill_extractor = SkillExtractor(nlp, SKILL_DB, PhraseMatcher)
+    # ... מריץ skill_extractor.annotate() על ה-description של כל שורה,
+    # מוסיף scraped_at (UTC now) ו-_id (generate_job_id), וכותב ל-Mongo:
+    jobs_collection.replace_one({"_id": job_id}, mongo_ready_job, upsert=True)
+
+if __name__ == "__main__":
+    search_all_jobs()
+    process_raw_jobs()   # ← זה בדיוק מה ש-model-improvment היום חסר
+```
+
+זה סוגר בבת אחת שלושה חוסרים שזיהינו ב-`model-improvment`: (1) כתיבה ל-Mongo בפועל (`replace_one`
+עם `upsert=True` לפי `_id` יציב — לא דורס היסטוריה כי כל job מקבל `_id` יציב משלו), (2) הרצת SkillNer
+בפועל (לא רק `data.get('skills','')` הריק מה-JSON-LD), (3) `datePosted` אמיתי מה-JSON-LD (חסר לגמרי
+בגרסה הנוכחית). כיוון שהחילוץ קורה **באותה הרצה** מיד אחרי הסקרייפינג (`search_all_jobs()` ואז
+`process_raw_jobs()` ברצף), אין בעיית "נדרס לפני שנשמר" — אז **אין צורך בקולקציית `raw_postings`
+נפרדת** לזרימה החיה הזו (זה פישוט לעומת התכנון המקורי כאן).
+- פעולה: להביא (`git show`/`cherry-pick`/copy ידני) את [scraping/external/linkedin.py](../../scraping/external/linkedin.py)
+  מ-`origin/yarin/deploy` לתוך `model-improvment`, להתאים רק את `MONGO_URI` לברירת המחדל של branch זה
+  (`mongodb://localhost:27017/jobs`, כמו ב-[train.py:25-28](../../ds/model/train.py#L25-L28)) ולהחליף
+  `f_TPR=r86400` (24h, כמו ב-`yarin/deploy`) מול `r7776000` (90 יום, כמו ב-`model-improvment` הנוכחי) —
+  להחליט לפי כמה "טרי" רוצים שהסקרייפ היומי יהיה (ל-`growth_trend`/`stability_score` ב-A4 עדיף חלון קצר
+  ועקבי, אז מומלץ 24h כמו ב-`yarin/deploy`).
+- ה-Dockerfile המקביל שם — [scraping/external/Dockerfile](../../scraping/external/Dockerfile) ב-
+  `origin/yarin/deploy` — מתקין `en_core_web_lg` + skillNer בשביל הסקרייפר עצמו, ומאשר שהפער שזיהינו
+  ב-A2 (התשתית לא מתקינה spaCy) הוא אמיתי וכבר נפתר שם בדפוס דומה למה שכבר קיים ב-
+  [ds/Dockerfile](../../ds/Dockerfile) של `model-improvment`.
+
+### A2. שלב חילוץ (SkillNer) — לחלץ מ-`process_raw_jobs()` ללוגיקה עצמאית וניתנת-להרצה-מחדש
+
+ה-`process_raw_jobs()` מ-A1 פותר את הזרימה החיה (סקרייפ→חילוץ→Mongo, הרצה אחת). אבל הדרישה המקורית
+("שינוי הפייפליין לתצורה שבה ניתן להריץ SkillNer מחדש על דאטהסט אחר, שכבר הגיע אלינו ולא עבר את החלק
+הזה") עדיין לא מכוסה — `process_raw_jobs()` היום קשור ל-2 קבצי JSONL ספציפיים של הסקרייפר. לכן:
+
+- לחלץ את הליבה (`get_skills()` הפנימית + לוגיקת ה-`upsert` עם `_id`/`scraped_at`) ממנה למודול משותף
+  `ds/model/skill_extraction.py`, ולהשתמש בו בשני מקומות: (1) בתוך `linkedin.py` (A1, כמו היום), וגם
+  (2) בסקריפט חדש `ds/model/extract_skills.py` שמקבל **collection מקור/יעד** קונפיגורביליים
+  (`SOURCE_COLLECTION`/`TARGET_COLLECTION`) — כדי להריץ בדיוק את אותה לוגיקת חילוץ על `lang-uk-job`
+  (142K, קיימת כבר ב-Mongo, טרם חולצה — ראו [03-model1-skills-model.md](03-model1-skills-model.md))
+  או כל דאטהסט חיצוני עתידי, בלי לגעת בקוד הסקרייפר.
+- מסמן `extracted: true` על מסמכי מקור כדי שריצות הבאות ידלגו עליהם (checkpoint/resume — SkillNer איטי,
+  לעולם לא להריץ פעמיים על אותו מסמך).
 - לתקן את [pipeline/Dockerfile](../../pipeline/Dockerfile): להוסיף את התקנת spaCy `en_core_web_lg` +
-  skillNer (להעתיק את השלב הקיים כבר ב-[ds/Dockerfile](../../ds/Dockerfile) — אין צורך להמציא מחדש).
-- לעדכן [pipeline/run_daily.sh](../../pipeline/run_daily.sh): scrape (→raw_postings) → **extract**
-  (→jobs.jobs) → train → restart DS. שלב ה-train לא משתנה — `train.py` כבר קורא נכון מ-`MONGO_COLLECTION`
-  ([train.py:31](../../ds/model/train.py#L31)).
+  skillNer — reference מדויק ל-[scraping/external/Dockerfile](../../scraping/external/Dockerfile)
+  ב-`origin/yarin/deploy` (מעל) או [ds/Dockerfile](../../ds/Dockerfile) הקיים כבר ב-`model-improvment`.
+- לעדכן [pipeline/run_daily.sh](../../pipeline/run_daily.sh): scrape+extract (A1, ריצה אחת דרך
+  `linkedin.py` המעודכן) → train → restart DS. שלב ה-train לא משתנה — `train.py` כבר קורא נכון מ-
+  `MONGO_COLLECTION` ([train.py:31](../../ds/model/train.py#L31)).
 
 ### A2.5. הרצת הלמידה עצמה (Execute) — מה שקורה בין "יש סקילים" ל"יש מודל מעודכן"
 
@@ -91,6 +129,30 @@ A1+A2 פותרים רק את קלט האימון (דאטה גולמי + סקיל
   נשמר לבדיקה ידנית), לסמן ב-`model_runs` `promoted: false` + סיבה, ו-`run_daily.sh` **לא** מריץ
   `docker restart` במקרה הזה (המודל הישן ממשיך לשרת). זה גם מה שהופך את "הרץ עכשיו" ב-A3 לבטוח —
   משתמש אדמין שלוחץ על זה לא יכול בטעות להוריד את איכות המודל החי.
+- **הבהרה — `training.ipynb` מול `train.py`, כדי לא לכתוב לוגיקת טרנד פעמיים.** התבקשנו להוסיף
+  לתוכנית הצעה שהתקבלה מיריב הצוות: לקחת את הסקרייפר מ-`origin/yarin/deploy` (בדיוק מה ש-A1 עושה
+  עכשיו), להזין את הפלט ל-[training.ipynb](../../ds/model/training.ipynb) הישן, ולהוסיף שם "לוגיקת
+  איזה סקילים טרנדים — זו הלוגיקה היחידה שחסרה". בדקתי את שני הצדדים:
+  - ב-`origin/yarin/deploy`, `ds/model/train.py` עדיין קורא מ-JSONL סטטי
+    ([ds/model/train.py](../../ds/model/train.py) שם, שורות עם `EXTRACTOR`/`open(path)`) ו**אין בו
+    בכלל** לוגיקת trend/recency — נכון שזו "הלוגיקה היחידה שחסרה" *שם*.
+  - **על `model-improvment`** (הbranch הזה) המצב שונה: `train.py` **כבר** קורא מ-Mongo וכבר מחשב
+    `recency_weight` ([train.py:64-69](../../ds/model/train.py#L64-L69)) ו-`trend_label`
+    rising/stable/falling ([train.py:458-467](../../ds/model/train.py#L458-L467)) — גרסה **מתקדמת
+    יותר** ממה שהמחברת הישנה הייתה מצריכה מאפס. `ds/model/training.ipynb` הנוכחי (בדקתי — אין בו
+    `MongoClient`, אין `trend`, אין `recency`) הוא **גרסה קודמת/נטושה** שכבר הוחלפה ע"י `train.py`.
+  - **מסקנה לתוכנית:** לא לכתוב את לוגיקת הטרנד ב-`training.ipynb` — זה יוצר שני מאמנים מתחרים
+    (notebook ישן מול script חדש) עם שני מקורות אמת. במקום זה: A1 (למעלה) כבר מספק בדיוק את מה
+    ש-`train.py` צריך (Mongo + `datePosted`), אז "הלוגיקה החסרה" של יריב **כבר כתובה וקיימת** על
+    branch זה. מומלץ להעביר הודעה חוזרת ליריב עם ההפניה ל-[train.py:56-69](../../ds/model/train.py#L56-L69)+[:458-508](../../ds/model/train.py#L458-L508),
+    ולשקול להעביר את `training.ipynb` ל-`ds/model/archive/` (או להוסיף לו כותרת "SUPERSEDED BY
+    train.py") כדי שאף אחד לא ישקיע שוב עבודה על מסלול נטוש.
+  - **מה כן שווה לאמץ מההצעה של יריב:** העיקרון "לעבוד/לבחון בצורה אינטראקטיבית ולשמור מודל רק כשהכל
+    מושלם" — זה בדיוק מה ששער האיכות האוטומטי (הסעיף הקודם) עושה בפרודקשן, אבל שווה גם **כשלב ביניים
+    ידני**: להריץ `train.py` ידנית מול Mongo אמיתי (או `python -i` / Jupyter קצר) ולעיין ב-
+    `canonical_titles.json` ובפלט ה-sanity-check שכבר יש ב-[train.py:614-621](../../ds/model/train.py#L614-L621)
+    **לפני** שמדליקים את ה-cron האוטומטי (ofelia) — כדי לוודא שהדאטה האמיתי (אחרי A1) נראה הגיוני,
+    לפני שסומכים על שער האיכות האוטומטי בלבד.
 
 ### A3. דשבורד "מצב הלמידה" באדמין
 
@@ -302,9 +364,12 @@ A1+A2+A2.5 הופכים את הדאטה המתוארך (`model_runs`/`role_skill
 
 ## Verification (כשהמימוש יתחיל)
 
-- **A1/A2**: אחרי הרצת `extract_skills.py` על `raw_postings` — לוודא `jobs.jobs` מקבל מסמכים חדשים
-  עם `skills.full_matches` לא ריק, ו-`raw_postings` המקוריים מסומנים `extracted: true`. להריץ
-  `docker compose --profile batch run --rm pipeline` ידנית ולוודא שלוש השלבים רצים בסדר (לוגים).
+- **A1**: להריץ `python scraping/external/linkedin.py` (הגרסה המעודכנת מ-`origin/yarin/deploy`) ידנית
+  מול Mongo מקומי, ולוודא ש-`jobs.jobs` מקבל מסמכים חדשים עם `skills.full_matches` לא ריק ו-`datePosted`
+  ממולא. להריץ פעמיים ברצף ולוודא שאין כפילויות (`countDocuments` לא קופץ פי 2 — ה-`_id` היציב עושה dedup).
+- **A2**: להריץ את `extract_skills.py` (החדש) מול `lang-uk-job` הקיימת ב-Mongo ולוודא שהיא מקבלת
+  `skills.*` בלי לגעת בסקרייפר כלל. להריץ `docker compose --profile batch run --rm pipeline` ידנית
+  ולוודא שהשלבים (scrape+extract → train → restart) רצים בסדר (לוגים).
 - **A2.5**: להריץ `train.py` פעמיים ברצף על אותה דאטה (ריצה יציבה) ולוודא ש-`promoted: true` בשתיהן;
   לדמות ריצה גרועה (לחתוך ידנית חלק גדול מ-`jobs.jobs` בסביבת טסט) ולוודא ש-`model.joblib` **לא**
   משתנה, ש-`model_runs` מסמן `promoted: false` עם סיבה, ושה-`docker restart` בסוף `run_daily.sh`
