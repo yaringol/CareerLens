@@ -13,9 +13,9 @@ import {
 import AppLogo from '../components/ui/AppLogo'
 import './ImproveCVScreen.css'
 
-const RESULT_KEY = 'pocAnalysisResult'
-const JD_KEY = 'pocJobDescription'
-const CV_FILENAME_KEY = 'pocCvFileName'
+const RESULT_KEY = 'analysisResult'
+const JD_KEY = 'jobDescription'
+const CV_FILENAME_KEY = 'cvFileName'
 
 type Phase = 'proficiency' | 'improvement' | 'result'
 
@@ -640,7 +640,7 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
       const result = await reanalyzeCv(jobTitle, mergedCvText, jd)
       const newResult: ReanalyzeResult = { ...result, cvText: mergedCvText }
       sessionStorage.setItem(RESULT_KEY, JSON.stringify(newResult))
-      sessionStorage.setItem('pocJobDescription', jd)
+      sessionStorage.setItem('jobDescription', jd)
       if (onReanalyze) {
         onReanalyze(newResult)   // passes result to dashboard → updates state + closes modal
       } else if (onClose) {

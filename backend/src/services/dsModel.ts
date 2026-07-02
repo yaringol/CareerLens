@@ -164,6 +164,45 @@ export async function getCoreSkills(
   }
 }
 
+export type SkillTrend = 'rising' | 'stable' | 'falling';
+
+export interface TrendingSkill {
+  skill: string;
+  trend: SkillTrend;
+}
+
+/**
+ * Calls /title/trending-skills — recency-weighted skills for a role, each tagged with a
+ * rising/stable/falling trend. Intended to run before analyze so the dynamic skill slots
+ * favour what is currently in demand.
+ */
+export async function getTrendingSkills(title: string, n = 5): Promise<TrendingSkill[]> {
+  try {
+    const response = await axios.get<{ skills?: Array<{ skill?: unknown; trend?: unknown }> }>(
+      `${DS_MODEL_URL}/title/trending-skills`,
+      {
+        params: { title, n },
+        timeout: DS_MODEL_TIMEOUT_MS,
+      }
+    );
+
+    return (response.data?.skills ?? [])
+      .map((s) => ({
+        skill: typeof s.skill === 'string' ? s.skill.trim() : '',
+        trend: (s.trend === 'rising' || s.trend === 'falling' ? s.trend : 'stable') as SkillTrend,
+      }))
+      .filter((s) => s.skill);
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      if (err.code === 'ECONNREFUSED' || err.code === 'ECONNABORTED') {
+        throw new DsModelError('DS model service is unavailable', 503);
+      }
+      throw new DsModelError(`DS model request failed: ${err.message}`);
+    }
+    throw err;
+  }
+}
+
 export interface TitleMatchResult {
   canonical: string;
   confidence: number;

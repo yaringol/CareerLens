@@ -89,7 +89,7 @@ async function apiFetch(input: RequestInfo | URL, init?: RequestInit): Promise<R
   return res
 }
 
-export interface PocJob {
+export interface RoleOption {
   id: string
   title: string
   skills: string[]
@@ -116,7 +116,7 @@ export interface TitleMatchSuggestion {
 
 export interface AnalyzeResponse {
   jobTitle: string
-  skills: Array<{ name: string; score: number }>
+  skills: Array<{ name: string; score: number; trend?: 'rising' | 'stable' | 'falling' }>
   matchScore: number
   id: string
   cvOnlyMode?: boolean
@@ -185,11 +185,11 @@ export interface CompareSavedResponse {
 
 const jsonHeaders = { 'Content-Type': 'application/json' }
 
-export async function fetchJobs(): Promise<PocJob[]> {
+export async function fetchJobs(): Promise<RoleOption[]> {
   const res = await apiFetch(`${base()}/jobs`, {
     headers: { ...authHeaders() },
   })
-  return res.json() as Promise<PocJob[]>
+  return res.json() as Promise<RoleOption[]>
 }
 
 export async function uploadPdf(file: File, saveToLibrary = true): Promise<UploadPdfResponse> {

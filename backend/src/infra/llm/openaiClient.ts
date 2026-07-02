@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 
-/** Allows the server to boot without a key; LLM calls fail fast and POC fallbacks handle analyze. */
+/** Allows the server to boot without a key; LLM calls fail fast and fallbacks handle analyze. */
 const apiKey = process.env.OPENAI_API_KEY?.trim() || 'sk-local-dev-no-key';
 
 export const openai = new OpenAI({

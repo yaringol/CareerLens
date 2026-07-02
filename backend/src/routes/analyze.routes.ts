@@ -5,11 +5,11 @@ import {
   getCoreSkillsById,
   extractDynamicSkills,
 } from '../services/job.service';
-import { getSkillsFromText } from '../services/dsModel';
+import { getSkillsFromText, getTrendingSkills } from '../services/dsModel';
 import { scoreAndPersist } from '../services/scoring.service';
 import { ValidationError } from '../errors';
 import type { IJob } from '../models/job.model';
-import { logAnalyzeOk } from '../utils/pocLog';
+import { logAnalyzeOk } from '../utils/logger';
 import { isGibberish } from '../utils/gibberishDetector';
 import { looksLikeJobUrl } from '../utils/jobUrl';
 import { fetchJobPostingFromUrl } from '../services/jobPostingFetcher.service';
@@ -173,8 +173,7 @@ async function resolveJobDescriptionInput(raw: string): Promise<string> {
  *
  * Current: { canonicalTitle, cvText, jobDescription } — a detected or user-confirmed canonical title
  *          selects the role. The stored Job.description is not used for dynamic skill extraction.
- * POC compatibility: { jobId, cvText, jobDescription } remains supported.
- * Legacy: { jobTitle, jobDescription, cvText }
+ * Also supported: { jobId, cvText, jobDescription } and legacy { jobTitle, jobDescription, cvText }.
  */
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -232,13 +231,27 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     }
 
     const { coreSkills } = await getCoreSkillsById(id);
+
+    // Time-aware skills (recency-weighted) fetched before scoring. Best-effort: a DS
+    // hiccup must never fail analyze. Trending skills are prepended to the dynamic list
+    // so positions 6–10 favour what's currently in demand; each skill's trend is also
+    // threaded to the response for display.
+    let trending: { skill: string; trend: string }[] = [];
+    if (!skipGibberish) {
+      try {
+        trending = await getTrendingSkills(job.title);
+      } catch {
+        trending = [];
+      }
+    }
+    const trendBySkill = new Map(trending.map((t) => [t.skill.toLowerCase(), t.trend]));
+
     const allSkills = skipGibberish
       ? coreSkills.slice(0, 5)
-      : mergeTenSkills(
-          job.title,
-          coreSkills,
-          (await extractDynamicSkills(job.title, descriptionForDynamic)).extractedSkills
-        );
+      : mergeTenSkills(job.title, coreSkills, [
+          ...trending.map((t) => t.skill),
+          ...(await extractDynamicSkills(job.title, descriptionForDynamic)).extractedSkills,
+        ]);
 
     const cvOnlyMode = skipGibberish;
     const expectedSkillCount = cvOnlyMode ? 5 : 10;
@@ -260,7 +273,11 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 
     res.json({
       jobTitle: analysis.jobTitle,
-      skills: analysis.scores.map((s) => ({ name: s.skill, score: s.score })),
+      skills: analysis.scores.map((s) => ({
+        name: s.skill,
+        score: s.score,
+        trend: trendBySkill.get(s.skill.toLowerCase()) ?? 'stable',
+      })),
       matchScore: analysis.matchScore,
       id: analysis._id.toString(),
       cvOnlyMode: analysis.cvOnlyMode ?? false,

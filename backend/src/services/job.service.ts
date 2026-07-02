@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { getPocJobsForList, getJobById, getJobByTitle } from '../dal/job.dal';
+import { getAllJobs, getJobById, getJobByTitle } from '../dal/job.dal';
 import { Job, IJob } from '../models/job.model';
 import { getCoreSkills } from './dsModel';
 import { extractSkills } from '../agents/skillExtraction.agent';
@@ -9,13 +9,13 @@ import {
   logJobDescriptionForExtraction,
   logLlmDynamicSkillsOk,
   logDebugText,
-} from '../utils/pocLog';
+} from '../utils/logger';
 
 export async function listJobs(): Promise<IJob[]> {
-  const jobs = await getPocJobsForList();
+  const jobs = await getAllJobs();
   if (jobs.length === 0) {
     throw new DsModelError(
-      'No jobs found in the database. From the backend directory run: npm run seed',
+      'No roles found in the database. From the backend directory run: npm run seed',
       503
     );
   }

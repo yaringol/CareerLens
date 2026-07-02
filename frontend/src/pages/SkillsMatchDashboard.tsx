@@ -8,8 +8,8 @@ import { getCvText } from '../services/api'
 import './SkillsMatchDashboard.css'
 
 
-const RESULT_KEY = 'pocAnalysisResult'
-const CV_FILENAME_KEY = 'pocCvFileName'
+const RESULT_KEY = 'analysisResult'
+const CV_FILENAME_KEY = 'cvFileName'
 
 type StoredAnalysisResult = AnalyzeResponse & {
   cvText?: string
@@ -387,7 +387,7 @@ const SkillsMatchDashboard = () => {
   }
 
   // New flow (Upload → Personalize → Results → Improve): going back from Results
-  // returns to Personalization. Keep pocPersonalizationInput so it re-renders.
+  // returns to Personalization. Keep personalizationInput so it re-renders.
   const handleBackToPersonalize = () => {
     leavingRef.current = true
     sessionStorage.removeItem(RESULT_KEY)
@@ -407,7 +407,7 @@ const SkillsMatchDashboard = () => {
       isEstimated: saved.isEstimated,
     }
 
-    sessionStorage.setItem('pocExcludeCvId', saved.cvId)
+    sessionStorage.setItem('excludeCvId', saved.cvId)
     sessionStorage.setItem(CV_FILENAME_KEY, saved.fileName)
 
     setBetterSavedCv(null)

@@ -21,7 +21,7 @@ import { isGibberish } from '../../utils/gibberishDetector'
 import { looksLikeJobUrl } from '../../utils/jobUrl'
 import '../../pages/UploadScreen.css'
 
-const PERSONALIZATION_INPUT_KEY = 'pocPersonalizationInput'
+const PERSONALIZATION_INPUT_KEY = 'personalizationInput'
 const CV_EXTRACT_ERROR = 'Could not extract text from this PDF'
 // Confidence is the normalised share of the top role among the top-3 candidates
 // (see /cv/role). A dominant top-1 scores ~80-100; a genuine 2-way tie ~50-55.

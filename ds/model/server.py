@@ -22,16 +22,36 @@ skill_extractor = SkillExtractor(nlp, SKILL_DB, PhraseMatcher)
 
 app = FastAPI()
 
-artifacts = joblib.load(f'{os.path.dirname(__file__)}/model.joblib')
+# MODEL_PATH / CANONICAL_TITLES_PATH point at the shared model volume in the deploy
+# image, so a container restart picks up a freshly-trained model.
+MODEL_PATH = os.getenv('MODEL_PATH', f'{os.path.dirname(__file__)}/model.joblib')
+artifacts = joblib.load(MODEL_PATH)
 vectorizer = artifacts['vectorizer']
 knn = artifacts['knn_model']
 skills_data = artifacts['skills']
 titles_data = artifacts['titles']            # canonical title per variant row
 variant_titles = artifacts['variant_titles'] # variant phrase per row (parallel to titles_data)
+feature_matrix = artifacts.get('feature_matrix', {})   # recency-weighted prevalence + trend (if trained)
+model_trained_at = artifacts.get('trained_at')
 
 cv_to_title_model = joblib.load(f'{os.path.dirname(__file__)}/text_to_job_title_classifier.joblib')
 
 from label_map import to_supported_title
+
+# Optional per-role record counts / confidence (written by train.py alongside model.joblib).
+_canonical_json = os.getenv(
+    'CANONICAL_TITLES_PATH', f'{os.path.dirname(__file__)}/canonical_titles.json'
+)
+try:
+    with open(_canonical_json, encoding='utf-8') as _f:
+        canonical_data = json.load(_f)
+except FileNotFoundError:
+    canonical_data = {'record_counts': {}, 'confidence_levels': {}}
+
+def confidence_level(n: int) -> str:
+    if n >= 100: return 'high'
+    if n >= 50:  return 'medium'
+    return 'low'
 
 class NpEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -96,12 +116,12 @@ def predict_skills(title: str, top_n: int = 5):
     # 1. Vectorize input title
     vec = vectorizer.transform([title])
 
-    # 2. Snap to the nearest POC role (n_neighbors=1)
+    # 2. Snap to the nearest role (n_neighbors=1)
     _, indices = knn.kneighbors(vec)
     matched_role = skills_data[indices[0][0]]
 
     # Skills are pre-sorted by aggregated score — take the top N.
-    # Default 5 keeps existing callers (POC /analyze) unchanged; the
+    # Default 5 keeps existing callers (/analyze) unchanged; the
     # Personalization screen requests more so the user has a real choice.
     n = max(1, top_n)
     top = matched_role[:n]
@@ -157,6 +177,63 @@ def match_title(title: str):
             break
 
     return {"suggestions": suggestions}
+
+@app.get("/titles")
+def list_titles():
+    """All canonical roles the model supports (source of truth for seeding the backend)."""
+    titles = canonical_data.get('canonical_titles')
+    if not titles:
+        seen, titles = set(), []
+        for t in titles_data:
+            if t not in seen:
+                seen.add(t)
+                titles.append(t)
+    rc = canonical_data.get('record_counts', {})
+    return {
+        "titles": [
+            {"title": t, "records_count": rc.get(t, 0), "data_confidence": confidence_level(rc.get(t, 0))}
+            for t in titles
+        ]
+    }
+
+@app.get("/title/trending-skills")
+def trending_skills(title: str, n: int = 5):
+    """
+    Time-aware skills for a role (call before analyze). `prevalence` is recency-weighted at
+    train time so ranking by it surfaces current demand; `trend` flags rising/stable/falling.
+    Falls back to the plain pre-sorted skill list when the model has no time fields yet.
+    """
+    vec = vectorizer.transform([title])
+    _, indices = knn.kneighbors(vec)
+    idx = indices[0][0]
+    matched_canonical = titles_data[idx]
+    rc = canonical_data.get('record_counts', {}).get(matched_canonical, 0)
+
+    feats = feature_matrix.get(matched_canonical, {})
+    if feats:
+        ranked = sorted(feats.items(), key=lambda kv: -kv[1].get('prevalence', 0.0))[:n]
+        skills = [
+            {
+                "skill":             s,
+                "prevalence":        round(float(f.get('prevalence', 0.0)), 4),
+                "recent_prevalence": round(float(f.get('recent_prevalence', 0.0)), 4),
+                "trend":             f.get('trend', 'stable'),
+            }
+            for s, f in ranked
+        ]
+    else:
+        skills = [
+            {"skill": s, "prevalence": None, "recent_prevalence": None, "trend": "stable"}
+            for s in skills_data[idx][:n]
+        ]
+
+    return {
+        "matched_canonical": matched_canonical,
+        "data_confidence":   confidence_level(rc),
+        "records_count":     rc,
+        "skills":            skills,
+        "trained_at":        model_trained_at,
+    }
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')

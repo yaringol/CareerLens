@@ -1,6 +1,6 @@
 import { PDFParse } from 'pdf-parse';
 import { ValidationError } from '../errors';
-import { logDebugText, logUploadOk, logUploadWarn } from '../utils/pocLog';
+import { logDebugText, logUploadOk, logUploadWarn } from '../utils/logger';
 
 function normalizeCvText(text: string): string {
   let t = text.toLowerCase();

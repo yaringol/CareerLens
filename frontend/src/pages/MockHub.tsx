@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import AppLogo from '../components/ui/AppLogo'
 import './PersonalizationMock.css'
 
-const INPUT_KEY = 'pocPersonalizationInput'
+const INPUT_KEY = 'personalizationInput'
 
 // Seed used so step 2 (Personalize) opens the REAL screen with data, no upload needed.
 const PERSONALIZE_SEED = {

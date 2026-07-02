@@ -9,7 +9,7 @@ import {
   logLlmScoringOk,
   logLlmScoringRawUnnormalized,
   logLlmScoringUniformReplaced,
-} from '../utils/pocLog';
+} from '../utils/logger';
 
 const MIN_CV_TEXT_LENGTH = 50;
 const SCORE_MIN = 0;

@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import AppLogo from '../components/ui/AppLogo'
 import './UploadScreen.css'
 
-const INPUT_KEY = 'pocPersonalizationInput'
+const INPUT_KEY = 'personalizationInput'
 
 interface MockProfile {
   canonicalTitle: string
@@ -11,7 +11,7 @@ interface MockProfile {
   jobDescription: string
 }
 
-// canonicalTitle values match the POC jobs so the standard fallback (POST /api/analyze) resolves too.
+// canonicalTitle values match supported roles so the standard fallback (POST /api/analyze) resolves too.
 const PROFILES: Record<string, MockProfile> = {
   'Software Engineer': {
     canonicalTitle: 'Software Engineer',

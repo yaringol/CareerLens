@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import AppLogo from '../components/ui/AppLogo'
 import './PersonalizationMock.css'
 
-const INPUT_KEY = 'pocPersonalizationInput'
+const INPUT_KEY = 'personalizationInput'
 
 interface MockProfile {
   id: string
@@ -13,7 +13,7 @@ interface MockProfile {
   jobDescription: string
 }
 
-// canonicalTitle values match the POC jobs so both the personalize options call
+// canonicalTitle values match supported roles so both the personalize options call
 // and the "standard results" fallback (POST /api/analyze) resolve a real job.
 const PROFILES: MockProfile[] = [
   {

@@ -9,7 +9,7 @@ import {
   logCompareStarredBetter,
   logCompareStarredNone,
   logCompareStarredStart,
-} from '../utils/pocLog';
+} from '../utils/logger';
 
 export const MAX_SAVED_CVS = 10;
 export const MAX_FAVORITE_CVS = 3;

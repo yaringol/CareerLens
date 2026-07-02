@@ -6,20 +6,72 @@ import json
 import os
 import sys
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 
 import joblib
 import numpy as np
+from pymongo import MongoClient
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.neighbors import NearestNeighbors
 
 BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
 EXTRACTOR  = os.path.join(BASE_DIR, '..', 'extractor')
 
+# Where model.joblib + canonical_titles.json are written. In the deploy image this
+# points at the shared `model_data` volume the DS service reads on (re)start.
+MODEL_OUT  = os.getenv('MODEL_OUT_DIR', BASE_DIR)
+
+# ── Mongo source (single source of truth, shared with the scraper) ─────────────
+MONGO_URI = os.getenv(
+    'MONGO_URI',
+    'mongodb://localhost:27017/jobs',
+)
+# Collection to train from — set MONGO_COLLECTION=JOBS_EXAMPLE to train on the
+# synthetic trend dataset instead of the live scraped `jobs`.
+MONGO_COLLECTION = os.getenv('MONGO_COLLECTION', 'jobs')
+
+# ── Recency / time-feature tuning ──────────────────────────────────────────────
+# Postings decay by half every HALF_LIFE_DAYS, so recent jobs dominate prevalence
+# and emerging skills rise. TREND_WINDOW_DAYS defines the "recent" slice used to
+# label a skill rising/stable/falling vs its all-time prevalence.
+HALF_LIFE_DAYS    = float(os.getenv('RECENCY_HALF_LIFE_DAYS', '14'))
+TREND_WINDOW_DAYS = float(os.getenv('TREND_WINDOW_DAYS', '7'))
+TREND_RISING      = 1.25
+TREND_FALLING     = 0.80
+NOW               = datetime.now(timezone.utc)
+
+
+def _parse_dt(raw):
+    """Accept BSON datetime or ISO-8601 string (e.g. '2026-06-29T09:36:52.000Z')."""
+    if isinstance(raw, datetime):
+        return raw if raw.tzinfo else raw.replace(tzinfo=timezone.utc)
+    if isinstance(raw, str) and raw:
+        try:
+            return datetime.fromisoformat(raw.replace('Z', '+00:00'))
+        except ValueError:
+            return None
+    return None
+
+
+def age_days(item):
+    """Age of a posting in days, preferring datePosted, falling back to scraped_at."""
+    posted = _parse_dt(item.get('datePosted')) or _parse_dt(item.get('scraped_at'))
+    if posted is None:
+        return None
+    return max(0.0, (NOW - posted).total_seconds() / 86400.0)
+
+
+def recency_weight(item):
+    """Exponential decay weight in (0, 1]; 1.0 when the posting date is unknown."""
+    age = age_days(item)
+    if age is None:
+        return 1.0
+    return 0.5 ** (age / HALF_LIFE_DAYS)
+
 # ── Canonical title set ───────────────────────────────────────────────────────
 
 CANONICAL_TITLE_VARIANTS = {
-    # ── Original 5 POC titles ─────────────────────────────────────────────────
+    # ── Original 5 core titles ────────────────────────────────────────────────
     "Software Engineer": [
         "Software Engineer", "Senior Software Engineer", "Backend Engineer",
         "Senior Backend Engineer", "Backend Software Engineer", "Full Stack Engineer",
@@ -335,58 +387,87 @@ def extract_weighted_skills(item, canonical):
             scores[sk] += score
     return dict(scores)
 
-# ── Load & aggregate ──────────────────────────────────────────────────────────
+# ── Load & aggregate (from MongoDB, recency-weighted) ──────────────────────────
+# A Mongo document already has the same shape the old JSONL loop expected
+# (og_title, title, skills.full_matches/ngram_matches), plus datePosted/scraped_at
+# which we use to weight recent postings higher.
 
-role_skill_scores = {t: defaultdict(float) for t in CANONICAL_TITLES}
-role_skill_counts = {t: defaultdict(int)   for t in CANONICAL_TITLES}
-record_counts     = defaultdict(int)
+# Recency-weighted accumulators (drive prevalence so trending skills surface):
+role_skill_scores = {t: defaultdict(float) for t in CANONICAL_TITLES}   # Σ score·w
+role_skill_counts = {t: defaultdict(int)   for t in CANONICAL_TITLES}   # raw frequency
+role_record_weight = defaultdict(float)                                  # Σ w  (weighted denom)
+record_counts      = defaultdict(int)                                    # raw # postings (confidence)
 
-datasets = {
-    'linkedin': os.path.join(EXTRACTOR, 'linkedin_translated_skills.jsonl'),
-    'alljobs':  os.path.join(EXTRACTOR, 'alljobs_translated_skills.jsonl'),
-}
+# Recent-window accumulators (for the rising/stable/falling trend label):
+recent_skill_scores = {t: defaultdict(float) for t in CANONICAL_TITLES}  # Σ score in window
+recent_record_count = defaultdict(int)                                   # # postings in window
 
-for source, path in datasets.items():
-    with open(path, encoding='utf-8') as f:
-        for line in f:
-            try:
-                item = json.loads(line)
-                og_title     = item.get('og_title') or item.get('og_tite')
-                actual_title = item.get('title', '')
-                canonical    = resolve_canonical(og_title, actual_title)
-                if canonical is None:
-                    continue
-                total = (len(item['skills'].get('full_matches', [])) +
-                         len(item['skills'].get('ngram_matches', [])))
-                if total < 5:
-                    continue
-                weighted = extract_weighted_skills(item, canonical)
-                if not weighted:
-                    continue
-                for skill, score in weighted.items():
-                    role_skill_scores[canonical][skill] += score
-                    role_skill_counts[canonical][skill] += 1
-                record_counts[canonical] += 1
-            except (json.JSONDecodeError, KeyError):
-                continue
+mongo = MongoClient(MONGO_URI, serverSelectionTimeoutMS=8000)
+jobs_collection = mongo.get_default_database()[MONGO_COLLECTION]
+print(f"Reading jobs from MongoDB: {MONGO_URI.split('@')[-1]} collection={MONGO_COLLECTION}")
 
-print("Records loaded per role:")
+for item in jobs_collection.find({}):
+    try:
+        og_title     = item.get('og_title') or item.get('og_tite')
+        actual_title = item.get('title', '')
+        canonical    = resolve_canonical(og_title, actual_title)
+        if canonical is None:
+            continue
+        skills = item.get('skills') or {}
+        total = (len(skills.get('full_matches', [])) +
+                 len(skills.get('ngram_matches', [])))
+        if total < 5:
+            continue
+        weighted = extract_weighted_skills(item, canonical)
+        if not weighted:
+            continue
+
+        w   = recency_weight(item)
+        age = age_days(item)
+        is_recent = age is not None and age <= TREND_WINDOW_DAYS
+
+        for skill, score in weighted.items():
+            role_skill_scores[canonical][skill] += score * w
+            role_skill_counts[canonical][skill] += 1
+            if is_recent:
+                recent_skill_scores[canonical][skill] += score
+        role_record_weight[canonical] += w
+        record_counts[canonical]      += 1
+        if is_recent:
+            recent_record_count[canonical] += 1
+    except (KeyError, TypeError):
+        continue
+
+print("Records loaded per role (raw count | weighted):")
 for title in CANONICAL_TITLES:
     n = record_counts[title]
-    print(f"  {n:4}  {title}  ({len(role_skill_scores[title])} unique skills)")
+    print(f"  {n:4}  (w={role_record_weight[title]:6.1f})  {title}  "
+          f"({len(role_skill_scores[title])} unique skills)")
 
 # ── Sort skills (backward-compat list) ───────────────────────────────────────
 
 role_sorted_skills = {
     title: [sk for sk, _ in sorted(
-        role_skill_scores[title].items(), key=lambda x: -x[1] / max(record_counts[title], 1)
+        role_skill_scores[title].items(), key=lambda x: -x[1] / max(role_record_weight[title], 1e-9)
     )]
     for title in CANONICAL_TITLES
 }
 
 # ── Feature matrix ────────────────────────────────────────────────────────────
 
-def compute_feature_matrix(role_skill_scores, role_skill_counts, record_counts):
+def trend_label(recent_prev, overall_prev):
+    """rising / stable / falling from recent-window prevalence vs all-time prevalence."""
+    if overall_prev <= 0 or recent_prev <= 0:
+        return 'stable'
+    ratio = recent_prev / overall_prev
+    if ratio >= TREND_RISING:
+        return 'rising'
+    if ratio <= TREND_FALLING:
+        return 'falling'
+    return 'stable'
+
+def compute_feature_matrix(role_skill_scores, role_skill_counts, role_record_weight,
+                           recent_skill_scores, recent_record_count):
     n_titles = len(CANONICAL_TITLES)
     skill_title_count = defaultdict(int)
     for skills in role_skill_scores.values():
@@ -395,29 +476,40 @@ def compute_feature_matrix(role_skill_scores, role_skill_counts, record_counts):
 
     fm = {}
     for title in CANONICAL_TITLES:
-        n = record_counts[title]
-        if n == 0:
+        denom = role_record_weight[title]
+        if denom <= 0:
             continue
+        recent_denom = recent_record_count[title]
         fm[title] = {}
         for skill, total_score in role_skill_scores[title].items():
             frequency  = role_skill_counts[title][skill]
-            prevalence = total_score / n
+            prevalence = total_score / denom                       # recency-weighted mean
+            # Raw (un-normalized) recent vs overall prevalence drives the trend label.
+            recent_prev_raw  = (recent_skill_scores[title][skill] / recent_denom
+                                if recent_denom > 0 else 0.0)
             idf        = np.log(n_titles / skill_title_count[skill]) if skill_title_count[skill] > 0 else 0
             specificity = idf / np.log(max(n_titles, 2))
             fm[title][skill] = {
                 'frequency':         frequency,
                 'prevalence':        prevalence,
+                'recent_prevalence': recent_prev_raw,
+                'trend':             trend_label(recent_prev_raw, prevalence),
                 'title_specificity': float(np.clip(specificity, 0.0, 1.0)),
             }
 
+    # Normalize prevalence (and recent_prevalence on the same scale) to [0, 1] per title.
     for title in fm:
         max_prev = max(f['prevalence'] for f in fm[title].values())
         if max_prev > 0:
             for skill in fm[title]:
                 fm[title][skill]['prevalence'] /= max_prev
+                fm[title][skill]['recent_prevalence'] /= max_prev
     return fm
 
-feature_matrix = compute_feature_matrix(role_skill_scores, role_skill_counts, record_counts)
+feature_matrix = compute_feature_matrix(
+    role_skill_scores, role_skill_counts, role_record_weight,
+    recent_skill_scores, recent_record_count,
+)
 
 # ── Build KNN ─────────────────────────────────────────────────────────────────
 
@@ -452,8 +544,9 @@ model_artifacts = {
     'trained_at':     timestamp,
 }
 
-versioned = os.path.join(BASE_DIR, f'model_{timestamp}.joblib')
-latest    = os.path.join(BASE_DIR, 'model.joblib')
+os.makedirs(MODEL_OUT, exist_ok=True)
+versioned = os.path.join(MODEL_OUT, f'model_{timestamp}.joblib')
+latest    = os.path.join(MODEL_OUT, 'model.joblib')
 joblib.dump(model_artifacts, versioned)
 joblib.dump(model_artifacts, latest)
 print(f"Saved: {latest}")
@@ -472,14 +565,56 @@ canonical_data = {
     'generated_at':      timestamp,
 }
 
-json_path = os.path.join(BASE_DIR, 'canonical_titles.json')
+json_path = os.path.join(MODEL_OUT, 'canonical_titles.json')
 with open(json_path, 'w', encoding='utf-8') as f:
     json.dump(canonical_data, f, indent=2, ensure_ascii=False)
 print(f"Saved: {json_path}")
 
+# ── Persist the learned skill<->title mapping to MongoDB ────────────────────────
+# So experiments across data sources (jobs / JOBS_EXAMPLE / lang-uk-job ...) are
+# stored side by side and comparable. Two collections in the same DB:
+#   model_runs          : one doc per training run (source + params + record counts)
+#   role_skill_features : one row per (run, canonical title, skill) — queryable
+# Disable with PERSIST_FEATURES=0.
+if os.getenv('PERSIST_FEATURES', '1').lower() not in ('0', 'false', 'no'):
+    fdb        = mongo.get_default_database()
+    runs_coll  = fdb[os.getenv('RUNS_COLLECTION', 'model_runs')]
+    feats_coll = fdb[os.getenv('FEATURES_COLLECTION', 'role_skill_features')]
+    run_id = f"{MONGO_COLLECTION}@{timestamp}"
+
+    runs_coll.replace_one({'_id': run_id}, {
+        '_id':                 run_id,
+        'source_collection':   MONGO_COLLECTION,
+        'trained_at':          timestamp,
+        'half_life_days':      HALF_LIFE_DAYS,
+        'trend_window_days':   TREND_WINDOW_DAYS,
+        'record_counts':       {t: int(record_counts[t]) for t in CANONICAL_TITLES},
+        'titles_with_data':    sum(1 for t in CANONICAL_TITLES if record_counts[t] > 0),
+    }, upsert=True)
+
+    feats_coll.delete_many({'run_id': run_id})
+    rows = [
+        {
+            'run_id': run_id, 'source': MONGO_COLLECTION, 'title': title, 'skill': skill,
+            'prevalence':        round(float(f['prevalence']), 4),
+            'recent_prevalence': round(float(f.get('recent_prevalence', 0.0)), 4),
+            'trend':             f.get('trend', 'stable'),
+            'frequency':         int(f['frequency']),
+            'title_specificity': round(float(f['title_specificity']), 4),
+        }
+        for title, skills in feature_matrix.items()
+        for skill, f in skills.items()
+    ]
+    if rows:
+        feats_coll.insert_many(rows)
+    feats_coll.create_index([('source', 1), ('title', 1), ('skill', 1)])
+    feats_coll.create_index('run_id')
+    print(f"Persisted {len(rows)} feature rows to '{feats_coll.name}' (run_id={run_id})")
+
 # ── Sanity check ──────────────────────────────────────────────────────────────
-print("\nTop 5 skills per original POC title:")
-poc = ["Software Engineer", "Data Scientist", "Product Manager", "DevOps Engineer", "Frontend Developer"]
-for title in poc:
-    idx = variant_labels.index(title)
-    print(f"  {title}: {skills_data[idx][:5]}")
+print("\nTop 5 skills per sample title:")
+for title in ["Software Engineer", "Data Scientist", "Machine Learning Engineer",
+              "DevOps Engineer", "Frontend Developer"]:
+    if title in variant_labels:
+        idx = variant_labels.index(title)
+        print(f"  {title}: {skills_data[idx][:5]}")

@@ -5,6 +5,9 @@ __pycache__/
 .venv311/
 .env
 
+# Secrets (see *.example counterparts)
+secrets/mongo.env
+
 # Data outputs
 data/processed/*
 !data/raw/.gitkeep

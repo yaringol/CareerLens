@@ -17,8 +17,8 @@ import type {
 } from '../services/api'
 import './PersonalizationScreen.css'
 
-const INPUT_KEY = 'pocPersonalizationInput'
-const RESULT_KEY = 'pocAnalysisResult'
+const INPUT_KEY = 'personalizationInput'
+const RESULT_KEY = 'analysisResult'
 const MAX_FOCUS_SKILLS = 5
 
 interface PersonalizationInput {
@@ -202,9 +202,9 @@ export default function PersonalizationScreen() {
         RESULT_KEY,
         JSON.stringify({ ...result, cvText: input.cvText, cvFileName: input.cvFileName })
       )
-      sessionStorage.setItem('pocJobDescription', input.isPostingMode ? input.jobDescription : '')
-      sessionStorage.setItem('pocCvFileName', input.cvFileName)
-      sessionStorage.setItem('pocExcludeCvId', input.excludeCvId ?? '')
+      sessionStorage.setItem('jobDescription', input.isPostingMode ? input.jobDescription : '')
+      sessionStorage.setItem('cvFileName', input.cvFileName)
+      sessionStorage.setItem('excludeCvId', input.excludeCvId ?? '')
       navigate('/dashboard', { replace: true })
     } catch (err) {
       submittedRef.current = false

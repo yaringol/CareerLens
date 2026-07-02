@@ -1,11 +1,11 @@
 import { llmCall } from '../infra/llm/llmCall';
 import { parseJsonSafe } from '../infra/llm/parseJson';
 import { AgentError } from './agentError';
-import { logSkillExtractionAgentPayload } from '../utils/pocLog';
+import { logSkillExtractionAgentPayload } from '../utils/logger';
 
 const AGENT_NAME = 'skillExtraction';
 
-/** User message prefix — keep in sync with `logSkillExtractionAgentPayload` wording in pocLog. */
+/** User message prefix — keep in sync with `logSkillExtractionAgentPayload` wording in logger. */
 const USER_MESSAGE_PREFIX = 'Job description:\n';
 
 const SYSTEM_PROMPT = `You are a senior technical recruiter who distills job postings into the concrete skills that actually drive hiring decisions.
