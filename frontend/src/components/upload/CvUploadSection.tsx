@@ -91,7 +91,6 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
   const [manualTitleQuery, setManualTitleQuery] = useState('')
   const [manualTitleSuggestions, setManualTitleSuggestions] = useState<TitleMatchSuggestion[]>([])
   const [isManualTitleSearching, setIsManualTitleSearching] = useState(false)
-  const [showManualOverride, setShowManualOverride] = useState(false)
   const [jobDescription, setJobDescription] = useState('')
   const [fieldErrors, setFieldErrors] = useState<UploadFieldErrors>({})
   const [jobInputMode, setJobInputMode] = useState<JobInputMode>('posting')
@@ -116,7 +115,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
   }, [cvTab, reportError])
 
   useEffect(() => {
-    if (roleDetection.status !== 'not-found' && !showManualOverride) return
+    if (roleDetection.status !== 'not-found') return
     const title = manualTitleQuery.trim()
     if (title.length < 2) {
       setManualTitleSuggestions([])
@@ -146,7 +145,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
       cancelled = true
       window.clearTimeout(timer)
     }
-  }, [manualTitleQuery, reportError, roleDetection.status, showManualOverride])
+  }, [manualTitleQuery, reportError, roleDetection.status])
 
   const clearCvFieldError = () => {
     setFieldErrors((prev) => (prev.cv ? { ...prev, cv: undefined } : prev))
@@ -155,7 +154,6 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
   const resetRoleDetection = () => {
     setManualTitleQuery('')
     setManualTitleSuggestions([])
-    setShowManualOverride(false)
     setRoleDetection({ status: 'idle' })
   }
 
@@ -163,9 +161,14 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
     setRoleDetection({ status: 'detecting' })
     try {
       const detected = await detectCvTitle(cvText)
-      const suggestions = detected.suggestions ?? []
+      if (!detected.detectedTitle) {
+        setRoleDetection({ status: 'not-found' })
+        return
+      }
+
+      const { suggestions } = await matchTitle(detected.detectedTitle)
       const bestMatch = suggestions[0]
-      if (!detected.detectedTitle || !bestMatch) {
+      if (!bestMatch) {
         setRoleDetection({ status: 'not-found' })
         return
       }
@@ -192,33 +195,15 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
   }
 
   function selectSuggestedRole(suggestion: TitleMatchSuggestion) {
-    const detectedTitle =
-      roleDetection.status === 'uncertain' || roleDetection.status === 'ready'
-        ? roleDetection.detectedTitle
-        : manualTitleQuery.trim() || suggestion.canonicalTitle
+    if (roleDetection.status !== 'uncertain' && roleDetection.status !== 'not-found') return
     setRoleDetection({
       status: 'ready',
-      detectedTitle,
+      detectedTitle: roleDetection.status === 'uncertain'
+        ? roleDetection.detectedTitle
+        : manualTitleQuery.trim(),
       canonicalTitle: suggestion.canonicalTitle,
       confidence: suggestion.confidence,
     })
-    setShowManualOverride(false)
-    setManualTitleQuery('')
-    setManualTitleSuggestions([])
-  }
-
-  function applyManualRole(title: string) {
-    const trimmed = title.trim()
-    if (!trimmed) return
-    setRoleDetection({
-      status: 'ready',
-      detectedTitle: trimmed,
-      canonicalTitle: trimmed,
-      confidence: 100,
-    })
-    setShowManualOverride(false)
-    setManualTitleQuery('')
-    setManualTitleSuggestions([])
   }
 
   async function detectRoleFromFile(file: File) {
@@ -636,75 +621,6 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                 )}
                 {roleDetection.status === 'error' && (
                   <p className="detected-role detected-role--error">Role detection is unavailable. Please try another CV.</p>
-                )}
-
-                {(roleDetection.status === 'ready'
-                  || roleDetection.status === 'uncertain'
-                  || roleDetection.status === 'error') && (
-                  <div className="role-override">
-                    {!showManualOverride ? (
-                      <button
-                        type="button"
-                        className="role-override__toggle"
-                        onClick={() => setShowManualOverride(true)}
-                        disabled={isLoading}
-                      >
-                        Not the right role? Choose it manually
-                      </button>
-                    ) : (
-                      <div className="role-search">
-                        <p className="role-search__hint">Type your role and pick a match, or use exactly what you typed.</p>
-                        <input
-                          className="role-search__input"
-                          type="search"
-                          value={manualTitleQuery}
-                          onChange={(e) => setManualTitleQuery(e.target.value)}
-                          placeholder="e.g. Software Engineer"
-                          disabled={isLoading}
-                          autoFocus
-                        />
-                        {isManualTitleSearching && <p className="role-search__status">Searching...</p>}
-                        {manualTitleSuggestions.length > 0 && (
-                          <div className="role-suggestions__list" role="list">
-                            {manualTitleSuggestions.map((suggestion) => (
-                              <button
-                                key={suggestion.canonicalTitle}
-                                type="button"
-                                className="role-suggestion"
-                                onClick={() => selectSuggestedRole(suggestion)}
-                                disabled={isLoading}
-                              >
-                                <span>{suggestion.canonicalTitle}</span>
-                                <span>{suggestion.confidence}% match</span>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                        {manualTitleQuery.trim().length >= 2 && (
-                          <button
-                            type="button"
-                            className="role-override__use"
-                            onClick={() => applyManualRole(manualTitleQuery)}
-                            disabled={isLoading}
-                          >
-                            Use "{manualTitleQuery.trim()}"
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          className="role-override__cancel"
-                          onClick={() => {
-                            setShowManualOverride(false)
-                            setManualTitleQuery('')
-                            setManualTitleSuggestions([])
-                          }}
-                          disabled={isLoading}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    )}
-                  </div>
                 )}
               </div>
 

@@ -20,48 +20,12 @@ export interface TitleMatchSuggestion {
   confidence: number;
 }
 
-interface CVTitleDetectionResponse {
-  job_title: string;
-  confidence: number;
-}
-
-export interface DetectedRole {
-  jobTitle: string;
-  confidence: number;
-}
-
-/**
- * Calls /cv/role — the classifier maps free text (CV body or a typed title)
- * to the nearest supported canonical job titles, ranked by confidence.
- */
-async function classifyRoles(text: string): Promise<DetectedRole[]> {
-  try {
-    const response = await axios.get<CVTitleDetectionResponse[]>(
-      `${DS_MODEL_URL}/cv/role`,
-      {
-        params: { text },
-        timeout: DS_MODEL_TIMEOUT_MS,
-      }
-    );
-    return (response.data ?? [])
-      .map((item) => ({
-        jobTitle: typeof item.job_title === 'string' ? item.job_title.trim() : '',
-        confidence: typeof item.confidence === 'number' ? item.confidence : 0,
-      }))
-      .filter((role) => role.jobTitle);
-  } catch (err) {
-    if (axios.isAxiosError(err)) {
-      if (err.code === 'ECONNREFUSED' || err.code === 'ECONNABORTED') {
-        throw new DsModelError('DS model service is unavailable', 503);
-      }
-      throw new DsModelError(`DS model request failed: ${err.message}`);
-    }
-    throw err;
-  }
-}
-
-export async function detectTitleFromCv(text: string): Promise<DetectedRole[]> {
-  return classifyRoles(text);
+interface DsTitleMatchResponse {
+  suggestions?: Array<{
+    canonical_title?: unknown;
+    matched_variant?: unknown;
+    confidence?: unknown;
+  }>;
 }
 
 /**
@@ -150,24 +114,33 @@ export async function getCoreSkills(jobTitle: string): Promise<string[] | null> 
   }
 }
 
-export function rolesToSuggestions(roles: DetectedRole[]): TitleMatchSuggestion[] {
-  return roles.slice(0, 3).map((role) => ({
-    canonicalTitle: role.jobTitle,
-    matchedVariant: role.jobTitle,
-    confidence: role.confidence,
-  }));
-}
-
 export async function getTitleMatches(title: string): Promise<{ suggestions: TitleMatchSuggestion[] }> {
-  const roles = await classifyRoles(title);
-  const suggestions = rolesToSuggestions(roles).map((suggestion) => ({
-    ...suggestion,
-    matchedVariant: title.trim(),
-  }));
+  try {
+    const response = await axios.get<DsTitleMatchResponse>(`${DS_MODEL_URL}/title/match`, {
+      params: { title },
+      timeout: DS_MODEL_TIMEOUT_MS,
+    });
+    const suggestions = (response.data?.suggestions ?? [])
+      .map((suggestion) => ({
+        canonicalTitle: typeof suggestion.canonical_title === 'string' ? suggestion.canonical_title.trim() : '',
+        matchedVariant: typeof suggestion.matched_variant === 'string' ? suggestion.matched_variant.trim() : '',
+        confidence: typeof suggestion.confidence === 'number' ? suggestion.confidence : 0,
+      }))
+      .filter((suggestion) => suggestion.canonicalTitle && suggestion.matchedVariant)
+      .slice(0, 3);
 
-  if (suggestions.length === 0) {
-    throw new DsModelError(`DS model returned no title matches for "${title}"`);
+    if (suggestions.length === 0) {
+      throw new DsModelError(`DS model returned no title matches for "${title}"`);
+    }
+
+    return { suggestions };
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      if (err.code === 'ECONNREFUSED' || err.code === 'ECONNABORTED') {
+        throw new DsModelError('DS model service is unavailable', 503);
+      }
+      throw new DsModelError(`DS model request failed: ${err.message}`);
+    }
+    throw err;
   }
-
-  return { suggestions };
 }

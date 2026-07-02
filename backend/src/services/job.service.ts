@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { getPocJobsForList, getJobById, getJobByTitle } from '../dal/job.dal';
-import { Job, IJob } from '../models/job.model';
+import { IJob } from '../models/job.model';
 import { getCoreSkills } from './dsModel';
 import { extractSkills } from '../agents/skillExtraction.agent';
 import { ValidationError, NotFoundError, DsModelError } from '../errors';
@@ -123,56 +123,13 @@ export async function extractDynamicSkills(
   }
 }
 
-function toNormalizedTitle(title: string): string {
-  return title
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-/**
- * Resolves a canonical title to a Job document. Uses MongoDB when already seeded;
- * otherwise verifies the title with the DS skills model and upserts a Job row.
- */
-export async function findOrCreateJobByTitle(jobTitle: string): Promise<IJob> {
-  const title = jobTitle.trim();
-  if (!title) {
-    throw new ValidationError('Job title is required');
-  }
-
-  const exact = await getJobByTitle(title);
-  if (exact) return exact;
-
-  const byCase = await Job.findOne(
-    { title: { $regex: new RegExp(`^${escapeRegExp(title)}$`, 'i') } },
-    { title: 1, normalizedTitle: 1, description: 1 }
-  );
-  if (byCase) return byCase;
-
-  const coreSkills = await getCoreSkills(title);
-  if (!coreSkills?.length) {
-    throw new NotFoundError(`Job title "${title}" is not supported by the skills model`);
-  }
-
-  const normalizedTitle = toNormalizedTitle(title);
-  const created = await Job.findOneAndUpdate(
-    { normalizedTitle },
-    { $setOnInsert: { title, normalizedTitle, description: '' } },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
-  );
-  if (!created) {
-    throw new DsModelError(`Failed to register job title "${title}"`, 503);
-  }
-  return created;
-}
-
 export async function validateJobTitle(jobTitle: string): Promise<IJob> {
-  return findOrCreateJobByTitle(jobTitle);
+  // TODO: Replace with vector DB semantic title matching in production
+  const job = await getJobByTitle(jobTitle);
+  if (!job) {
+    throw new NotFoundError(`Job title "${jobTitle}" not found. Must be one of the 5 POC jobs.`);
+  }
+  return job;
 }
 
 export async function validateJobById(jobId: string): Promise<IJob> {

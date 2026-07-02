@@ -1,0 +1,48 @@
+services:
+  mongodb:
+    container_name: mongodb
+    restart: always
+    image: mongo:6.0
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=secretpassword
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+
+  scraper:
+    container_name: scraper
+    restart: always
+    image: careerlens/scraper:main
+    environment:
+      - MONGODB_URI=mongodb://root:secretpassword@mongodb:27017/mydatabase?authSource=admin
+    depends_on:
+    networks:
+      - app-network
+
+  frontend:
+    container_name: frontend
+    restart: always
+    image: careerlens/frontend:main
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80" # Access your app at http://localhost:8080
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongo_data:
