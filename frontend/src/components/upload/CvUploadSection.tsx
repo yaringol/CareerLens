@@ -16,6 +16,7 @@ import {
   type TitleMatchSuggestion,
 } from '../../services/api'
 import FavoriteStarButton from '../cv/FavoriteStarButton'
+import AdminNavLink from '../admin/AdminNavLink'
 import ScanLoader from '../ui/ScanLoader'
 import { isGibberish } from '../../utils/gibberishDetector'
 import { looksLikeJobUrl } from '../../utils/jobUrl'
@@ -430,6 +431,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               Account
             </Link>
+            <AdminNavLink className="btn-nav-pill btn-nav-pill--admin" />
           </div>
           <div className="step-indicator">
             <div className="step step--active">

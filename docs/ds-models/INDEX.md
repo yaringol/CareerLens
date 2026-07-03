@@ -14,6 +14,8 @@
 | [06-model1-original-plan-historical.md](06-model1-original-plan-historical.md) | `docs/ds_model_plan.md` | **היסטורי** — התוכנית המקורית ל-feature matrix של מודל 1 (DS-2 עד DS-12) |
 | [07-progress-and-feature-backlog.md](07-progress-and-feature-backlog.md) | `docs/ds_progress.md` | סיכום התקדמות + backlog פיצ'רים (FEAT-1 עד FEAT-6), כולל סעיף הסקרייפינג היומי |
 | [08-implementation-plan-track-a-b.md](08-implementation-plan-track-a-b.md) | תוכנן ע"י Claude (חדש) | **תוכנית יישום** (טרם מומשה) לתיקון פייפליין מודל 1 + הרחבת מודל 2 ל-59 כותרות + LLM fallback סגור |
+| [09-pipeline-fix-plan.md](09-pipeline-fix-plan.md) | מסמך עבודה חי (2026-07) | **תוכנית תיקון + סטטוס מימוש** — פערים, A1–A4, קונטרקט API, יומן שלבים |
+| [10-model-runs-mongo.md](10-model-runs-mongo.md) | מסמך עבודה חי (2026-07) | **`model_runs` ב-Mongo** — שדות, שער promotion, והשוואת 3 הרצות live |
 
 ---
 

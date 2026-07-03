@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import HalfCircleGauge, { getStrength } from '../components/ui/HalfCircleGauge'
 import AppLogo from '../components/ui/AppLogo'
+import AdminNavLink from '../components/admin/AdminNavLink'
 import { useError } from '../context/ErrorContext'
 import type { AnalyzeResponse, CompareSavedResponse } from '../services/api'
 import { getCvText } from '../services/api'
@@ -465,6 +466,7 @@ const SkillsMatchDashboard = () => {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             Account
           </button>
+          <AdminNavLink className="btn-nav-pill btn-nav-pill--admin" />
         </div>
         <div className="step-indicator">
           <div className="step step--done">

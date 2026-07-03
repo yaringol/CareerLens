@@ -26,9 +26,15 @@ services:
     environment:
       - PORT=3000
       - MONGODB_URI=mongodb://root:${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD in .env}@mongodb:27017/careerlens?authSource=admin
+      - JOBS_MONGO_URI=mongodb://root:${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD in .env}@mongodb:27017/jobs?authSource=admin
       - DS_MODEL_URL=http://ds:8000
       - JWT_SECRET=${JWT_SECRET:-dev-insecure-change-me}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - PIPELINE_DOCKER_IMAGE=careerlens/pipeline:main
+      - PIPELINE_DOCKER_NETWORK=app-network
+      - DS_CONTAINER=careerlens-ds
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "3000:3000" # direct API access for testing; the frontend proxies /api -> backend:3000
     depends_on:

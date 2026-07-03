@@ -37,6 +37,10 @@ model_trained_at = artifacts.get('trained_at')
 cv_to_title_model = joblib.load(f'{os.path.dirname(__file__)}/text_to_job_title_classifier.joblib')
 
 from label_map import to_supported_title
+from skill_schema import select_display_skills
+
+SKILL_TOP_POOL = int(os.getenv('SKILL_TOP_POOL', '10'))
+SKILL_TOP_DISPLAY = int(os.getenv('SKILL_TOP_DISPLAY', '5'))
 
 # Optional per-role record counts / confidence (written by train.py alongside model.joblib).
 _canonical_json = os.getenv(
@@ -113,21 +117,34 @@ def predict_skills_from_text(text: str):
 
 @app.get("/title/skills")
 def predict_skills(title: str, top_n: int = 5):
-    # 1. Vectorize input title
     vec = vectorizer.transform([title])
-
-    # 2. Snap to the nearest role (n_neighbors=1)
     _, indices = knn.kneighbors(vec)
-    matched_role = skills_data[indices[0][0]]
+    idx = indices[0][0]
+    matched_canonical = titles_data[idx]
+    feats = feature_matrix.get(matched_canonical, {})
+    rc = canonical_data.get('record_counts', {}).get(matched_canonical, 0)
 
-    # Skills are pre-sorted by aggregated score — take the top N.
-    # Default 5 keeps existing callers (/analyze) unchanged; the
-    # Personalization screen requests more so the user has a real choice.
-    n = max(1, top_n)
-    top = matched_role[:n]
+    n = max(1, min(top_n, SKILL_TOP_DISPLAY))
+    ranked = select_display_skills(
+        feats,
+        pool_size=SKILL_TOP_POOL,
+        display_count=n,
+        fallback=skills_data[idx],
+    )
 
     return {
-        "suggested_skills": top
+        "matched_canonical": matched_canonical,
+        "data_confidence": confidence_level(rc),
+        "records_count": rc,
+        "suggested_skills": [r['skill'] for r in ranked],
+        "skills": ranked,
+        "ranking": {
+            "pool_size": SKILL_TOP_POOL,
+            "display_count": n,
+            "primary_metric": "prevalence",
+            "secondary_metric": "stability_score",
+        },
+        "trained_at": model_trained_at,
     }
 
 @app.get("/cv/role")
@@ -210,28 +227,36 @@ def trending_skills(title: str, n: int = 5):
     rc = canonical_data.get('record_counts', {}).get(matched_canonical, 0)
 
     feats = feature_matrix.get(matched_canonical, {})
-    if feats:
-        ranked = sorted(feats.items(), key=lambda kv: -kv[1].get('prevalence', 0.0))[:n]
-        skills = [
-            {
-                "skill":             s,
-                "prevalence":        round(float(f.get('prevalence', 0.0)), 4),
-                "recent_prevalence": round(float(f.get('recent_prevalence', 0.0)), 4),
-                "trend":             f.get('trend', 'stable'),
-            }
-            for s, f in ranked
-        ]
-    else:
-        skills = [
-            {"skill": s, "prevalence": None, "recent_prevalence": None, "trend": "stable"}
-            for s in skills_data[idx][:n]
-        ]
+    n = max(1, min(n, SKILL_TOP_DISPLAY))
+    ranked = select_display_skills(
+        feats,
+        pool_size=SKILL_TOP_POOL,
+        display_count=n,
+        fallback=skills_data[idx],
+    )
+    skills = [
+        {
+            "skill":             r['skill'],
+            "prevalence":        r.get('prevalence'),
+            "recent_prevalence": r.get('recent_prevalence'),
+            "stability_score":   r.get('stability_score'),
+            "trend":             r.get('trend', 'stable'),
+            "time_coverage_reliable": r.get('time_coverage_reliable', False),
+        }
+        for r in ranked
+    ]
 
     return {
         "matched_canonical": matched_canonical,
         "data_confidence":   confidence_level(rc),
         "records_count":     rc,
         "skills":            skills,
+        "ranking": {
+            "pool_size": SKILL_TOP_POOL,
+            "display_count": n,
+            "primary_metric": "prevalence",
+            "secondary_metric": "stability_score",
+        },
         "trained_at":        model_trained_at,
     }
 
