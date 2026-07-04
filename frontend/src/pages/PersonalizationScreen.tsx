@@ -534,9 +534,6 @@ export default function PersonalizationScreen() {
                       aria-pressed={checked}
                     >
                       <span className="focus-skill-name">{skill.name}</span>
-                      <span className={`focus-skill-source focus-skill-source--${skill.source}`}>
-                        {skill.source === 'cv' ? 'from CV' : 'from posting'}
-                      </span>
                     </button>
                   )
                 })}
