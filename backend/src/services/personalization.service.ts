@@ -1,6 +1,6 @@
 import type { TrendingSkill } from './dsModel';
 
-/** Same slugging rule used by personalize.routes.ts's SkillOption ids — both routes
+/** Same slugging rule used by personalize.routes.ts's SkillOption ids - both routes
  * must generate identical ids for the same skill name so a selectedSkillIds override
  * from the Personalization screen (built against this id scheme) actually matches. */
 export function skillId(name: string): string {
@@ -11,7 +11,7 @@ export function skillId(name: string): string {
  * Collapses the Personalization screen's two redundant stable/trending weights into
  * one number on the same [0,1] scale as TrendingSkill.stabilityScore: 0 = pure stable
  * preference, 1 = pure trending preference, 0.5 = balanced. personalMatch is excluded
- * — it's a different axis (CV/role fit), not part of the stable<->trending spectrum,
+ * - it's a different axis (CV/role fit), not part of the stable<->trending spectrum,
  * so mixing it in would break the "0.5 = balanced" invariant.
  */
 export function computeStabilityPreference(stable: number, trending: number): number {
@@ -23,9 +23,9 @@ export function computeStabilityPreference(stable: number, trending: number): nu
 /**
  * Picks 5 of the given (up to 10) candidate skills, ranked primarily by how closely
  * each skill's own stabilityScore matches the user's stabilityPreference (ascending
- * distance — the whole point of this function), with prevalence (relevance to the
+ * distance - the whole point of this function), with prevalence (relevance to the
  * role) used ONLY to break near-ties in that distance, never blended arithmetically
- * with it — a blend would let a highly-relevant-but-poorly-matching skill outrank a
+ * with it - a blend would let a highly-relevant-but-poorly-matching skill outrank a
  * well-matching one just for having higher raw prevalence, defeating the preference.
  * Explicit selectedSkillIds (user manually picked in the UI) always win their slots
  * first; remaining slots are filled by the ranking.

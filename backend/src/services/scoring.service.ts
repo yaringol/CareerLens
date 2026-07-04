@@ -100,7 +100,8 @@ function normalizeLlmScoringJson(
     if (score === undefined) {
       score = overlapScoreForSkill(skill, cvText);
     }
-    return { skill, score: Math.round(score) };
+    const clamped = Math.min(SCORE_MAX, Math.max(SCORE_MIN, Math.round(score)));
+    return { skill, score: clamped };
   });
 
   const values = aligned.map((a) => a.score);

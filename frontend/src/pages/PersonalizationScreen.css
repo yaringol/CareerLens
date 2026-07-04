@@ -161,19 +161,6 @@
   font-weight: 500;
 }
 
-.focus-skill-source {
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--color-secondary);
-  background: var(--color-bg);
-  border-radius: var(--radius-badge);
-  padding: 0.08rem 0.35rem;
-}
-
-.focus-skill-source--cv { color: var(--color-success); }
-.focus-skill-source--market { color: var(--color-accent); }
-
 .personalize-loading {
   margin-top: 0.9rem;
   font-size: 0.88rem;

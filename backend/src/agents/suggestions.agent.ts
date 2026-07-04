@@ -19,17 +19,17 @@ Honesty is non-negotiable:
 - If the skill is already well represented, prefer minimal edits over rewriting.
 
 Output discipline:
-- Return ONLY the text requested — no preamble, no explanation, no markdown fences, no surrounding quotes.`;
+- Return ONLY the text requested - no preamble, no explanation, no markdown fences, no surrounding quotes.`;
 
 const MERGE_SYSTEM_PROMPT = `You are a senior CV editor performing a precise, surgical merge of approved edits.
 
 Principles:
-- Apply ONLY the listed changes. Every other part of the CV must stay unchanged — same sections, order, wording, formatting, and whitespace.
+- Apply ONLY the listed changes. Every other part of the CV must stay unchanged - same sections, order, wording, formatting, and whitespace.
 - When several edits touch the same paragraph, weave them into ONE natural paragraph that keeps all original facts and reads in the candidate's voice.
 - Never invent experience, employers, projects, metrics, or dates.
 
 Output discipline:
-- Return ONLY the complete updated CV text — no commentary, no markdown fences, no quotes.`;
+- Return ONLY the complete updated CV text - no commentary, no markdown fences, no quotes.`;
 
 const PROFICIENCY_GUIDE = `Proficiency levels guide:
 - no_knowledge  -> subtle mention only; do NOT imply hands-on experience

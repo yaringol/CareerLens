@@ -41,7 +41,7 @@
   overflow: visible;
 }
 
-/* Document body — stroke draw-in */
+/* Document body - stroke draw-in */
 .sp-doc {
   stroke-dasharray: 280;
   stroke-dashoffset: 280;

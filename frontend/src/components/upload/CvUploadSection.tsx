@@ -292,10 +292,10 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
   }
 
   // An LLM-fallback pick is a single constrained answer, not a similarity
-  // score — showing "70% match" would misread as a real confidence number.
+  // score - showing "70% match" would misread as a real confidence number.
   function matchLabel(suggestion: TitleMatchSuggestion) {
     return suggestion.source === 'llm_fallback' ? (
-      <span className="badge-ai" title="AI matched this from your CV — no similarity score to show">
+      <span className="badge-ai" title="AI matched this from your CV (no similarity score to show)">
         AI matched
       </span>
     ) : (
@@ -304,7 +304,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
   }
 
   // suggestion always comes from the closed 59-title list (auto-detection
-  // suggestions or /title/normalize search results) — never free text, so the
+  // suggestions or /title/normalize search results) - never free text, so the
   // resulting canonicalTitle is always one the rest of the app can act on.
   function selectSuggestedRole(suggestion: TitleMatchSuggestion) {
     if (roleDetection.status !== 'uncertain' && roleDetection.status !== 'not-found') return
@@ -759,7 +759,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                         ? `Detected as ${roleDetection.detectedTitle} · `
                         : ''}
                       {roleDetection.source === 'llm_fallback' ? (
-                        <span className="badge-ai" title="AI matched this from your CV — no similarity score to show">
+                        <span className="badge-ai" title="AI matched this from your CV (no similarity score to show)">
                           AI matched
                         </span>
                       ) : (
@@ -913,7 +913,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                       Your Dream Job Posting <span className="field-required" aria-hidden="true">*</span>
                     </span>
                     <span className="field-hint">
-                      Paste the full description or a job link - the backend fetches the posting when you analyze.
+                      Paste the full description or a job link. The backend fetches the posting when you analyze.
                     </span>
                   </label>
                   <textarea
@@ -970,7 +970,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                 </div>
               ) : (
                 <p className="cv-only-mode-hint">
-                  Score your CV against <strong>5 core skills</strong> for the selected role - no job posting needed.
+                  Score your CV against <strong>5 core skills</strong> for the selected role. No job posting needed.
                 </p>
               )}
             </div>

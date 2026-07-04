@@ -5,7 +5,7 @@
 להבין מה נעשה, להריץ הכול, ולוודא שהקוד החדש פעיל. לא הושמט דבר בכוונה.
 
 - **Branch:** `model-improvment`
-- **Commit עיקרי:** `b68122a` — _feat(ds): retrain CV→title classifier and wire calibrated detection to UI_
+- **Commit עיקרי:** `b68122a` - _feat(ds): retrain CV→title classifier and wire calibrated detection to UI_
 - **תאריך:** 2026-07-01
 
 ---
@@ -14,7 +14,7 @@
 1. [מטרה ורקע](#1-מטרה-ורקע)
 2. [רשימת כל הקבצים שהשתנו/נוספו](#2-רשימת-כל-הקבצים-שהשתנונוספו)
 3. [Setup ממחשב חדש (מאפס)](#3-setup-ממחשב-חדש-מאפס)
-4. [ארכיטקטורה — איך הכול מחובר](#4-ארכיטקטורה--איך-הכול-מחובר)
+4. [ארכיטקטורה - איך הכול מחובר](#4-ארכיטקטורה--איך-הכול-מחובר)
 5. [ההחלטות וההנדסה (בפירוט מלא)](#5-ההחלטות-וההנדסה-בפירוט-מלא)
 6. [תוצאות ומדדים](#6-תוצאות-ומדדים)
 7. [מה בתוך המודל מול מה בקוד (deploy)](#7-מה-בתוך-המודל-מול-מה-בקוד-deploy)
@@ -29,7 +29,7 @@
 
 היעד: להוכיח שזיהוי התפקיד הוא **למידה אמיתית** ולא רק חיפוש דמיון, ולשלב אותו נכון ב-UI.
 
-- ה-KNN שב-[train.py](train.py) (endpoint `/title/match`) הוא fuzzy-matching על מחרוזות — **לא** למידה.
+- ה-KNN שב-[train.py](train.py) (endpoint `/title/match`) הוא fuzzy-matching על מחרוזות - **לא** למידה.
 - המסווג ב-[tfid.ipynb](tfid.ipynb) לומד לסווג תפקיד מתוך גוף הקו"ח (skills/אחריות/טכנולוגיות),
   כשהטייטל מוסתר. הוא נשמר ל-`text_to_job_title_classifier.joblib` ומוגש דרך `GET /cv/role`.
 
@@ -44,24 +44,24 @@
 ## 2. רשימת כל הקבצים שהשתנו/נוספו
 
 **חדשים (ב-commit `b68122a`):**
-- `ds/model/label_map.py` — איחוד לייבלים (65→38) + מיפוי fallback סמנטי (38→59).
-- `ds/model/tfid.ipynb` — המחברת שמאמנת את המסווג (רצה מקצה-לקצה עם פלטים).
+- `ds/model/label_map.py` - איחוד לייבלים (65→38) + מיפוי fallback סמנטי (38→59).
+- `ds/model/tfid.ipynb` - המחברת שמאמנת את המסווג (רצה מקצה-לקצה עם פלטים).
 
 **שונו (ב-commit `b68122a`):**
-- `ds/model/server.py` — endpoint `/cv/role` שוכתב (נרמול confidence + יישור טייטל); הוסף `import label_map`.
-- `ds/model/text_to_job_title_classifier.joblib` — המודל המאומן מחדש (38 מחלקות).
-- `backend/src/services/dsModel.ts` — טיפוסים + `classifyRoles` + `rolesToSuggestions` מעבירים `canonical_title`.
-- `backend/src/routes/cv.routes.ts` — `detectedTitle` = הטייטל הגולמי שזוהה.
-- `frontend/src/components/upload/CvUploadSection.tsx` — סף `AUTO_MATCH_CONFIDENCE_MIN` 90→60 + תצוגה.
+- `ds/model/server.py` - endpoint `/cv/role` שוכתב (נרמול confidence + יישור טייטל); הוסף `import label_map`.
+- `ds/model/text_to_job_title_classifier.joblib` - המודל המאומן מחדש (38 מחלקות).
+- `backend/src/services/dsModel.ts` - טיפוסים + `classifyRoles` + `rolesToSuggestions` מעבירים `canonical_title`.
+- `backend/src/routes/cv.routes.ts` - `detectedTitle` = הטייטל הגולמי שזוהה.
+- `frontend/src/components/upload/CvUploadSection.tsx` - סף `AUTO_MATCH_CONFIDENCE_MIN` 90→60 + תצוגה.
 
-**מסמכים (אולי לא ב-commit — בדוק `git status`):**
-- `ds/model/CV_TITLE_CLASSIFIER.md` — סיכום + שלבים הבאים.
-- `ds/model/titles_model_progress.md` — המסמך הזה.
+**מסמכים (אולי לא ב-commit - בדוק `git status`):**
+- `ds/model/CV_TITLE_CLASSIFIER.md` - סיכום + שלבים הבאים.
+- `ds/model/titles_model_progress.md` - המסמך הזה.
 
 **מחוץ ל-commit בכוונה:**
-- `ds/model/master_resumes.jsonl` (**16MB** — דאטת האימון; מומלץ Git LFS. **נדרש רק לאימון מחדש**, לא להרצת האפליקציה).
+- `ds/model/master_resumes.jsonl` (**16MB** - דאטת האימון; מומלץ Git LFS. **נדרש רק לאימון מחדש**, לא להרצת האפליקציה).
 - גיבוי joblib מתוארך (`text_to_job_title_classifier_YYYYMMDD_HHMMSS.joblib`).
-- `HomePage.css`, `ImproveCVScreen.tsx`, `SkillsMatchDashboard.tsx` — WIP קיים שלא קשור לעבודה הזו; **לא לבלבל**.
+- `HomePage.css`, `ImproveCVScreen.tsx`, `SkillsMatchDashboard.tsx` - WIP קיים שלא קשור לעבודה הזו; **לא לבלבל**.
 
 ---
 
@@ -80,7 +80,7 @@ pip install -r requirements.txt          # fastapi, uvicorn, sklearn, spacy, ski
 python server.py                          # מאזין על http://localhost:8000
 ```
 > ה-server טוען את שני ה-joblibs ואת `label_map.py` בעלייה. `label_map.py` **חייב** להיות לצד `server.py`.
-> requirements.txt מכסה את ה-**server בלבד** — לא את המחברת (ראו §9).
+> requirements.txt מכסה את ה-**server בלבד** - לא את המחברת (ראו §9).
 
 ### 3ב. Backend (Node, port 3000)
 ```bash
@@ -94,7 +94,7 @@ cd frontend && npm install && npm run dev
 
 ---
 
-## 4. ארכיטקטורה — איך הכול מחובר
+## 4. ארכיטקטורה - איך הכול מחובר
 
 זרימת זיהוי התפקיד מהעלאת קו"ח:
 ```
@@ -113,31 +113,31 @@ cd frontend && npm install && npm run dev
 
 ## 5. ההחלטות וההנדסה (בפירוט מלא)
 
-### 5.1 איחוד לייבלים — [label_map.py](label_map.py) `consolidate()`
+### 5.1 איחוד לייבלים - [label_map.py](label_map.py) `consolidate()`
 הדאטה `master_resumes.jsonl` (4,817 קו"ח) הכיל **65 טייטלים גולמיים** עם סינונימים מפוצלים
 וזנב נדיר. מיפוי "מורחב" → **38 מחלקות נקיות**, **99.4% מהדאטה נשמר**, כולן ≥100 דוגמאות.
 כלל: שם קנוני היכן שקיים, מיזוג סינונימים אמיתיים, זריקת רעש לא-IC (Operations/Project/Business
 Manager/Analyst, Electrical Engineer, SAP, Advocate).
 
-### 5.2 מניעת דליפה (Leakage) — קריטי להוכחת הלמידה
+### 5.2 מניעת דליפה (Leakage) - קריטי להוכחת הלמידה
 - **77% מהקו"ח מכילים את שם התפקיד מילה-במילה ב-summary** → מודל נאיבי "מעתיק" את הטייטל.
 - פתרון בזמן האימון (במחברת):
-  1. `idx==0 guard` — מסירים את כותרת התפקיד הנוכחי מבלוק הניסיון שלו.
-  2. `scrub` — מסירים את מחרוזת הטייטל הגולמי מכל הטקסט (בעיקר ה-summary).
+  1. `idx==0 guard` - מסירים את כותרת התפקיד הנוכחי מבלוק הניסיון שלו.
+  2. `scrub` - מסירים את מחרוזת הטייטל הגולמי מכל הטקסט (בעיקר ה-summary).
 - מדידה: הסרת הדליפה הורידה CV macro-F1 מ-**0.981 → 0.932** (הפער = הדליפה; 0.932 הוא ההגון).
 - **לא** הוספנו את מילות הלייבלים ל-stop-words: `react`, `angular`, `sql` הם כישורים לגיטימיים;
   הסרתם ריסקה תפקידים ממוקדי-פריימוורק (F1 צנח מ-0.89 ל-0.2). ניקוי הדליפה נעשה רק דרך `scrub`.
   > ⚠️ אסימטריה מודעת: `scrub` הוא training-time בלבד (דורש ground-truth של הטייטל). ב-inference
-  > הטקסט מוזן כמו שהוא — זה תקין, כי המודל למד להישען על כישורים.
+  > הטקסט מוזן כמו שהוא - זה תקין, כי המודל למד להישען על כישורים.
 
 ### 5.3 המחברת [tfid.ipynb](tfid.ipynb)
 Section B (baselines + שחזור קונפיג ישן) → A1 (איחוד) → A2 (harness: metrics, CV, confusion,
 learning curve) → A3 (V1 TF-IDF+LogReg) → Leakage ablation → A4 (V2 embeddings) → A5 (השוואה + שמירה).
 
-### 5.4 נרמול ה-confidence — [server.py `/cv/role`](server.py)
-הבעיה: הסתברות גולמית מתפרסת על 38 מחלקות → top-1 טיפוסי 15–40%, אז סף UI ישן (90) אף פעם לא נפתח.
+### 5.4 נרמול ה-confidence - [server.py `/cv/role`](server.py)
+הבעיה: הסתברות גולמית מתפרסת על 38 מחלקות → top-1 טיפוסי 15-40%, אז סף UI ישן (90) אף פעם לא נפתח.
 הפתרון: מחזירים `confidence` = **חלק יחסי מנורמל מתוך ה-top-3** (סכום ≈100%). top-1 דומיננטי
-~80–100; תיקו אמיתי ~50. (בנוסף `raw_confidence` = softmax גולמי, לדיבוג.)
+~80-100; תיקו אמיתי ~50. (בנוסף `raw_confidence` = softmax גולמי, לדיבוג.)
 
 מבנה תגובת `/cv/role` (מערך top-3):
 ```json
@@ -145,7 +145,7 @@ learning curve) → A3 (V1 TF-IDF+LogReg) → Leakage ablation → A4 (V2 embedd
   "confidence": 78.4, "raw_confidence": 22.1}, ...]
 ```
 
-### 5.5 יישור מרחב לייבלים — [label_map.py](label_map.py) `to_supported_title()`
+### 5.5 יישור מרחב לייבלים - [label_map.py](label_map.py) `to_supported_title()`
 ה-`canonicalTitle` מזין `getCoreSkills → /title/skills`, שמכיר רק את **59 הטייטלים הקנוניים** (מ-train.py).
 ה-KNN של char-ngrams הוא fallback **שגוי סמנטית** (`iOS→Kernel`, `JavaScript→Java`, `SQL→Frontend`).
 לכן בנינו **מפה סמנטית מאוצרת** `CLASSIFIER_TO_SUPPORTED`: 21 זהות + 17 מיפויים ידניים:
@@ -162,7 +162,7 @@ learning curve) → A3 (V1 TF-IDF+LogReg) → Leakage ablation → A4 (V2 embedd
 | Flutter Developer | Software Engineer | | Vue Developer | Frontend Developer |
 | JavaScript Developer | Frontend Developer | | | |
 
-(21 האחרים ממופים לעצמם — כבר בסט ה-59. כל היעדים אומתו כקיימים ב-59.)
+(21 האחרים ממופים לעצמם - כבר בסט ה-59. כל היעדים אומתו כקיימים ב-59.)
 
 ### 5.6 חיווט backend → frontend
 - [dsModel.ts](../../backend/src/services/dsModel.ts): `CVTitleDetectionResponse`/`DetectedRole` קיבלו
@@ -178,9 +178,9 @@ learning curve) → A3 (V1 TF-IDF+LogReg) → Leakage ablation → A4 (V2 embedd
 
 | מודל | accuracy | macro-F1 | CV macro-F1 |
 |---|---|---|---|
-| Dummy (most_frequent) | 0.091 | 0.004 | — |
-| **V1 — TF-IDF + LogReg** ✅ נבחר | **0.911** | **0.931** | **0.932 ± 0.004** |
-| V2 — Embeddings (`all-MiniLM-L6-v2`) + LogReg | 0.844 | 0.869 | 0.861 ± 0.005 |
+| Dummy (most_frequent) | 0.091 | 0.004 | - |
+| **V1 - TF-IDF + LogReg** ✅ נבחר | **0.911** | **0.931** | **0.932 ± 0.004** |
+| V2 - Embeddings (`all-MiniLM-L6-v2`) + LogReg | 0.844 | 0.869 | 0.861 ± 0.005 |
 
 - פי ~230 מעל baseline + CV יציב מאוד → למידה, לא מקריות.
 - Leakage ablation: 0.981 (דולף) → 0.932 (נקי).
@@ -203,8 +203,8 @@ learning curve) → A3 (V1 TF-IDF+LogReg) → Leakage ablation → A4 (V2 embedd
 | סף 60 + תצוגה | `CvUploadSection.tsx` | frontend |
 
 **מסקנות deploy:**
-1. העתקת ה-`.joblib` לבדו **לא מספיקה** — צריך גם `server.py` **וגם `label_map.py`** (ה-server מייבא אותו; בלעדיו קורס).
-2. **חובה restart ל-DS service** — המודל והקוד נטענים רק בעלייה.
+1. העתקת ה-`.joblib` לבדו **לא מספיקה** - צריך גם `server.py` **וגם `label_map.py`** (ה-server מייבא אותו; בלעדיו קורס).
+2. **חובה restart ל-DS service** - המודל והקוד נטענים רק בעלייה.
 3. backend ו-frontend צריכים build/deploy נפרד.
 
 ---
@@ -220,7 +220,7 @@ curl "http://localhost:8000/cv/role?text=iOS%20developer%20Swift%20Xcode%20UIKit
 ```bash
 cd ds/model && python -c "import joblib; m=joblib.load('text_to_job_title_classifier.joblib'); print(len(m.classes_))"  # 38
 ```
-**Backend `/api/cv/title`** (detectedTitle גולמי, suggestions[0].canonicalTitle נתמך — יכולים להיות שונים):
+**Backend `/api/cv/title`** (detectedTitle גולמי, suggestions[0].canonicalTitle נתמך - יכולים להיות שונים):
 ```bash
 curl -X POST http://localhost:3000/api/cv/title -H "Content-Type: application/json" \
   -d '{"cvText":"iOS developer 5 yrs Swift Xcode UIKit building native apps ...(>50 chars)"}'
@@ -238,7 +238,7 @@ print('empty:',[t for t in c if c[t]==0] or 'none','| total:',len(c))"   # empty
 
 ## 9. איך לאמן מחדש (הרצת המחברת)
 
-⚠️ **דורש את `master_resumes.jsonl` (16MB) שאינו ב-git** — יש להשיגו ולשים ב-`ds/model/`.
+⚠️ **דורש את `master_resumes.jsonl` (16MB) שאינו ב-git** - יש להשיגו ולשים ב-`ds/model/`.
 תלויות מעבר ל-requirements.txt (המחברת בלבד):
 ```bash
 pip install pandas matplotlib seaborn scikit-learn joblib sentence-transformers jupyter nbconvert
@@ -252,14 +252,14 @@ python -m nbconvert --to notebook --execute --inplace --ExecutePreprocessor.time
 
 ## 10. אזהרות ומגבלות
 - **המספרים אופטימיים:** 0.93 נמדד על דאטה סינתטי מובנה. קו"ח אמיתיים (PDF רועש, מחליפי-קריירה, היברידיים) יתנהגו אחרת.
-- **master_resumes.jsonl לא ב-git** — בלי הקובץ אי אפשר לאמן מחדש (אבל האפליקציה עובדת עם המודל המצורף).
+- **master_resumes.jsonl לא ב-git** - בלי הקובץ אי אפשר לאמן מחדש (אבל האפליקציה עובדת עם המודל המצורף).
 - **restart חובה** אחרי כל שינוי ב-DS.
 - מחלקות מתבלבלות מטבען: Frontend↔React Native, Database Engineer↔DBA, ML↔Deep/AI Engineer.
-- הסף (60) והדיוק כוילו על דאטה סינתטי — טעונים אימות אמיתי (§11).
+- הסף (60) והדיוק כוילו על דאטה סינתטי - טעונים אימות אמיתי (§11).
 
 ---
 
 ## 11. השלבים הבאים
-ראו [CV_TITLE_CLASSIFIER.md](CV_TITLE_CLASSIFIER.md) לפירוט. בקצרה: לבנות test set של 20–40 קו"ח
+ראו [CV_TITLE_CLASSIFIER.md](CV_TITLE_CLASSIFIER.md) לפירוט. בקצרה: לבנות test set של 20-40 קו"ח
 אמיתיים ומורכבים עם ground-truth, להריץ דרך `/api/cv/title`, ולמדוד Top-1/Top-3 accuracy,
-confidence calibration, ו-manual-fallback rate — ואז לכייל מחדש את הסף/המפה לפי המציאות.
+confidence calibration, ו-manual-fallback rate - ואז לכייל מחדש את הסף/המפה לפי המציאות.

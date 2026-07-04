@@ -1,5 +1,5 @@
 /**
- * Standalone unit tests for personalization.service.ts — no Mongo/DS server required,
+ * Standalone unit tests for personalization.service.ts - no Mongo/DS server required,
  * pure-logic checks in the same style as ds/model/test_preferences.py.
  *
  * Run from backend/: npm run test-personalization
@@ -13,12 +13,12 @@ function check(label: string, condition: boolean, detail?: string) {
   if (condition) {
     console.log(`PASS ${label}`);
   } else {
-    console.log(`FAIL ${label}${detail ? ` — ${detail}` : ''}`);
+    console.log(`FAIL ${label}${detail ? ` - ${detail}` : ''}`);
     failures++;
   }
 }
 
-// ── computeStabilityPreference — validated against the 3 named UI presets ─────
+// ── computeStabilityPreference - validated against the 3 named UI presets ─────
 // (PersonalizationScreen.tsx PRESETS: stable={60,15,25}, balanced={33,33,34}, trending={15,60,25})
 
 check(

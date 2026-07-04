@@ -19,8 +19,8 @@ npm run preview
 
 ## POC flow (current)
 
-1. **`/upload`** — `UploadScreen`: load jobs, pick PDF, select job, submit.
-2. **`/dashboard`** — `SkillsMatchDashboard`: shows last analyze result from `sessionStorage`.
+1. **`/upload`** - `UploadScreen`: load jobs, pick PDF, select job, submit.
+2. **`/dashboard`** - `SkillsMatchDashboard`: shows last analyze result from `sessionStorage`.
 
 Full step-by-step, contracts, and backend file map: **[`../docs/POC.md`](../docs/POC.md)**.
 
@@ -46,4 +46,4 @@ frontend/
 
 ## Legacy / outdated docs
 
-If you see references to Input/Extract/Results pages or mocked `api.ts`, ignore them — the POC uses **`api.ts` real fetches** as described in `docs/POC.md`.
+If you see references to Input/Extract/Results pages or mocked `api.ts`, ignore them - the POC uses **`api.ts` real fetches** as described in `docs/POC.md`.

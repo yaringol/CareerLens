@@ -14,10 +14,10 @@ function isVerboseDebug(): boolean {
 export function logStartup(): void {
   if (!process.env.OPENAI_API_KEY?.trim()) {
     console.log(
-      `${PREFIX} OPENAI_API_KEY not set — skill extraction and scoring use fallbacks when the API is missing or returns an error.`
+      `${PREFIX} OPENAI_API_KEY not set - skill extraction and scoring use fallbacks when the API is missing or returns an error.`
     );
   } else {
-    console.log(`${PREFIX} OPENAI_API_KEY set — LLM enabled for dynamic skills and scoring (watch per-request LLM OK / fallback lines)`);
+    console.log(`${PREFIX} OPENAI_API_KEY set - LLM enabled for dynamic skills and scoring (watch per-request LLM OK / fallback lines)`);
   }
 }
 
@@ -42,12 +42,12 @@ export function logAnalyzeOk(jobTitle: string): void {
 export function logFallbackDynamicSkills(jobTitle: string, variant: 'per_job' | 'generic'): void {
   const src = variant === 'per_job' ? 'static list for role' : 'generic static list';
   console.log(
-    `${PREFIX} Dynamic skills fallback (${src}) job=${JSON.stringify(jobTitle)} — LLM unavailable or failed`
+    `${PREFIX} Dynamic skills fallback (${src}) job=${JSON.stringify(jobTitle)} - LLM unavailable or failed`
   );
 }
 
 export function logFallbackScoring(): void {
-  console.log(`${PREFIX} Scoring fallback (keyword overlap) — OpenAI unavailable or response invalid`);
+  console.log(`${PREFIX} Scoring fallback (keyword overlap) - OpenAI unavailable or response invalid`);
 }
 
 /** Client job description accepted for dynamic extraction (before LLM). */
@@ -87,7 +87,7 @@ export function logLlmScoringOk(jobTitle: string): void {
 /** Model returned the same score for every skill; replaced with keyword overlap for differentiation. */
 export function logLlmScoringUniformReplaced(jobTitle: string): void {
   console.log(
-    `${PREFIX} LLM scoring returned uniform scores — using keyword overlap instead job=${JSON.stringify(jobTitle)}`
+    `${PREFIX} LLM scoring returned uniform scores - using keyword overlap instead job=${JSON.stringify(jobTitle)}`
   );
 }
 
@@ -100,7 +100,7 @@ export function logLlmScoringRawUnnormalized(jobTitle: string): void {
 
 /** Background compare: started scoring starred CVs in parallel with main analyze. */
 export function logTitleLlmFallbackUsed(title: string): void {
-  console.log(`${PREFIX} CV title: classifier below threshold — LLM fallback picked ${JSON.stringify(title)}`);
+  console.log(`${PREFIX} CV title: classifier below threshold - LLM fallback picked ${JSON.stringify(title)}`);
 }
 
 export function logTitleLlmFallbackFailed(message: string): void {

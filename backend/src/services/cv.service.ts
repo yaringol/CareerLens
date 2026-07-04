@@ -13,14 +13,14 @@ function normalizeCvText(text: string): string {
 // normalizeCvText() is deliberately aggressive (lowercased, punctuation stripped,
 // newlines flattened to spaces) for the consumers that were built around it
 // (scoring, skill matching). But that same flattening also destroyed the one
-// thing CV-title extraction needs: real line breaks — "Alex Cohen\nSoftware
+// thing CV-title extraction needs: real line breaks - "Alex Cohen\nSoftware
 // Engineer" and "alex cohen software engineer" are not the same input. Rather
 // than touch the normalized text every other consumer depends on, this keeps a
 // small, separately-preserved slice of the ORIGINAL lines (case and punctuation
 // intact) for title detection only.
 //
 // Kept to a modest window (not the whole CV) to bound the size sent to the LLM
-// extractor that reads this text — wide enough that a title stated further down
+// extractor that reads this text - wide enough that a title stated further down
 // (e.g. inside a summary paragraph rather than the very first lines) is still
 // visible to it, which a hand-written line-position heuristic could never
 // safely assume.

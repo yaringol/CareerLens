@@ -24,7 +24,7 @@ from server import rank_skills, SkillPreferences
 
 MOCK_MATRIX = {
     "DevOps Engineer": {
-        # High prevalence, low specificity — stays in top-5 for title_match=0
+        # High prevalence, low specificity - stays in top-5 for title_match=0
         "python":        {"frequency": 200, "prevalence": 1.0,  "title_specificity": 0.1},
         "bash":          {"frequency": 140, "prevalence": 0.7,  "title_specificity": 0.9},
         "linux":         {"frequency": 130, "prevalence": 0.65, "title_specificity": 0.75},
@@ -33,7 +33,7 @@ MOCK_MATRIX = {
         "sql":           {"frequency":  90, "prevalence": 0.45, "title_specificity": 0.05},
         # terraform: low prevalence, very high specificity → rank 6 with title_match=0, rank 5 with title_match=1
         "terraform":     {"frequency":  80, "prevalence": 0.3,  "title_specificity": 0.99},
-        # Always rank 7 — should never appear in top-5
+        # Always rank 7 - should never appear in top-5
         "communication": {"frequency":  30, "prevalence": 0.15, "title_specificity": 0.05},
     }
 }
@@ -49,10 +49,10 @@ high = rank_skills("DevOps Engineer", SkillPreferences(title_match=1.0))
 low  = rank_skills("DevOps Engineer", SkillPreferences(title_match=0.0))
 diff = set(high) - set(low)
 if not diff:
-    print(f"FAIL unit-1: title_match=1.0 vs 0.0 — no difference\n  high={high}\n  low={low}")
+    print(f"FAIL unit-1: title_match=1.0 vs 0.0 - no difference\n  high={high}\n  low={low}")
     failures += 1
 else:
-    print(f"PASS unit-1: {len(diff)} skill(s) differ — {diff}")
+    print(f"PASS unit-1: {len(diff)} skill(s) differ - {diff}")
 
 # Test 2: title_match=0.0 → python (prevalence=1.0) must be first
 if low[0] != "python":

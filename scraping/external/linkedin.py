@@ -1,11 +1,11 @@
 """
-LinkedIn job scraper — raw ingest only (A1).
+LinkedIn job scraper - raw ingest only (A1).
 
 Writes append-only job postings to MongoDB (`raw_postings` by default) via upsert on a
 stable `_id` from `generate_job_id`. Does NOT run SkillNer or write extracted skills.
 
 Env:
-  MONGO_URI   — set in scraping/.env or ds/model/.env (see .env.example)
+  MONGO_URI   - set in scraping/.env or ds/model/.env (see .env.example)
   RAW_COLLECTION=raw_postings
   JSONL_BACKUP=path/to/backup.jsonl   # optional append-only backup (not source of truth)
 """
@@ -67,7 +67,7 @@ def parse_iso_datetime(value: Any) -> Optional[datetime]:
 
 
 def generate_job_id(title: str, company: str, url: str) -> str:
-    """Stable id for upsert — same posting re-scraped maps to the same Mongo _id."""
+    """Stable id for upsert - same posting re-scraped maps to the same Mongo _id."""
     raw = f"{title}_{company}_{url}".lower().strip()
     return hashlib.md5(raw.encode()).hexdigest()[:12]
 

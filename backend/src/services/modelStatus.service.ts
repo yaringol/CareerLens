@@ -3,6 +3,32 @@ import { getJobsConnection } from '../config/jobsDb';
 
 export const MODEL_STATUS_TITLES_PAGE_SIZE = 25;
 
+const SUMMARY_CACHE_MS = 60_000;
+const QUERY_TIMEOUT_MS = 12_000;
+let summaryCache: { at: number; data: Awaited<ReturnType<typeof buildModelStatusSummary>> } | null = null;
+
+async function withQueryTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label} timed out after ${QUERY_TIMEOUT_MS}ms`)), QUERY_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+async function countWithTimeout(collection: Collection, filter: Record<string, unknown> = {}): Promise<number> {
+  try {
+    return await withQueryTimeout(collection.countDocuments(filter), 'countDocuments');
+  } catch {
+    return 0;
+  }
+}
+
 interface ModelRunDoc {
   _id: string;
   trained_at?: string;
@@ -100,7 +126,7 @@ function mapTitleRows(titleRows: FeatureAggRow[], recordCounts: Record<string, n
 }
 
 /** Fast dashboard payload: model runs + approximate collection counts (no title aggregation). */
-export async function getModelStatusSummary() {
+async function buildModelStatusSummary() {
   const conn = await getJobsConnection();
   const runs = conn.collection<ModelRunDoc>('model_runs');
   const rawPostings = conn.collection('raw_postings');
@@ -123,8 +149,8 @@ export async function getModelStatusSummary() {
         })
         .toArray(),
       estimatedCount(rawPostings),
-      observations.countDocuments({ source: 'linkedin' }),
-      observations.countDocuments({ source: 'lang_uk' }),
+      countWithTimeout(observations, { source: 'linkedin' }),
+      countWithTimeout(observations, { source: 'lang_uk' }),
       estimatedCount(conn.collection('jobs')),
       estimatedCount(conn.collection('lang-uk-job-skills')),
       estimatedCount(conn.collection('lang-uk-job')),
@@ -164,6 +190,16 @@ export async function getModelStatusSummary() {
   };
 }
 
+export async function getModelStatusSummary() {
+  const now = Date.now();
+  if (summaryCache && now - summaryCache.at < SUMMARY_CACHE_MS) {
+    return summaryCache.data;
+  }
+  const data = await withQueryTimeout(buildModelStatusSummary(), 'model status summary');
+  summaryCache = { at: now, data };
+  return data;
+}
+
 /** Slower filtered counts loaded after the summary renders. */
 export async function getModelStatusCollectionStats() {
   const conn = await getJobsConnection();
@@ -171,8 +207,8 @@ export async function getModelStatusCollectionStats() {
   const langUkJob = conn.collection('lang-uk-job');
 
   const [pendingCount, langUkExtracted, langUkTotal] = await Promise.all([
-    rawPostings.countDocuments({ extracted: { $ne: true } }),
-    langUkJob.countDocuments({ extracted: true }),
+    countWithTimeout(rawPostings, { extracted: { $ne: true } }),
+    countWithTimeout(langUkJob, { extracted: true }),
     estimatedCount(langUkJob),
   ]);
 

@@ -3,10 +3,10 @@ import { Schema, model, Document } from 'mongoose';
 export type RecommendationMode = 'stable' | 'balanced' | 'trending' | 'custom';
 
 /**
- * Saved Personalization-screen Recommendation Balance — the full weight triple plus
+ * Saved Personalization-screen Recommendation Balance - the full weight triple plus
  * the chosen mode, so the screen can be restored EXACTLY on the next visit. The single
  * stable/trending scalar the model actually filters on (see computeStabilityPreference)
- * is derived from these weights at analyze time, not persisted — storing the object
+ * is derived from these weights at analyze time, not persisted - storing the object
  * avoids the lossy 3-weights → 1-scalar collapse (personalMatch/mode would be lost).
  */
 export interface PersonalizationPreference {

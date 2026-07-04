@@ -34,10 +34,10 @@ async function getSupportedTitles(): Promise<string[]> {
 
 const SYSTEM_PROMPT_HEADER = `You are a senior technical recruiter. Given the raw text of a candidate's CV, identify the candidate's primary current role.
 
-You MUST answer with exactly one job title copied verbatim from the supported list below — this is a closed classification task, no other titles exist. If the CV clearly does not fit any supported title (e.g. it is not an engineering/tech CV at all), answer "none".
+You MUST answer with exactly one job title copied verbatim from the supported list below - this is a closed classification task, no other titles exist. If the CV clearly does not fit any supported title (e.g. it is not an engineering/tech CV at all), answer "none".
 
 Selection rules:
-- Judge by the candidate's actual skills, responsibilities and technologies — not just a self-declared headline.
+- Judge by the candidate's actual skills, responsibilities and technologies - not just a self-declared headline.
 - Prefer the most specific matching title (e.g. "SOC Analyst" over "Cyber Security" when the CV is SOC-monitoring work).
 - For hybrid profiles pick the role that dominates the recent experience.
 

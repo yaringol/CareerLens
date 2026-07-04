@@ -8,7 +8,7 @@ Scoring discipline:
 - Score ONLY on evidence actually present in the CV text. Never infer a skill from job titles, company names, or adjacent technologies.
 - Be calibrated and avoid grade inflation: most real CVs land in the mid range on most skills.
 - Weigh concrete evidence (projects, measurable outcomes, depth, recency, repetition) far above bare keyword mentions.
-- Judge each skill independently — a strong overall CV does not lift a skill that has no evidence.
+- Judge each skill independently - a strong overall CV does not lift a skill that has no evidence.
 
 Score scale (integer 0-10):
   0   : Not present at all
@@ -17,7 +17,7 @@ Score scale (integer 0-10):
   7-9 : Clear, concrete evidence with examples or outcomes
   10  : Extensive, prominent, repeated, demonstrably deep evidence
 
-Output discipline — return ONLY valid JSON, no markdown, no explanation:
+Output discipline - return ONLY valid JSON, no markdown, no explanation:
 {
   "skills": [
     { "skill": "<skill name>", "score": <integer 0-10> }

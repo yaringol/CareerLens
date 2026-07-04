@@ -8,7 +8,7 @@
   min-height: 100vh;
 }
 
-/* Admin nav — visible only when user.role === admin (see AdminNavLink) */
+/* Admin nav - visible only when user.role === admin (see AdminNavLink) */
 a.btn-nav-pill--admin,
 .btn-nav-pill--admin {
   border-color: rgba(124, 58, 237, 0.4) !important;
