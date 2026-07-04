@@ -387,12 +387,10 @@ const SkillsMatchDashboard = () => {
     navigate('/upload')
   }
 
-  // New flow (Upload → Personalize → Results → Improve): going back from Results
-  // returns to Personalization. Keep personalizationInput so it re-renders.
-  const handleBackToPersonalize = () => {
+  const handleBackToUpload = () => {
     leavingRef.current = true
     sessionStorage.removeItem(RESULT_KEY)
-    navigate('/personalize')
+    navigate('/upload')
   }
 
   async function handleViewBetterCv() {
@@ -474,18 +472,13 @@ const SkillsMatchDashboard = () => {
             <span className="step-label">Upload</span>
           </div>
           <div className="step-line" />
-          <div className="step step--done">
-            <div className="step-dot">✓</div>
-            <span className="step-label">Personalize</span>
-          </div>
-          <div className="step-line" />
           <div className="step step--active">
-            <div className="step-dot">3</div>
+            <div className="step-dot">2</div>
             <span className="step-label">Results</span>
           </div>
           <div className="step-line" />
           <div className="step">
-            <div className="step-dot">4</div>
+            <div className="step-dot">3</div>
             <span className="step-label">Improve</span>
           </div>
         </div>
@@ -594,8 +587,8 @@ const SkillsMatchDashboard = () => {
         </div>
 
         <div className="dashboard-bottom-actions">
-          <button className="btn-card-action btn-back-standalone" onClick={handleBackToPersonalize}>
-            ← Back to personalize
+          <button className="btn-card-action btn-back-standalone" onClick={handleBackToUpload}>
+            ← Back to upload
           </button>
           <button
             className="btn-improve"

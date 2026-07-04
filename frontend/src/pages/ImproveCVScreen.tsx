@@ -695,18 +695,13 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
           <span className="improve-step-label">Upload</span>
         </div>
         <div className="improve-step-line" />
-        <div className="improve-step improve-step--done">
-          <span className="improve-step-dot">✓</span>
-          <span className="improve-step-label">Personalize</span>
-        </div>
-        <div className="improve-step-line" />
         <button className="improve-step improve-step--done improve-step--link" onClick={handleClose}>
           <span className="improve-step-dot">✓</span>
           <span className="improve-step-label">Results</span>
         </button>
         <div className="improve-step-line" />
         <div className="improve-step improve-step--active">
-          <span className="improve-step-dot">4</span>
+          <span className="improve-step-dot">3</span>
           <span className="improve-step-label">Improve</span>
         </div>
       </div>
