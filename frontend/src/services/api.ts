@@ -157,10 +157,12 @@ export interface PersonalizationContract {
   canonicalTitle: string
   cvText: string
   jobDescription?: string
+  excludeCvId?: string
   personalization: {
     mode: RecommendationMode
     weights: PersonalizationWeights
     selectedSkillIds: string[]
+    selectedSkillNames?: string[]
   }
 }
 
@@ -331,12 +333,13 @@ export async function analyzeCv(
 
 /**
  * Fetch the data the Personalization screen renders: detected title, the user's
- * CV-extracted skills, and the role-derived focus-skill pool (top 5 pre-selected).
+ * CV-extracted skills, and, in posting mode, the dynamic focus-skill pool.
  */
 export async function getPersonalizationOptions(payload: {
   canonicalTitle: string
   cvText: string
   jobDescription?: string
+  isPostingMode?: boolean
 }): Promise<PersonalizationOptions> {
   const res = await apiFetch(`${base()}/personalize/options`, {
     method: 'POST',

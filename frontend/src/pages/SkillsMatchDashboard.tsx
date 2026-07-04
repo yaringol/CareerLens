@@ -11,6 +11,7 @@ import './SkillsMatchDashboard.css'
 
 const RESULT_KEY = 'analysisResult'
 const CV_FILENAME_KEY = 'cvFileName'
+const PERSONALIZATION_INPUT_KEY = 'personalizationInput'
 
 type StoredAnalysisResult = AnalyzeResponse & {
   cvText?: string
@@ -450,6 +451,7 @@ const SkillsMatchDashboard = () => {
   const dynamicSkills = result.skills.slice(5, 10)
   const matchPercent  = Math.round((result.matchScore / 10) * 100)
   const analyzedSkillCount = result.cvOnlyMode ? 5 : 10
+  const canCustomize = !result.cvOnlyMode && Boolean(sessionStorage.getItem(PERSONALIZATION_INPUT_KEY))
 
   return (
     <div className="dashboard-screen">
@@ -569,10 +571,21 @@ const SkillsMatchDashboard = () => {
           {/* ── Dynamic skills card ── */}
           {!result.cvOnlyMode && (
             <ScoreCard>
-              <p className="card-eyebrow">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                Dynamic Skills
-              </p>
+              <div className="card-eyebrow-row card-eyebrow-row--spaced">
+                <p className="card-eyebrow">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                  Dynamic Skills
+                </p>
+                {canCustomize && (
+                  <button
+                    type="button"
+                    className="btn-card-mini"
+                    onClick={() => navigate('/personalize')}
+                  >
+                    Customize
+                  </button>
+                )}
+              </div>
               <div className="skills-list">
                 {dynamicSkills.map((s, i) => (
                   <SkillRow key={s.name} name={s.name} score={s.score} max={10} delay={500 + i * 80} />

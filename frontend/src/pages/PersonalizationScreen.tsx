@@ -122,6 +122,7 @@ export default function PersonalizationScreen() {
       canonicalTitle: input.canonicalTitle,
       cvText: input.cvText,
       jobDescription: input.jobDescription || undefined,
+      isPostingMode: input.isPostingMode,
     })
       .then((data) => {
         if (cancelled) return
@@ -167,13 +168,23 @@ export default function PersonalizationScreen() {
     if (!input || submitting) return
     setSubmitting(true)
     try {
-      await analyzePersonalized({
+      const selectedSkillNames = (options?.roleDerivedSkills ?? [])
+        .filter((skill) => selectedIds.includes(skill.id))
+        .map((skill) => skill.name)
+      const result = await analyzePersonalized({
         canonicalTitle: input.canonicalTitle,
         cvText: input.cvText,
         jobDescription: input.jobDescription || undefined,
-        personalization: { mode, weights, selectedSkillIds: selectedIds },
+        excludeCvId: input.excludeCvId || undefined,
+        personalization: { mode, weights, selectedSkillIds: selectedIds, selectedSkillNames },
       })
-      // Future: personalized results flow. Not reachable while backend returns 501.
+      sessionStorage.setItem(
+        RESULT_KEY,
+        JSON.stringify({ ...result, cvText: input.cvText, cvFileName: input.cvFileName })
+      )
+      sessionStorage.setItem('jobDescription', input.isPostingMode ? input.jobDescription : '')
+      sessionStorage.setItem('cvFileName', input.cvFileName)
+      sessionStorage.setItem('excludeCvId', input.excludeCvId ?? '')
       navigate('/dashboard', { replace: true })
     } catch (err) {
       if (err instanceof ApiError && err.code === 'PERSONALIZATION_NOT_IMPLEMENTED') {
@@ -218,6 +229,7 @@ export default function PersonalizationScreen() {
 
   const detectedTitle = options?.detectedTitle ?? input.detectedTitle ?? input.canonicalTitle
   const selectedCount = selectedIds.length
+  const showFocusSkills = input.isPostingMode
 
   return (
     <section className="upload-section upload-section--visible">
@@ -292,44 +304,43 @@ export default function PersonalizationScreen() {
           )}
         </section>
 
-        {/* ── Area 2: Focus Skills ─────────────────────────────────── */}
-        <section className="personalize-section">
-          <h2 className="personalize-section-title">Focus Skills</h2>
-          <p className="personalize-section-sub">
-            Skills derived from <strong>this specific role</strong> ({detectedTitle}). Pick up to{' '}
-            {MAX_FOCUS_SKILLS} to focus on — only the selected ones move to your results.{' '}
-            <span className="focus-count">({selectedCount}/{MAX_FOCUS_SKILLS} selected)</span>
-          </p>
+        {showFocusSkills && (
+          <section className="personalize-section">
+            <h2 className="personalize-section-title">Focus Skills</h2>
+            <p className="personalize-section-sub">
+              Top dynamic skills extracted from this job posting. Pick up to{' '}
+              {MAX_FOCUS_SKILLS} to focus on — only the selected ones move to your results.{' '}
+              <span className="focus-count">({selectedCount}/{MAX_FOCUS_SKILLS} selected)</span>
+            </p>
 
-          {loadingOptions ? (
-            <p className="personalize-loading">Loading skills…</p>
-          ) : options && options.roleDerivedSkills.length > 0 ? (
-            <div className="focus-skill-grid">
-              {options.roleDerivedSkills.map((skill) => {
-                const checked = selectedIds.includes(skill.id)
-                const atLimit = !checked && selectedCount >= MAX_FOCUS_SKILLS
-                return (
-                  <button
-                    key={skill.id}
-                    type="button"
-                    className={`focus-skill-chip${checked ? ' focus-skill-chip--selected' : ''}${atLimit ? ' focus-skill-chip--disabled' : ''}`}
-                    onClick={() => toggleSkill(skill)}
-                    aria-pressed={checked}
-                  >
-                    <span className="focus-skill-name">{skill.name}</span>
-                    {skill.source !== 'role' && (
+            {loadingOptions ? (
+              <p className="personalize-loading">Loading skills…</p>
+            ) : options && options.roleDerivedSkills.length > 0 ? (
+              <div className="focus-skill-grid">
+                {options.roleDerivedSkills.map((skill) => {
+                  const checked = selectedIds.includes(skill.id)
+                  const atLimit = !checked && selectedCount >= MAX_FOCUS_SKILLS
+                  return (
+                    <button
+                      key={skill.id}
+                      type="button"
+                      className={`focus-skill-chip${checked ? ' focus-skill-chip--selected' : ''}${atLimit ? ' focus-skill-chip--disabled' : ''}`}
+                      onClick={() => toggleSkill(skill)}
+                      aria-pressed={checked}
+                    >
+                      <span className="focus-skill-name">{skill.name}</span>
                       <span className={`focus-skill-source focus-skill-source--${skill.source}`}>
                         {skill.source === 'cv' ? 'from CV' : 'from posting'}
                       </span>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-          ) : (
-            <p className="personalize-loading">No skills available for this role.</p>
-          )}
-        </section>
+                    </button>
+                  )
+                })}
+              </div>
+            ) : (
+              <p className="personalize-loading">No dynamic skills available for this posting.</p>
+            )}
+          </section>
+        )}
 
         {/* ── Footer / actions ─────────────────────────────────────── */}
         {notImplemented ? (
