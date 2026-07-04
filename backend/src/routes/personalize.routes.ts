@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate } from '../middleware/auth.middleware';
 import { ValidationError } from '../errors';
-import { extractTitleFromCv, getCoreSkills, getSkillsFromText, getTrendingSkills } from '../services/dsModel';
+import { extractTitleFromCv, getSkillsFromText } from '../services/dsModel';
 import { extractDynamicSkills } from '../services/job.service';
 import { isGibberish } from '../utils/gibberishDetector';
 import { looksLikeJobUrl } from '../utils/jobUrl';
@@ -143,21 +143,8 @@ router.post('/options', async (req: Request, res: Response, next: NextFunction):
         return;
       }
 
-      focusSkillsPromise = Promise.all([
-        getCoreSkills(canonicalTitle.trim(), 0.0, DEFAULT_SELECTED_COUNT).catch(() => []),
-        getTrendingSkills(canonicalTitle.trim(), ROLE_SKILL_POOL_SIZE).catch(() => []),
-        extractDynamicSkills(canonicalTitle.trim(), description)
-          .then((result) => result.extractedSkills)
-          .catch(() => [] as string[]),
-        getSkillsFromText(description, ROLE_SKILL_POOL_SIZE).catch(() => [] as string[]),
-      ]).then(([core, trending, dynamic, skillNer]) => {
-        const candidates = [
-          ...trending.map((item) => item.skill),
-          ...dynamic,
-          ...skillNer,
-        ];
-        return buildSkillOptions(candidates, core ?? []).map((skill) => skill.name);
-      });
+      focusSkillsPromise = extractDynamicSkills(canonicalTitle.trim(), description, ROLE_SKILL_POOL_SIZE)
+        .then((result) => buildSkillOptions(result.extractedSkills).map((skill) => skill.name));
     }
 
     const [titleResult, focusSkills, cvSkills] = await Promise.all([

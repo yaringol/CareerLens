@@ -96,7 +96,8 @@ export type DynamicSkillsSource = 'llm_job_description' | 'static_fallback_per_j
 
 export async function extractDynamicSkills(
   jobTitle: string,
-  jobDescription: string
+  jobDescription: string,
+  skillCount = 5
 ): Promise<{
   jobTitle: string;
   extractedSkills: string[];
@@ -105,10 +106,13 @@ export async function extractDynamicSkills(
   try {
     logJobDescriptionForExtraction(jobTitle, jobDescription.length);
     logDebugText('job description (extractSkills input)', jobDescription, 400);
-    const extractedSkills = await extractSkills(jobDescription);
+    const extractedSkills = await extractSkills(jobDescription, skillCount);
     logLlmDynamicSkillsOk(jobTitle, extractedSkills);
     return { jobTitle, extractedSkills, dynamicSource: 'llm_job_description' };
-  } catch {
+  } catch (err) {
+    if (skillCount !== 5) {
+      throw err;
+    }
     const perJob = FALLBACK_DYNAMIC_BY_TITLE[jobTitle];
     if (perJob && perJob.length === 5) {
       logFallbackDynamicSkills(jobTitle, 'per_job');
