@@ -39,7 +39,11 @@
   gap: 0.25rem;
   font-size: 0.7rem;
   background: var(--gradient-accent, linear-gradient(135deg, #8b7cf6, #c084fc));
-  color: #fff;
+  /* Always white: the badge sits on a solid purple fill, and it renders inside
+     containers that grey out their spans (.detected-role--ready span,
+     .role-suggestion span:last-child) with higher specificity — !important keeps
+     it legible everywhere without a specificity arms race. */
+  color: #fff !important;
   border-radius: 4px;
   padding: 0.1rem 0.4rem;
   font-weight: 600;
