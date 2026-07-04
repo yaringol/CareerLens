@@ -362,23 +362,20 @@ type PersonalizationMode = (typeof PERSONALIZATION_MODES)[number];
 /**
  * POST /api/analyze/personalized
  *
- * Contract-only endpoint for the upcoming personalized recommendation flow
- * (Stable / Trending / Personal-Match weighting + focus-skill selection).
- *
- * The time-based / personalized model logic is NOT implemented yet, so a valid
- * request is acknowledged with 501 + PERSONALIZATION_NOT_IMPLEMENTED. The
- * frontend uses this code to offer an explicit fallback to POST /api/analyze.
- * Validation runs first so the request contract is exercised end-to-end today.
+ * Personalized recommendation flow. The selected focus skills become the five
+ * dynamic skill slots while the first five slots stay the canonical core skills.
  */
-router.post('/personalized', (req: Request, res: Response, next: NextFunction) => {
+router.post('/personalized', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { canonicalTitle, cvText, personalization } = req.body as {
+    const { canonicalTitle, cvText, personalization, excludeCvId } = req.body as {
       canonicalTitle?: unknown;
       cvText?: unknown;
+      excludeCvId?: unknown;
       personalization?: {
         mode?: unknown;
         weights?: { stable?: unknown; trending?: unknown; personalMatch?: unknown };
         selectedSkillIds?: unknown;
+        selectedSkillNames?: unknown;
       };
     };
 
@@ -392,7 +389,7 @@ router.post('/personalized', (req: Request, res: Response, next: NextFunction) =
       throw new ValidationError('personalization is required');
     }
 
-    const { mode, weights, selectedSkillIds } = personalization;
+    const { mode, weights, selectedSkillIds, selectedSkillNames } = personalization;
     if (!PERSONALIZATION_MODES.includes(mode as PersonalizationMode)) {
       throw new ValidationError(
         `personalization.mode must be one of: ${PERSONALIZATION_MODES.join(', ')}`
@@ -418,10 +415,53 @@ router.post('/personalized', (req: Request, res: Response, next: NextFunction) =
       throw new ValidationError('You can select up to 5 skills only');
     }
 
-    // Contract validated — personalized model path is not active yet.
-    res.status(501).json({
-      code: 'PERSONALIZATION_NOT_IMPLEMENTED',
-      error: 'Personalized recommendations are not available yet.',
+    if (!Array.isArray(selectedSkillNames)) {
+      throw new ValidationError('personalization.selectedSkillNames must be an array');
+    }
+
+    const focusSkills = selectedSkillNames
+      .filter((item): item is string => typeof item === 'string')
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    if (focusSkills.length === 0) {
+      throw new ValidationError('Select at least one focus skill');
+    }
+    if (focusSkills.length > 5) {
+      throw new ValidationError('You can select up to 5 focus skills only');
+    }
+
+    const job = await validateJobTitle(canonicalTitle.trim());
+    const id = job._id.toString();
+    const { coreSkills } = await getCoreSkillsById(id);
+    const allSkills = mergeTenSkills(job.title, coreSkills, focusSkills);
+
+    const { analysis, bestSavedCv } = await analyzeWithParallelFavoriteCompare({
+      userId: req.user!.id,
+      jobId: id,
+      jobTitle: job.title,
+      cvText: cvText.trim(),
+      skills: allSkills,
+      cvOnlyMode: false,
+      expectedSkillCount: 10,
+      excludeCvId: typeof excludeCvId === 'string' ? excludeCvId : undefined,
+      cvFileName: id,
+    });
+
+    logAnalyzeOk(job.title);
+
+    res.json({
+      jobTitle: analysis.jobTitle,
+      skills: analysis.scores.map((s) => ({
+        name: s.skill,
+        score: s.score,
+        trend: 'stable',
+      })),
+      matchScore: analysis.matchScore,
+      id: analysis._id.toString(),
+      cvOnlyMode: analysis.cvOnlyMode ?? false,
+      isEstimated: analysis.isEstimated ?? false,
+      bestSavedCv,
     });
   } catch (err) {
     next(err);
