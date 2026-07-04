@@ -164,18 +164,26 @@ export default function PersonalizationScreen() {
   }
 
   async function handleContinue() {
-    if (!input || submitting) return
+    if (!input || submitting || submittedRef.current) return
+    submittedRef.current = true
     setSubmitting(true)
     try {
-      await analyzePersonalized({
+      const result = await analyzePersonalized({
         canonicalTitle: input.canonicalTitle,
         cvText: input.cvText,
         jobDescription: input.jobDescription || undefined,
         personalization: { mode, weights, selectedSkillIds: selectedIds },
       })
-      // Future: personalized results flow. Not reachable while backend returns 501.
+      sessionStorage.setItem(
+        RESULT_KEY,
+        JSON.stringify({ ...result, cvText: input.cvText, cvFileName: input.cvFileName })
+      )
+      sessionStorage.setItem('jobDescription', input.isPostingMode ? input.jobDescription : '')
+      sessionStorage.setItem('cvFileName', input.cvFileName)
+      sessionStorage.setItem('excludeCvId', input.excludeCvId ?? '')
       navigate('/dashboard', { replace: true })
     } catch (err) {
+      submittedRef.current = false
       if (err instanceof ApiError && err.code === 'PERSONALIZATION_NOT_IMPLEMENTED') {
         setNotImplemented(true)
         return
