@@ -2,7 +2,12 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate, requireRole } from '../middleware/auth.middleware';
 import { CvAnalysis } from '../models/cvAnalysis.model';
 import { User } from '../models/user.model';
-import { getModelStatus } from '../services/modelStatus.service';
+import {
+  getModelStatusCollectionStats,
+  getModelStatusSummary,
+  getModelStatusTitles,
+  MODEL_STATUS_TITLES_PAGE_SIZE,
+} from '../services/modelStatus.service';
 import {
   abortPipeline,
   getPipelineStatus,
@@ -70,7 +75,43 @@ router.get(
   requireRole('admin'),
   async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      res.json(await getModelStatus());
+      res.json(await getModelStatusSummary());
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.get(
+  '/model-status/collection-stats',
+  authenticate,
+  requireRole('admin'),
+  async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      res.json(await getModelStatusCollectionStats());
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.get(
+  '/model-status/titles',
+  authenticate,
+  requireRole('admin'),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const runId = typeof req.query.runId === 'string' ? req.query.runId.trim() : '';
+      if (!runId) {
+        res.status(400).json({ error: 'runId is required' });
+        return;
+      }
+
+      const offset = Math.max(0, parseInt(String(req.query.offset ?? '0'), 10) || 0);
+      const limitRaw = parseInt(String(req.query.limit ?? MODEL_STATUS_TITLES_PAGE_SIZE), 10);
+      const limit = Number.isFinite(limitRaw) ? limitRaw : MODEL_STATUS_TITLES_PAGE_SIZE;
+
+      res.json(await getModelStatusTitles(runId, offset, limit));
     } catch (err) {
       next(err);
     }
