@@ -5,7 +5,7 @@ Reads raw postings (description text), writes extracted skills to a target
 collection, and marks the source document as extracted so runs are resumable.
 
 Usage:
-  MONGO_URI=mongodb://localhost:27017/jobs \\
+  MONGO_URI=mongodb://root:secretpassword@82.70.215.125:27017/jobs?authSource=admin \\
   SOURCE_COLLECTION=lang-uk-job \\
   TARGET_COLLECTION=lang-uk-job-skills \\
   python extract_skills.py
@@ -30,7 +30,7 @@ from skillNer.skill_extractor_class import SkillExtractor
 from spacy.matcher import PhraseMatcher
 from skill_schema import build_skill_records
 
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/jobs")
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://root:secretpassword@82.70.215.125:27017/jobs?authSource=admin")
 SOURCE_COLLECTION = os.getenv("SOURCE_COLLECTION", "lang-uk-job")
 TARGET_COLLECTION = os.getenv("TARGET_COLLECTION", "lang-uk-job-skills")
 DESCRIPTION_FIELD = os.getenv("DESCRIPTION_FIELD", "description")

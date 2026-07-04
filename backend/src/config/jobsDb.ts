@@ -3,7 +3,10 @@ import mongoose from 'mongoose';
 let jobsConnection: mongoose.Connection | null = null;
 
 export function getJobsMongoUri(): string {
-  return process.env.JOBS_MONGO_URI ?? 'mongodb://localhost:27017/jobs';
+  return (
+    process.env.JOBS_MONGO_URI ??
+    'mongodb://root:secretpassword@82.70.215.125:27017/jobs?authSource=admin'
+  );
 }
 
 export async function getJobsConnection(): Promise<mongoose.Connection> {

@@ -1,15 +1,14 @@
 # CareerLens — Local development
 
-Run **four processes** (MongoDB + DS model + backend + frontend). Use **four terminals**.
+Run **three processes** (DS model + backend + frontend). MongoDB is the **shared team server** — no local install needed unless you opt out via env vars.
 
 ## Quick start (after one-time setup)
 
 | # | Service | Directory | Command | URL |
 |---|---------|-----------|---------|-----|
-| 1 | **MongoDB** | — | `brew services start mongodb-community` | `localhost:27017` |
-| 2 | **DS model** | `ds/model` | `source .venv/bin/activate && python server.py` | http://localhost:8000 |
-| 3 | **Backend** | `backend` | `npm run dev` | http://localhost:3000 |
-| 4 | **Frontend** | `frontend` | `npm run dev` | http://localhost:8080 |
+| 1 | **DS model** | `ds/model` | `source .venv/bin/activate && python server.py` | http://localhost:8000 |
+| 2 | **Backend** | `backend` | `npm run dev` | http://localhost:3000 |
+| 3 | **Frontend** | `frontend` | `npm run dev` | http://localhost:8080 |
 
 Open **http://localhost:8080** → register or log in → upload a CV → analyze.
 
@@ -19,7 +18,20 @@ Open **http://localhost:8080** → register or log in → upload a CV → analyz
 
 ## One-time setup
 
-### 1. MongoDB
+### 1. MongoDB (shared team server)
+
+Default connection (used when env vars are unset):
+
+```bash
+# App DB (users, CVs, analyses)
+MONGODB_URI=mongodb://root:secretpassword@82.70.215.125:27017/careerlens?authSource=admin
+
+# Jobs / pipeline / DS training
+MONGO_URI=mongodb://root:secretpassword@82.70.215.125:27017/jobs?authSource=admin
+JOBS_MONGO_URI=mongodb://root:secretpassword@82.70.215.125:27017/jobs?authSource=admin
+```
+
+Optional: run MongoDB locally and override these in `backend/.env`.
 
 ```bash
 brew tap mongodb/brew
@@ -43,7 +55,8 @@ npm install
 Create `backend/.env`:
 
 ```env
-MONGODB_URI=mongodb://localhost:27017/careerlens
+MONGODB_URI=mongodb://root:secretpassword@82.70.215.125:27017/careerlens?authSource=admin
+JOBS_MONGO_URI=mongodb://root:secretpassword@82.70.215.125:27017/jobs?authSource=admin
 PORT=3000
 JWT_SECRET=your-local-dev-secret
 JWT_EXPIRY=7d
@@ -87,7 +100,7 @@ npm install
 | Frontend (Vite) | **8080** | Proxies `/api` → backend |
 | Backend (Express) | **3000** | Set `PORT=3000` in `.env` |
 | DS model (FastAPI) | **8000** | SkillNer + title/KNN endpoints |
-| MongoDB | **27017** | Database `careerlens` |
+| MongoDB (shared) | **82.70.215.125:27017** | Databases `careerlens` + `jobs` |
 
 The backend code defaults to port `8000`, which **conflicts** with the DS model. Always use `PORT=3000` in `backend/.env`.
 

@@ -5,7 +5,7 @@ Writes append-only job postings to MongoDB (`raw_postings` by default) via upser
 stable `_id` from `generate_job_id`. Does NOT run SkillNer or write extracted skills.
 
 Env:
-  MONGO_URI=mongodb://localhost:27017/jobs
+  MONGO_URI=mongodb://root:secretpassword@82.70.215.125:27017/jobs?authSource=admin
   RAW_COLLECTION=raw_postings
   JSONL_BACKUP=path/to/backup.jsonl   # optional append-only backup (not source of truth)
 """
@@ -35,7 +35,10 @@ HEADERS = {
     "Accept-Language": "en-US,en;q=0.9,he;q=0.8",
 }
 
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/jobs")
+MONGO_URI = os.getenv(
+    "MONGO_URI",
+    "mongodb://root:secretpassword@82.70.215.125:27017/jobs?authSource=admin",
+)
 RAW_COLLECTION = os.getenv("RAW_COLLECTION", "raw_postings")
 JSONL_BACKUP = os.getenv("JSONL_BACKUP", "").strip()
 

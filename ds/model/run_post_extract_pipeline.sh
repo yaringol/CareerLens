@@ -5,7 +5,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-MONGO_URI="${MONGO_URI:-mongodb://localhost:27017/jobs}"
+MONGO_URI="${MONGO_URI:-mongodb://root:secretpassword@82.70.215.125:27017/jobs?authSource=admin}"
 PYTHON="${PYTHON:-$SCRIPT_DIR/.venv/bin/python}"
 POLL_SECONDS="${POLL_SECONDS:-300}"
 SOURCE_COLLECTION="${SOURCE_COLLECTION:-lang-uk-job}"

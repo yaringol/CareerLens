@@ -4,7 +4,7 @@ Migrate jobs + lang-uk-job-skills into unified role_skill_observations collectio
 One Mongo document per (source, job, skill) with datePosted + observed_at.
 
 Run AFTER extract completes on both sources:
-  MONGO_URI=mongodb://localhost:27017/jobs python migrate_unified_skill_observations.py
+  MONGO_URI=mongodb://root:secretpassword@82.70.215.125:27017/jobs?authSource=admin python migrate_unified_skill_observations.py
 
 Env:
   SOURCE_MAP=jobs:linkedin,lang-uk-job-skills:lang_uk
@@ -22,7 +22,7 @@ from pymongo import MongoClient, ReplaceOne
 
 from skill_schema import UNIFIED_SKILLS_COLLECTION, job_doc_to_observations
 
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/jobs")
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://root:secretpassword@82.70.215.125:27017/jobs?authSource=admin")
 UNIFIED_COLLECTION = os.getenv("UNIFIED_COLLECTION", UNIFIED_SKILLS_COLLECTION)
 BATCH_SIZE = int(os.getenv("BATCH_SIZE", "1000"))
 SOURCE_MAP_RAW = os.getenv(

@@ -3,7 +3,7 @@ Import lang-uk job descriptions into MongoDB (raw, pre-SkillNer).
 
 Usage:
   pip install datasets pymongo
-  MONGO_URI=mongodb://localhost:27017/jobs python import_lang_uk_jobs.py
+  MONGO_URI=mongodb://root:secretpassword@82.70.215.125:27017/jobs?authSource=admin python import_lang_uk_jobs.py
 
 Optional env:
   MONGO_COLLECTION=lang-uk-job
@@ -19,7 +19,7 @@ from pymongo import MongoClient, UpdateOne
 
 from lang_uk_mapping import row_to_job_doc
 
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/jobs")
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://root:secretpassword@82.70.215.125:27017/jobs?authSource=admin")
 COLLECTION = os.getenv("MONGO_COLLECTION", "lang-uk-job")
 BATCH_SIZE = int(os.getenv("BATCH_SIZE", "1000"))
 DATASET_NAME = os.getenv(
