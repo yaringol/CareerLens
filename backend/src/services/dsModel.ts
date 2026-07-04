@@ -7,6 +7,7 @@ import {
   logTitleLlmFallbackFailed,
   logTitleExtractionOk,
   logTitleExtractionNone,
+  logTitleExtractionFailed,
 } from '../utils/logger';
 
 const DS_MODEL_URL = process.env.DS_MODEL_URL ?? 'http://localhost:8000';
@@ -321,14 +322,18 @@ const TITLE_EXTRACTION_LOW_CONFIDENCE = TITLE_LLM_FALLBACK_THRESHOLD;
  * canonical titles via the existing semantic model (getTitleMatches ->
  * DS's `/title/normalize`); (2) if no self-declared title is found (a valid
  * "NONE" answer, not a failure), fall back to the full-CV-body classifier
- * (classifyRoles -> DS's `/cv/role`). An error from the extraction LLM call
- * itself (network/API failure) is NOT caught here — it propagates so the
- * caller treats "extraction unavailable" as a hard failure rather than
- * silently degrading to the classifier.
+ * (classifyRoles -> DS's `/cv/role`). If the extraction LLM itself fails
+ * (network/API failure), continue to the classifier so role detection still
+ * works while the optional extraction rung is unavailable.
  */
 export async function extractTitleFromCv(cvText: string, headerText?: string): Promise<ExtractTitleResult> {
   const rawText = headerText || cvText;
-  const selfDeclaredTitle = await extractSelfDeclaredTitle(rawText);
+  let selfDeclaredTitle: string | null = null;
+  try {
+    selfDeclaredTitle = await extractSelfDeclaredTitle(rawText);
+  } catch (err) {
+    logTitleExtractionFailed(err instanceof Error ? err.message : String(err));
+  }
 
   if (selfDeclaredTitle) {
     const { suggestions } = await getTitleMatches(selfDeclaredTitle);

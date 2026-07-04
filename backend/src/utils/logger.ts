@@ -119,6 +119,11 @@ export function logTitleExtractionNone(): void {
   console.log(`${PREFIX} CV title: LLM found no self-declared title, falling back to full-CV classifier`);
 }
 
+/** LLM title extraction failed (network/API/etc.); continue with the DS classifier. */
+export function logTitleExtractionFailed(message: string): void {
+  console.warn(`${PREFIX} CV title: LLM extraction failed, falling back to full-CV classifier: ${message}`);
+}
+
 export function logCompareStarredStart(starredCount: number, jobTitle: string): void {
   console.log(
     `${PREFIX} Checking starred CVs (parallel) job=${JSON.stringify(jobTitle)} starredCount=${starredCount}`
