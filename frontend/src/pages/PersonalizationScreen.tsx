@@ -253,6 +253,7 @@ export default function PersonalizationScreen() {
     }
     return savedPrefs?.selectedSkillIds ?? []
   })
+  const [returningToResults, setReturningToResults] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [notImplemented, setNotImplemented] = useState(false)
   const [savedPreference, setSavedPreference] = useState<SavedPersonalization | null>(null)
