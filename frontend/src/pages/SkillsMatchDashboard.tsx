@@ -6,16 +6,21 @@ import AdminNavLink from '../components/admin/AdminNavLink'
 import { useError } from '../context/ErrorContext'
 import type { AnalyzeResponse, CompareSavedResponse } from '../services/api'
 import { getCvText } from '../services/api'
+import {
+  buildPersonalizationInput,
+  savePersonalizationInput,
+} from '../utils/personalizationInput'
 import './SkillsMatchDashboard.css'
 
 
 const RESULT_KEY = 'analysisResult'
 const CV_FILENAME_KEY = 'cvFileName'
-const PERSONALIZATION_INPUT_KEY = 'personalizationInput'
 
 type StoredAnalysisResult = AnalyzeResponse & {
   cvText?: string
   cvFileName?: string
+  canonicalTitle?: string
+  detectedTitle?: string
   bestSavedCv?: CompareSavedResponse['bestSavedCv']
 }
 
@@ -394,6 +399,37 @@ const SkillsMatchDashboard = () => {
     navigate('/upload')
   }
 
+  function handleCustomize() {
+    if (!result || result.cvOnlyMode) return
+
+    const raw = sessionStorage.getItem(RESULT_KEY)
+    if (!raw) return
+    let stored: StoredAnalysisResult
+    try {
+      stored = JSON.parse(raw) as StoredAnalysisResult
+    } catch {
+      return
+    }
+    if (!stored.cvText?.trim()) {
+      reportError(new Error('CV text is unavailable. Please analyze again from upload.'))
+      return
+    }
+
+    const jobDescription = sessionStorage.getItem('jobDescription') ?? ''
+    savePersonalizationInput(
+      buildPersonalizationInput({
+        canonicalTitle: stored.canonicalTitle ?? stored.jobTitle,
+        detectedTitle: stored.detectedTitle ?? stored.jobTitle,
+        cvText: stored.cvText,
+        cvFileName: stored.cvFileName ?? sessionStorage.getItem(CV_FILENAME_KEY) ?? 'cv.pdf',
+        jobDescription,
+        isPostingMode: true,
+        excludeCvId: sessionStorage.getItem('excludeCvId') || undefined,
+      }),
+    )
+    navigate('/personalize')
+  }
+
   async function handleViewBetterCv() {
     if (!betterSavedCv || !result) return
 
@@ -451,7 +487,7 @@ const SkillsMatchDashboard = () => {
   const dynamicSkills = result.skills.slice(5, 10)
   const matchPercent  = Math.round((result.matchScore / 10) * 100)
   const analyzedSkillCount = result.cvOnlyMode ? 5 : 10
-  const canCustomize = !result.cvOnlyMode && Boolean(sessionStorage.getItem(PERSONALIZATION_INPUT_KEY))
+  const canCustomize = !result.cvOnlyMode
 
   return (
     <div className="dashboard-screen">
@@ -580,7 +616,7 @@ const SkillsMatchDashboard = () => {
                   <button
                     type="button"
                     className="btn-card-mini"
-                    onClick={() => navigate('/personalize')}
+                    onClick={handleCustomize}
                   >
                     Customize
                   </button>

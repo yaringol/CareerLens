@@ -21,9 +21,13 @@ import AdminNavLink from '../admin/AdminNavLink'
 import ScanLoader from '../ui/ScanLoader'
 import { isGibberish } from '../../utils/gibberishDetector'
 import { looksLikeJobUrl } from '../../utils/jobUrl'
+import {
+  buildPersonalizationInput,
+  clearPersonalizationInput,
+  savePersonalizationInput,
+} from '../../utils/personalizationInput'
 import '../../pages/UploadScreen.css'
 
-const PERSONALIZATION_INPUT_KEY = 'personalizationInput'
 const RESULT_KEY = 'analysisResult'
 const CV_EXTRACT_ERROR = 'Could not extract text from this PDF'
 // Confidence is the normalised share of the top role among the top-3 candidates
@@ -420,12 +424,32 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
       )
       sessionStorage.setItem(
         RESULT_KEY,
-        JSON.stringify({ ...result, cvText, cvFileName }),
+        JSON.stringify({
+          ...result,
+          cvText,
+          cvFileName,
+          canonicalTitle: roleDetection.canonicalTitle,
+          detectedTitle: roleDetection.detectedTitle,
+        }),
       )
       sessionStorage.setItem('jobDescription', isPostingMode ? trimmedJobDescription : '')
       sessionStorage.setItem('cvFileName', cvFileName)
       sessionStorage.setItem('excludeCvId', excludeCvId ?? '')
-      sessionStorage.removeItem(PERSONALIZATION_INPUT_KEY)
+      if (isPostingMode) {
+        savePersonalizationInput(
+          buildPersonalizationInput({
+            canonicalTitle: roleDetection.canonicalTitle,
+            detectedTitle: roleDetection.detectedTitle,
+            cvText,
+            cvFileName,
+            jobDescription: trimmedJobDescription,
+            isPostingMode: true,
+            excludeCvId: excludeCvId || undefined,
+          }),
+        )
+      } else {
+        clearPersonalizationInput()
+      }
       navigate('/dashboard', { replace: true })
     } catch (err) {
       handleAnalysisError(err)
@@ -444,9 +468,8 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
       if (roleDetection.status !== 'ready') return
 
       const { cvText, cvFileName, excludeCvId } = payload
-      sessionStorage.setItem(
-        PERSONALIZATION_INPUT_KEY,
-        JSON.stringify({
+      savePersonalizationInput(
+        buildPersonalizationInput({
           canonicalTitle: roleDetection.canonicalTitle,
           detectedTitle: roleDetection.detectedTitle,
           cvText,

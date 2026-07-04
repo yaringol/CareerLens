@@ -15,21 +15,14 @@ import type {
   RecommendationMode,
   SkillOption,
 } from '../services/api'
+import {
+  readPersonalizationInput,
+  type PersonalizationInput,
+} from '../utils/personalizationInput'
 import './PersonalizationScreen.css'
 
-const INPUT_KEY = 'personalizationInput'
 const RESULT_KEY = 'analysisResult'
 const MAX_FOCUS_SKILLS = 5
-
-interface PersonalizationInput {
-  canonicalTitle: string
-  detectedTitle?: string
-  cvText: string
-  cvFileName: string
-  jobDescription: string
-  isPostingMode: boolean
-  excludeCvId?: string
-}
 
 type WeightKey = keyof PersonalizationWeights
 
@@ -82,13 +75,7 @@ function rebalanceWeights(
 }
 
 function readInput(): PersonalizationInput | null {
-  try {
-    const raw = sessionStorage.getItem(INPUT_KEY)
-    if (!raw) return null
-    return JSON.parse(raw) as PersonalizationInput
-  } catch {
-    return null
-  }
+  return readPersonalizationInput()
 }
 
 export default function PersonalizationScreen() {
@@ -180,7 +167,13 @@ export default function PersonalizationScreen() {
       })
       sessionStorage.setItem(
         RESULT_KEY,
-        JSON.stringify({ ...result, cvText: input.cvText, cvFileName: input.cvFileName })
+        JSON.stringify({
+          ...result,
+          cvText: input.cvText,
+          cvFileName: input.cvFileName,
+          canonicalTitle: input.canonicalTitle,
+          detectedTitle: input.detectedTitle ?? input.canonicalTitle,
+        })
       )
       sessionStorage.setItem('jobDescription', input.isPostingMode ? input.jobDescription : '')
       sessionStorage.setItem('cvFileName', input.cvFileName)
@@ -211,7 +204,13 @@ export default function PersonalizationScreen() {
       )
       sessionStorage.setItem(
         RESULT_KEY,
-        JSON.stringify({ ...result, cvText: input.cvText, cvFileName: input.cvFileName })
+        JSON.stringify({
+          ...result,
+          cvText: input.cvText,
+          cvFileName: input.cvFileName,
+          canonicalTitle: input.canonicalTitle,
+          detectedTitle: input.detectedTitle ?? input.canonicalTitle,
+        })
       )
       sessionStorage.setItem('jobDescription', input.isPostingMode ? input.jobDescription : '')
       sessionStorage.setItem('cvFileName', input.cvFileName)
