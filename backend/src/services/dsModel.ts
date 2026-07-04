@@ -1,8 +1,27 @@
 import axios from 'axios';
 import { DsModelError } from '../errors';
+import { classifyTitleWithLlm } from '../agents/titleClassification.agent';
+import { extractSelfDeclaredTitle } from '../agents/titleExtraction.agent';
+import {
+  logTitleLlmFallbackUsed,
+  logTitleLlmFallbackFailed,
+  logTitleExtractionOk,
+  logTitleExtractionNone,
+} from '../utils/logger';
 
 const DS_MODEL_URL = process.env.DS_MODEL_URL ?? 'http://localhost:8000';
 const DS_MODEL_TIMEOUT_MS = 5000;
+
+// Below this normalised confidence (0-100) for ALL classifier candidates, the CV
+// is routed to the closed-list LLM fallback — typically roles the classifier has
+// no training data for (security/hardware/research specialisations). Calibrated
+// on the classifier's holdout; override with TITLE_LLM_FALLBACK_THRESHOLD.
+const TITLE_LLM_FALLBACK_THRESHOLD = Number(process.env.TITLE_LLM_FALLBACK_THRESHOLD ?? '55');
+
+// Confidence attached to an accepted LLM-fallback title: above the UI auto-accept
+// bar (it was chosen deliberately from the closed list), below a slam-dunk
+// classifier hit, so it still reads as reviewable in the UI.
+const LLM_FALLBACK_CONFIDENCE = 70;
 
 interface SkillMatch {
   doc_node_value: string;
@@ -18,6 +37,7 @@ export interface TitleMatchSuggestion {
   canonicalTitle: string;
   matchedVariant: string;
   confidence: number;
+  source?: RoleDetectionSource;
 }
 
 interface CVTitleDetectionResponse {
@@ -26,10 +46,13 @@ interface CVTitleDetectionResponse {
   confidence: number;
 }
 
+export type RoleDetectionSource = 'title_extraction' | 'classifier' | 'llm_fallback';
+
 export interface DetectedRole {
   jobTitle: string;       // what the classifier detected (may be unsupported by skills KNN)
   canonicalTitle: string; // title aligned to the skills taxonomy (safe to send downstream)
   confidence: number;     // normalised share (0-100)
+  source: RoleDetectionSource;
 }
 
 /**
@@ -56,6 +79,7 @@ async function classifyRoles(text: string): Promise<DetectedRole[]> {
           jobTitle,
           canonicalTitle,
           confidence: typeof item.confidence === 'number' ? item.confidence : 0,
+          source: 'classifier' as const,
         };
       })
       .filter((role) => role.jobTitle);
@@ -70,8 +94,67 @@ async function classifyRoles(text: string): Promise<DetectedRole[]> {
   }
 }
 
-export async function detectTitleFromCv(text: string): Promise<DetectedRole[]> {
-  return classifyRoles(text);
+/**
+ * CV->title detection ladder: (1) an LLM extracts the candidate's self-declared
+ * title verbatim from the CV text, normalized against the 59 canonical titles
+ * via semantic nearest-centroid, (2) fall back to the full-CV-body classifier
+ * when no self-declared title is found, (3) when every remaining candidate is
+ * below the calibrated confidence threshold, fall back to a second LLM call
+ * constrained to the closed 59-title list. The system always answers from
+ * within the closed scope — extraction, classifier, or LLM — and tags which
+ * one produced the result. Steps 1-2 happen in extractTitleFromCv; this
+ * function only adds the closed-list LLM rung.
+ */
+export async function detectTitleFromCv(text: string, headerText?: string): Promise<DetectedRole[]> {
+  const ladder = await extractTitleFromCv(text, headerText);
+  const roles: DetectedRole[] = (ladder.candidates ?? [])
+    .map((item) => {
+      const jobTitle = typeof item.job_title === 'string' ? item.job_title.trim() : '';
+      const canonicalTitle =
+        typeof item.canonical_title === 'string' && item.canonical_title.trim()
+          ? item.canonical_title.trim()
+          : jobTitle;
+      return {
+        jobTitle,
+        canonicalTitle,
+        confidence: typeof item.confidence === 'number' ? item.confidence : 0,
+        source: 'classifier' as const,
+      };
+    })
+    .filter((role) => role.jobTitle);
+
+  // The ladder's top candidate is the title-extraction hit when it resolved
+  // confidently (see extractTitleFromCv above) — tag it distinctly from a
+  // plain full-body classifier guess.
+  if (ladder.source === 'title_extraction' && roles[0]) {
+    roles[0] = { ...roles[0], source: 'title_extraction' };
+  }
+
+  const allBelowThreshold =
+    roles.length === 0 || roles.every((r) => r.confidence < TITLE_LLM_FALLBACK_THRESHOLD);
+  if (!allBelowThreshold) {
+    return roles;
+  }
+
+  try {
+    const llmTitle = await classifyTitleWithLlm(text);
+    if (llmTitle) {
+      logTitleLlmFallbackUsed(llmTitle);
+      const fallbackRole: DetectedRole = {
+        jobTitle: llmTitle,
+        canonicalTitle: llmTitle,
+        confidence: LLM_FALLBACK_CONFIDENCE,
+        source: 'llm_fallback',
+      };
+      // LLM pick first; classifier candidates stay as alternatives in the UI.
+      return [fallbackRole, ...roles.filter((r) => r.canonicalTitle !== llmTitle)];
+    }
+  } catch (err) {
+    // Fallback must never block the flow — low-confidence classifier results
+    // still let the user pick manually in the UI.
+    logTitleLlmFallbackFailed(String(err));
+  }
+  return roles;
 }
 
 /**
@@ -203,53 +286,92 @@ export async function getTrendingSkills(title: string, n = 5): Promise<TrendingS
   }
 }
 
-export interface TitleMatchResult {
-  canonical: string;
-  confidence: number;
-}
-
 export interface ExtractTitleResult {
   extracted_title: string | null;
+  // Title as originally found, before seniority/employment-type words were
+  // stripped for display (e.g. "Middle/Senior React Developer" — extracted_title
+  // would be "React Developer"). Optional: absent on older DS versions.
+  raw_title?: string | null;
+  // Seniority words detected in raw_title ("Senior", "Junior", "Lead", ...),
+  // empty if none. Not yet surfaced in the UI — available for a future display.
+  seniority?: string[];
   canonical_title: string | null;
   confidence: number;
   low_confidence: boolean;
+  source: 'title_extraction' | 'cv_classifier';
+  candidates: CVTitleDetectionResponse[];
 }
 
-export async function matchTitle(title: string): Promise<{ matches: TitleMatchResult[]; low_confidence: boolean }> {
-  try {
-    const response = await axios.get<{ matches: TitleMatchResult[]; low_confidence: boolean }>(
-      `${DS_MODEL_URL}/title/match`,
-      { params: { title }, timeout: DS_MODEL_TIMEOUT_MS }
-    );
-    return response.data;
-  } catch (err) {
-    if (axios.isAxiosError(err)) {
-      if (err.code === 'ECONNREFUSED' || err.code === 'ECONNABORTED') {
-        throw new DsModelError('DS model service is unavailable', 503);
-      }
-      throw new DsModelError(`DS model request failed: ${err.message}`);
-    }
-    throw err;
-  }
-}
+// Below this normalised confidence (0-100), an extraction/classifier result is
+// flagged low_confidence. Reuses the same calibrated value as the ladder's LLM
+// rung (TITLE_LLM_FALLBACK_THRESHOLD) rather than a second, independent number.
+const TITLE_EXTRACTION_LOW_CONFIDENCE = TITLE_LLM_FALLBACK_THRESHOLD;
 
-export async function extractTitleFromCv(cvText: string): Promise<ExtractTitleResult> {
-  try {
-    const response = await axios.post<ExtractTitleResult>(
-      `${DS_MODEL_URL}/cv/title`,
-      { text: cvText },
-      { timeout: DS_MODEL_TIMEOUT_MS }
-    );
-    return response.data;
-  } catch (err) {
-    if (axios.isAxiosError(err)) {
-      if (err.code === 'ECONNREFUSED' || err.code === 'ECONNABORTED') {
-        throw new DsModelError('DS model service is unavailable', 503);
-      }
-      throw new DsModelError(`DS model request failed: ${err.message}`);
+/**
+ * headerText, when provided, carries the CV's original first lines (real line
+ * breaks, original case/punctuation) — separate from cvText, which has
+ * already been flattened/lowercased for the other consumers built around it.
+ * The LLM extraction below reads whichever is available; headerText is
+ * preferred when present since it is unflattened, but the LLM (unlike the
+ * regex-based extraction this replaces) does not strictly require it — it can
+ * still read a title out of flattened/lowercased cvText if that's all it gets.
+ *
+ * Ladder: (1) ask an LLM for the candidate's self-declared title verbatim
+ * (extractSelfDeclaredTitle) and, if found, normalize it against the 59
+ * canonical titles via the existing semantic model (getTitleMatches ->
+ * DS's `/title/normalize`); (2) if no self-declared title is found (a valid
+ * "NONE" answer, not a failure), fall back to the full-CV-body classifier
+ * (classifyRoles -> DS's `/cv/role`). An error from the extraction LLM call
+ * itself (network/API failure) is NOT caught here — it propagates so the
+ * caller treats "extraction unavailable" as a hard failure rather than
+ * silently degrading to the classifier.
+ */
+export async function extractTitleFromCv(cvText: string, headerText?: string): Promise<ExtractTitleResult> {
+  const rawText = headerText || cvText;
+  const selfDeclaredTitle = await extractSelfDeclaredTitle(rawText);
+
+  if (selfDeclaredTitle) {
+    const { suggestions } = await getTitleMatches(selfDeclaredTitle);
+    const top = suggestions[0];
+    if (top) {
+      logTitleExtractionOk(selfDeclaredTitle, top.canonicalTitle, top.confidence);
+      return {
+        extracted_title: selfDeclaredTitle,
+        raw_title: selfDeclaredTitle,
+        seniority: [],
+        canonical_title: top.canonicalTitle,
+        confidence: top.confidence,
+        low_confidence: top.confidence < TITLE_EXTRACTION_LOW_CONFIDENCE,
+        source: 'title_extraction',
+        candidates: suggestions.map((s) => ({
+          job_title: s.matchedVariant,
+          canonical_title: s.canonicalTitle,
+          confidence: s.confidence,
+        })),
+      };
     }
-    throw err;
+  } else {
+    logTitleExtractionNone();
   }
+
+  // No self-declared title found (or normalize returned nothing usable) —
+  // fall back to the full-CV-body classifier, same as before.
+  const roles = await classifyRoles(cvText);
+  const top = roles[0];
+  return {
+    extracted_title: selfDeclaredTitle,
+    raw_title: selfDeclaredTitle,
+    seniority: [],
+    canonical_title: top ? top.canonicalTitle : null,
+    confidence: top ? top.confidence : 0,
+    low_confidence: (top ? top.confidence : 0) < TITLE_EXTRACTION_LOW_CONFIDENCE,
+    source: 'cv_classifier',
+    candidates: roles.map((r) => ({
+      job_title: r.jobTitle,
+      canonical_title: r.canonicalTitle,
+      confidence: r.confidence,
+    })),
+  };
 }
 
 export function rolesToSuggestions(roles: DetectedRole[]): TitleMatchSuggestion[] {
@@ -257,19 +379,53 @@ export function rolesToSuggestions(roles: DetectedRole[]): TitleMatchSuggestion[
     canonicalTitle: role.canonicalTitle,  // aligned to skills taxonomy (used downstream)
     matchedVariant: role.jobTitle,         // the raw detected title
     confidence: role.confidence,
+    source: role.source,
   }));
 }
 
+interface TitleNormalizeSuggestion {
+  canonical_title: string;
+  matched_variant?: string;
+  confidence: number;
+}
+
+/**
+ * Manual title search (e.g. "Sr. SWE" typed by the user when auto-detection
+ * misses): calls DS's /title/normalize, which runs the short-title semantic
+ * nearest-centroid model directly. This must never go through classifyRoles/
+ * /cv/role — that classifier is trained on full CV bodies, and its TF-IDF
+ * vocabulary/weighting is tuned for thousand-word documents, not a 2-4 word
+ * query (the same class of train/serve mismatch as feeding a full CV into a
+ * titles-only model, just in the opposite direction).
+ */
 export async function getTitleMatches(title: string): Promise<{ suggestions: TitleMatchSuggestion[] }> {
-  const roles = await classifyRoles(title);
-  const suggestions = rolesToSuggestions(roles).map((suggestion) => ({
-    ...suggestion,
-    matchedVariant: title.trim(),
-  }));
+  try {
+    const response = await axios.get<{ suggestions: TitleNormalizeSuggestion[] }>(
+      `${DS_MODEL_URL}/title/normalize`,
+      { params: { title }, timeout: DS_MODEL_TIMEOUT_MS }
+    );
 
-  if (suggestions.length === 0) {
-    throw new DsModelError(`DS model returned no title matches for "${title}"`);
+    const suggestions: TitleMatchSuggestion[] = (response.data?.suggestions ?? [])
+      .map((item) => ({
+        canonicalTitle: typeof item.canonical_title === 'string' ? item.canonical_title.trim() : '',
+        matchedVariant: title.trim(),
+        confidence: typeof item.confidence === 'number' ? item.confidence : 0,
+      }))
+      .filter((s) => s.canonicalTitle);
+
+    if (suggestions.length === 0) {
+      throw new DsModelError(`DS model returned no title matches for "${title}"`);
+    }
+
+    return { suggestions };
+  } catch (err) {
+    if (err instanceof DsModelError) throw err;
+    if (axios.isAxiosError(err)) {
+      if (err.code === 'ECONNREFUSED' || err.code === 'ECONNABORTED') {
+        throw new DsModelError('DS model service is unavailable', 503);
+      }
+      throw new DsModelError(`DS model request failed: ${err.message}`);
+    }
+    throw err;
   }
-
-  return { suggestions };
 }

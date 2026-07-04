@@ -99,6 +99,26 @@ export function logLlmScoringRawUnnormalized(jobTitle: string): void {
 }
 
 /** Background compare: started scoring starred CVs in parallel with main analyze. */
+export function logTitleLlmFallbackUsed(title: string): void {
+  console.log(`${PREFIX} CV title: classifier below threshold — LLM fallback picked ${JSON.stringify(title)}`);
+}
+
+export function logTitleLlmFallbackFailed(message: string): void {
+  console.warn(`${PREFIX} CV title: LLM fallback failed, returning classifier results: ${message}`);
+}
+
+/** LLM extracted a self-declared title and it normalized to a canonical title. */
+export function logTitleExtractionOk(selfDeclaredTitle: string, canonicalTitle: string, confidence: number): void {
+  console.log(
+    `${PREFIX} CV title: LLM extracted ${JSON.stringify(selfDeclaredTitle)} -> ${JSON.stringify(canonicalTitle)} (${confidence}%)`
+  );
+}
+
+/** LLM ran successfully but found no self-declared title in the text (not a failure). */
+export function logTitleExtractionNone(): void {
+  console.log(`${PREFIX} CV title: LLM found no self-declared title, falling back to full-CV classifier`);
+}
+
 export function logCompareStarredStart(starredCount: number, jobTitle: string): void {
   console.log(
     `${PREFIX} Checking starred CVs (parallel) job=${JSON.stringify(jobTitle)} starredCount=${starredCount}`

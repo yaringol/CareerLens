@@ -3,7 +3,7 @@ import { Types } from 'mongoose';
 import { uploadMiddleware } from '../middleware/upload';
 import { authenticate } from '../middleware/auth.middleware';
 import { processUpload } from '../services/cv.service';
-import { detectTitleFromCv, rolesToSuggestions, extractTitleFromCv, matchTitle } from '../services/dsModel';
+import { detectTitleFromCv, rolesToSuggestions, extractTitleFromCv } from '../services/dsModel';
 import { CvFile } from '../models/cvFile.model';
 import { ValidationError } from '../errors';
 import {
@@ -18,18 +18,18 @@ router.use(authenticate);
 // POST /api/cv/title — Detect the most likely role from raw CV text.
 router.post('/cv/title', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { cvText } = req.body as { cvText?: unknown };
+    const { cvText, headerText } = req.body as { cvText?: unknown; headerText?: unknown };
     if (typeof cvText !== 'string' || cvText.trim().length < 50) {
       throw new ValidationError('cvText must contain at least 50 characters');
     }
 
-    const roles = await detectTitleFromCv(cvText);
+    const roles = await detectTitleFromCv(cvText, typeof headerText === 'string' ? headerText : undefined);
     const suggestions = rolesToSuggestions(roles);
     const top = suggestions[0];
     res.json({
       detectedTitle: top ? top.matchedVariant : null,
       confidence: top ? top.confidence : 0,
-      source: top ? 'experience' : 'none',
+      source: top ? top.source ?? 'classifier' : 'none',
       suggestions,
     });
   } catch (err) {
@@ -44,11 +44,11 @@ router.post('/upload', uploadMiddleware.single('file'), async (req: Request, res
     if (!req.file) {
       throw new ValidationError('No file uploaded');
     }
-    const { cvText } = await processUpload(req.file.buffer, req.file.originalname);
+    const { cvText, headerText } = await processUpload(req.file.buffer, req.file.originalname);
     const save = req.query.save !== 'false';
 
     if (!save) {
-      res.json({ cvId: null, cvText, fileName: req.file.originalname });
+      res.json({ cvId: null, cvText, headerText, fileName: req.file.originalname });
       return;
     }
 
@@ -59,6 +59,7 @@ router.post('/upload', uploadMiddleware.single('file'), async (req: Request, res
       userId,
       fileName: req.file.originalname,
       cvText,
+      headerText,
       fileSizeBytes: req.file.size,
       isFavorite: false,
     });
@@ -66,6 +67,7 @@ router.post('/upload', uploadMiddleware.single('file'), async (req: Request, res
     res.json({
       cvId: cvFile._id.toString(),
       cvText,
+      headerText,
       fileName: cvFile.fileName,
     });
   } catch (err) {
@@ -118,7 +120,12 @@ router.get('/cv/:id', async (req: Request, res: Response, next: NextFunction): P
       res.status(404).json({ error: 'CV not found' });
       return;
     }
-    res.json({ cvId: file._id.toString(), cvText: file.cvText, fileName: file.fileName });
+    res.json({
+      cvId: file._id.toString(),
+      cvText: file.cvText,
+      headerText: file.headerText,
+      fileName: file.fileName,
+    });
   } catch (err) {
     next(err);
   }
@@ -141,25 +148,11 @@ router.delete('/cv/:id', async (req: Request, res: Response, next: NextFunction)
 // POST /api/cv/extract-title — Detect user's current role from CV text
 router.post('/cv/extract-title', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { cvText } = req.body as { cvText?: string };
+    const { cvText, headerText } = req.body as { cvText?: string; headerText?: string };
     if (!cvText || typeof cvText !== 'string' || cvText.trim().length < 10) {
       throw new ValidationError('cvText is required (min 10 chars)');
     }
-    const result = await extractTitleFromCv(cvText);
-    res.json(result);
-  } catch (err) {
-    next(err);
-  }
-});
-
-// GET /api/title/match?title=... — Return top-3 canonical title matches
-router.get('/title/match', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const title = req.query.title as string | undefined;
-    if (!title || title.trim().length < 2) {
-      throw new ValidationError('title query param is required');
-    }
-    const result = await matchTitle(title.trim());
+    const result = await extractTitleFromCv(cvText, typeof headerText === 'string' ? headerText : undefined);
     res.json(result);
   } catch (err) {
     next(err);

@@ -31,6 +31,27 @@
   font-weight: 600;
 }
 
+/* AI-fallback pick: a single constrained answer, not a similarity score —
+   styled distinctly from a %-match value so it doesn't read as a number. */
+.badge-ai {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  background: var(--gradient-accent, linear-gradient(135deg, #8b7cf6, #c084fc));
+  color: #fff;
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge-ai::before {
+  content: '✦';
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
 .title-detect-actions {
   margin-top: 0.35rem;
 }

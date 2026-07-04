@@ -40,7 +40,13 @@ type UploadFieldErrors = {
 
 type RoleDetection =
   | { status: 'idle' | 'detecting' }
-  | { status: 'ready'; detectedTitle: string; canonicalTitle: string; confidence: number }
+  | {
+      status: 'ready'
+      detectedTitle: string
+      canonicalTitle: string
+      confidence: number
+      source?: 'title_extraction' | 'classifier' | 'llm_fallback'
+    }
   | { status: 'uncertain'; detectedTitle: string; suggestions: TitleMatchSuggestion[] }
   | { status: 'not-found' | 'error' }
 
@@ -96,6 +102,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
   const [manualTitleQuery, setManualTitleQuery] = useState('')
   const [manualTitleSuggestions, setManualTitleSuggestions] = useState<TitleMatchSuggestion[]>([])
   const [isManualTitleSearching, setIsManualTitleSearching] = useState(false)
+  const [showManualOverride, setShowManualOverride] = useState(false)
   const [jobDescription, setJobDescription] = useState('')
   const [fieldErrors, setFieldErrors] = useState<UploadFieldErrors>({})
   const [jobInputMode, setJobInputMode] = useState<JobInputMode>('posting')
@@ -120,7 +127,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
   }, [cvTab, reportError])
 
   useEffect(() => {
-    if (roleDetection.status !== 'not-found') return
+    if (roleDetection.status !== 'not-found' && !showManualOverride) return
     const title = manualTitleQuery.trim()
     if (title.length < 2) {
       setManualTitleSuggestions([])
@@ -150,7 +157,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
       cancelled = true
       window.clearTimeout(timer)
     }
-  }, [manualTitleQuery, reportError, roleDetection.status])
+  }, [manualTitleQuery, reportError, roleDetection.status, showManualOverride])
 
   const clearCvFieldError = () => {
     setFieldErrors((prev) => (prev.cv ? { ...prev, cv: undefined } : prev))
@@ -162,26 +169,23 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
     setRoleDetection({ status: 'idle' })
   }
 
-  async function detectRole(cvText: string) {
+  async function detectRole(cvText: string, headerText?: string) {
     setRoleDetection({ status: 'detecting' })
     try {
-      const detected = await detectCvTitle(cvText)
-      if (!detected.detectedTitle) {
-        setRoleDetection({ status: 'not-found' })
-        return
-      }
-
-      const { suggestions } = await matchTitle(detected.detectedTitle)
+      const detected = await detectCvTitle(cvText, headerText)
+      const suggestions = detected.suggestions ?? []
       const bestMatch = suggestions[0]
       if (!bestMatch) {
         setRoleDetection({ status: 'not-found' })
         return
       }
 
+      const detectedTitle = detected.detectedTitle ?? bestMatch.matchedVariant
+
       if (bestMatch.confidence < AUTO_MATCH_CONFIDENCE_MIN) {
         setRoleDetection({
           status: 'uncertain',
-          detectedTitle: detected.detectedTitle,
+          detectedTitle,
           suggestions,
         })
         return
@@ -189,9 +193,10 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
 
       setRoleDetection({
         status: 'ready',
-        detectedTitle: detected.detectedTitle,
+        detectedTitle,
         canonicalTitle: bestMatch.canonicalTitle,
         confidence: bestMatch.confidence,
+        source: bestMatch.source ?? (detected.source === 'none' ? undefined : detected.source),
       })
     } catch (err) {
       setRoleDetection({ status: 'error' })
@@ -199,6 +204,21 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
     }
   }
 
+  // An LLM-fallback pick is a single constrained answer, not a similarity
+  // score — showing "70% match" would misread as a real confidence number.
+  function matchLabel(suggestion: TitleMatchSuggestion) {
+    return suggestion.source === 'llm_fallback' ? (
+      <span className="badge-ai" title="AI matched this from your CV — no similarity score to show">
+        AI matched
+      </span>
+    ) : (
+      `${suggestion.confidence}% match`
+    )
+  }
+
+  // suggestion always comes from the closed 59-title list (auto-detection
+  // suggestions or /title/normalize search results) — never free text, so the
+  // resulting canonicalTitle is always one the rest of the app can act on.
   function selectSuggestedRole(suggestion: TitleMatchSuggestion) {
     if (roleDetection.status !== 'uncertain' && roleDetection.status !== 'not-found') return
     setRoleDetection({
@@ -208,13 +228,17 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
         : manualTitleQuery.trim(),
       canonicalTitle: suggestion.canonicalTitle,
       confidence: suggestion.confidence,
+      source: suggestion.source,
     })
+    setShowManualOverride(false)
+    setManualTitleQuery('')
+    setManualTitleSuggestions([])
   }
 
   async function detectRoleFromFile(file: File) {
     try {
-      const { cvText } = await uploadPdf(file, false)
-      await detectRole(cvText)
+      const { cvText, headerText } = await uploadPdf(file, false)
+      await detectRole(cvText, headerText)
     } catch (err) {
       setRoleDetection({ status: 'error' })
       if (isCvExtractFailure(err)) {
@@ -262,14 +286,14 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
 
   async function handleSelectSavedCv(cv: SavedCv) {
     try {
-      const { cvText } = await getCvText(cv.cvId)
+      const { cvText, headerText } = await getCvText(cv.cvId)
       setSelectedCvId(cv.cvId)
       setSelectedCvText(cvText)
       setSelectedCvName(cv.fileName)
       setCvFile(null)
       resetRoleDetection()
       clearCvFieldError()
-      await detectRole(cvText)
+      await detectRole(cvText, headerText)
     } catch (err) {
       reportError(err)
     }
@@ -629,8 +653,15 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                     <span>
                       {roleDetection.detectedTitle &&
                       roleDetection.detectedTitle !== roleDetection.canonicalTitle
-                        ? `Detected as ${roleDetection.detectedTitle} · ${roleDetection.confidence}% match`
-                        : `${roleDetection.confidence}% match`}
+                        ? `Detected as ${roleDetection.detectedTitle} · `
+                        : ''}
+                      {roleDetection.source === 'llm_fallback' ? (
+                        <span className="badge-ai" title="AI matched this from your CV — no similarity score to show">
+                          AI matched
+                        </span>
+                      ) : (
+                        `${roleDetection.confidence}% match`
+                      )}
                     </span>
                   </div>
                 )}
@@ -649,7 +680,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                           disabled={isLoading}
                         >
                           <span>{suggestion.canonicalTitle}</span>
-                          <span>{suggestion.confidence}% match</span>
+                          <span>{matchLabel(suggestion)}</span>
                         </button>
                       ))}
                     </div>
@@ -678,7 +709,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                             disabled={isLoading}
                           >
                             <span>{suggestion.canonicalTitle}</span>
-                            <span>{suggestion.confidence}% match</span>
+                            <span>{matchLabel(suggestion)}</span>
                           </button>
                         ))}
                       </div>
@@ -687,6 +718,65 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                 )}
                 {roleDetection.status === 'error' && (
                   <p className="detected-role detected-role--error">Role detection is unavailable. Please try another CV.</p>
+                )}
+
+                {(roleDetection.status === 'ready'
+                  || roleDetection.status === 'uncertain'
+                  || roleDetection.status === 'error') && (
+                  <div className="role-override">
+                    {!showManualOverride ? (
+                      <button
+                        type="button"
+                        className="role-override__toggle"
+                        onClick={() => setShowManualOverride(true)}
+                        disabled={isLoading}
+                      >
+                        Not the right role? Choose it manually
+                      </button>
+                    ) : (
+                      <div className="role-search">
+                        <p className="role-search__hint">Type your role and pick the closest supported match.</p>
+                        <input
+                          className="role-search__input"
+                          type="search"
+                          value={manualTitleQuery}
+                          onChange={(e) => setManualTitleQuery(e.target.value)}
+                          placeholder="e.g. Software Engineer"
+                          disabled={isLoading}
+                          autoFocus
+                        />
+                        {isManualTitleSearching && <p className="role-search__status">Searching...</p>}
+                        {manualTitleSuggestions.length > 0 && (
+                          <div className="role-suggestions__list" role="list">
+                            {manualTitleSuggestions.map((suggestion) => (
+                              <button
+                                key={suggestion.canonicalTitle}
+                                type="button"
+                                className="role-suggestion"
+                                onClick={() => selectSuggestedRole(suggestion)}
+                                disabled={isLoading}
+                              >
+                                <span>{suggestion.canonicalTitle}</span>
+                                <span>{matchLabel(suggestion)}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          className="role-override__cancel"
+                          onClick={() => {
+                            setShowManualOverride(false)
+                            setManualTitleQuery('')
+                            setManualTitleSuggestions([])
+                          }}
+                          disabled={isLoading}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
 
