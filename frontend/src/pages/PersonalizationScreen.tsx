@@ -165,18 +165,16 @@ export default function PersonalizationScreen() {
   }
 
   async function handleContinue() {
-    if (!input || submitting) return
+    if (!input || submitting || submittedRef.current) return
+    submittedRef.current = true
     setSubmitting(true)
     try {
-      const selectedSkillNames = (options?.roleDerivedSkills ?? [])
-        .filter((skill) => selectedIds.includes(skill.id))
-        .map((skill) => skill.name)
       const result = await analyzePersonalized({
         canonicalTitle: input.canonicalTitle,
         cvText: input.cvText,
         jobDescription: input.jobDescription || undefined,
         excludeCvId: input.excludeCvId || undefined,
-        personalization: { mode, weights, selectedSkillIds: selectedIds, selectedSkillNames },
+        personalization: { mode, weights, selectedSkillIds: selectedIds },
       })
       sessionStorage.setItem(
         RESULT_KEY,
@@ -187,6 +185,7 @@ export default function PersonalizationScreen() {
       sessionStorage.setItem('excludeCvId', input.excludeCvId ?? '')
       navigate('/dashboard', { replace: true })
     } catch (err) {
+      submittedRef.current = false
       if (err instanceof ApiError && err.code === 'PERSONALIZATION_NOT_IMPLEMENTED') {
         setNotImplemented(true)
         return

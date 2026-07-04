@@ -6,6 +6,7 @@ import { extractDynamicSkills } from '../services/job.service';
 import { isGibberish } from '../utils/gibberishDetector';
 import { looksLikeJobUrl } from '../utils/jobUrl';
 import { fetchJobPostingFromUrl } from '../services/jobPostingFetcher.service';
+import { skillId } from '../services/personalization.service';
 
 const router = Router();
 router.use(authenticate);
@@ -23,10 +24,6 @@ export interface SkillOption {
 const ROLE_SKILL_POOL_SIZE = 10;
 const DEFAULT_SELECTED_COUNT = 5;
 const MIN_JOB_DESCRIPTION_CHARS = 40;
-
-function skillId(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-}
 
 /**
  * Build the focus-skill candidate pool for the Personalization screen.
