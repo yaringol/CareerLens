@@ -1,0 +1,246 @@
+/* Reuse the prepared slider classes (.slider-row, .pref-slider, .slider-label-end, .slider-hint) */
+@import './UploadScreen.css';
+
+/* The screen reuses the upload flow shell (.upload-section / .upload-wrapper /
+   .upload-app-header / .upload-card) so it reads as part of the same flow. */
+
+.personalize-card.upload-card {
+  align-items: stretch;
+  gap: 0;
+}
+
+.upload-app-header--standalone {
+  margin-bottom: 0.25rem;
+}
+
+.btn-nav-pill--back {
+  margin-right: 0.125rem;
+}
+
+.personalize-intro {
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.personalize-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin: 0 0 0.35rem;
+}
+
+.personalize-detected {
+  font-size: 0.95rem;
+  color: var(--color-muted);
+}
+
+.personalize-detected-note {
+  color: var(--color-secondary);
+  font-size: 0.85rem;
+}
+
+.personalize-section {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.personalize-section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.personalize-section-sub {
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+  line-height: 1.5;
+}
+
+.focus-count {
+  font-weight: 600;
+  color: var(--color-primary);
+  white-space: nowrap;
+}
+
+/* ── Presets ──────────────────────────────────────────────────────── */
+.preset-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+
+.preset-btn {
+  padding: 0.6rem 0.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-input);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+.preset-btn:hover {
+  border-color: var(--color-accent);
+}
+
+.preset-btn--active {
+  background: var(--gradient-accent);
+  border-color: transparent;
+  color: #fff;
+}
+
+.personalize-hint {
+  margin-top: 0.6rem;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+
+/* ── Custom weight sliders ────────────────────────────────────────── */
+.weights-body {
+  margin-top: 0.9rem;
+  padding: 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-input);
+  background: var(--color-bg);
+}
+
+.weight-control {
+  margin-bottom: 0.7rem;
+}
+
+.weight-value {
+  text-align: right;
+  min-width: 44px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-primary);
+}
+
+/* ── Focus skills ─────────────────────────────────────────────────── */
+.focus-skill-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+
+.focus-skill-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.focus-skill-chip:hover {
+  border-color: var(--color-accent);
+}
+
+.focus-skill-chip--selected {
+  background: rgba(139, 124, 246, 0.12);
+  border-color: var(--color-accent);
+  color: var(--color-primary);
+}
+
+.focus-skill-chip--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.focus-skill-name {
+  font-weight: 500;
+}
+
+.focus-skill-source {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-secondary);
+  background: var(--color-bg);
+  border-radius: var(--radius-badge);
+  padding: 0.08rem 0.35rem;
+}
+
+.focus-skill-source--cv { color: var(--color-success); }
+.focus-skill-source--market { color: var(--color-accent); }
+
+.personalize-loading {
+  margin-top: 0.9rem;
+  font-size: 0.88rem;
+  color: var(--color-muted);
+}
+
+/* ── Actions / notice ─────────────────────────────────────────────── */
+.personalize-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 2rem;
+}
+
+.personalize-skip {
+  flex-basis: 100%;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+/* In the "coming soon" notice, keep actions aligned like the main footer */
+.personalize-notice .personalize-actions {
+  justify-content: space-between;
+}
+
+.personalize-notice {
+  margin-top: 2rem;
+  padding: 1rem;
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-input);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.personalize-notice-text {
+  font-size: 0.88rem;
+  color: var(--color-primary);
+}
+
+.personalize-notice .personalize-actions {
+  margin-top: 1rem;
+}
+
+.personalize-card .btn-primary,
+.personalize-card .btn-back {
+  padding: 0.65rem 1.4rem;
+  border-radius: var(--radius-input);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.personalize-card .btn-primary {
+  background: var(--gradient-accent);
+  color: #fff;
+}
+
+.personalize-card .btn-back {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-primary);
+}
+
+.personalize-card .btn-primary:disabled,
+.personalize-card .btn-back:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

@@ -3,7 +3,7 @@ import { Schema, model, Document } from 'mongoose';
 export interface IJob extends Document {
   title: string;
   normalizedTitle: string;
-  /** Optional; POC analyze uses the client `jobDescription` body field, not this. */
+  /** Optional; analyze uses the client `jobDescription` body field, not this. */
   description?: string;
   metadata?: Record<string, unknown>;
 }
@@ -15,4 +15,6 @@ const JobSchema = new Schema<IJob>({
   metadata: { type: Schema.Types.Mixed },
 });
 
-export const Job = model<IJob>('Job', JobSchema, 'job-PocOnly');
+// Catalog of supported canonical roles (title selectors), seeded from the DS model's
+// /titles endpoint. Distinct from the scraper's `jobs` DB of raw postings.
+export const Job = model<IJob>('Job', JobSchema, 'roles');

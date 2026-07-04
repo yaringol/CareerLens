@@ -89,7 +89,7 @@ async function apiFetch(input: RequestInfo | URL, init?: RequestInit): Promise<R
   return res
 }
 
-export interface PocJob {
+export interface RoleOption {
   id: string
   title: string
   skills: string[]
@@ -98,29 +98,70 @@ export interface PocJob {
 export interface UploadPdfResponse {
   cvId: string
   cvText: string
+  headerText?: string
   fileName: string
 }
 
 export interface DetectedCvTitle {
   detectedTitle: string | null
   confidence: number
-  source: 'headline' | 'experience' | 'none'
+  source: 'classifier' | 'llm_fallback' | 'none'
+  suggestions: TitleMatchSuggestion[]
 }
 
 export interface TitleMatchSuggestion {
   canonicalTitle: string
   matchedVariant: string
   confidence: number
+  source?: 'title_extraction' | 'classifier' | 'llm_fallback'
 }
 
 export interface AnalyzeResponse {
   jobTitle: string
-  skills: Array<{ name: string; score: number }>
+  skills: Array<{ name: string; score: number; trend?: 'rising' | 'stable' | 'falling' }>
   matchScore: number
   id: string
   cvOnlyMode?: boolean
   isEstimated?: boolean
   bestSavedCv?: CompareSavedResponse['bestSavedCv']
+}
+
+// ── Personalization ───────────────────────────────────────────────────────
+
+export type SkillSource = 'cv' | 'role' | 'market'
+
+export interface SkillOption {
+  id: string
+  name: string
+  source: SkillSource
+  score: number
+  selectedByDefault: boolean
+}
+
+export interface PersonalizationOptions {
+  detectedTitle: string
+  extractedCvSkills: string[]
+  roleDerivedSkills: SkillOption[]
+}
+
+export type RecommendationMode = 'stable' | 'balanced' | 'trending' | 'custom'
+
+export interface PersonalizationWeights {
+  stable: number
+  trending: number
+  personalMatch: number
+}
+
+export interface PersonalizationContract {
+  personalizationSessionId?: string
+  canonicalTitle: string
+  cvText: string
+  jobDescription?: string
+  personalization: {
+    mode: RecommendationMode
+    weights: PersonalizationWeights
+    selectedSkillIds: string[]
+  }
 }
 
 export interface SavedCv {
@@ -146,11 +187,11 @@ export interface CompareSavedResponse {
 
 const jsonHeaders = { 'Content-Type': 'application/json' }
 
-export async function fetchJobs(): Promise<PocJob[]> {
+export async function fetchJobs(): Promise<RoleOption[]> {
   const res = await apiFetch(`${base()}/jobs`, {
     headers: { ...authHeaders() },
   })
-  return res.json() as Promise<PocJob[]>
+  return res.json() as Promise<RoleOption[]>
 }
 
 export async function uploadPdf(file: File, saveToLibrary = true): Promise<UploadPdfResponse> {
@@ -165,11 +206,11 @@ export async function uploadPdf(file: File, saveToLibrary = true): Promise<Uploa
   return res.json() as Promise<UploadPdfResponse>
 }
 
-export async function detectCvTitle(cvText: string): Promise<DetectedCvTitle> {
+export async function detectCvTitle(cvText: string, headerText?: string): Promise<DetectedCvTitle> {
   const res = await apiFetch(`${base()}/cv/title`, {
     method: 'POST',
     headers: { ...jsonHeaders, ...authHeaders() },
-    body: JSON.stringify({ cvText }),
+    body: JSON.stringify({ cvText, headerText }),
   })
   return res.json()
 }
@@ -231,7 +272,7 @@ export async function getMyCVs(): Promise<SavedCv[]> {
   return rows.map((row) => ({ ...row, isFavorite: row.isFavorite ?? false }))
 }
 
-export async function getCvText(cvId: string): Promise<{ cvId: string; cvText: string; fileName: string }> {
+export async function getCvText(cvId: string): Promise<{ cvId: string; cvText: string; headerText?: string; fileName: string }> {
   const res = await apiFetch(`${base()}/cv/${cvId}`, {
     headers: { ...authHeaders() },
   })
@@ -284,6 +325,37 @@ export async function analyzeCv(
       titleMatch,
       ...(options.excludeCvId ? { excludeCvId: options.excludeCvId } : {}),
     }),
+  })
+  return res.json() as Promise<AnalyzeResponse>
+}
+
+/**
+ * Fetch the data the Personalization screen renders: detected title, the user's
+ * CV-extracted skills, and the role-derived focus-skill pool (top 5 pre-selected).
+ */
+export async function getPersonalizationOptions(payload: {
+  canonicalTitle: string
+  cvText: string
+  jobDescription?: string
+}): Promise<PersonalizationOptions> {
+  const res = await apiFetch(`${base()}/personalize/options`, {
+    method: 'POST',
+    headers: { ...jsonHeaders, ...authHeaders() },
+    body: JSON.stringify(payload),
+  })
+  return res.json() as Promise<PersonalizationOptions>
+}
+
+/**
+ * Submit the personalization contract. The personalized model path is not active
+ * yet, so this currently throws an ApiError with code PERSONALIZATION_NOT_IMPLEMENTED
+ * (HTTP 501); callers branch on that to offer the standard-analysis fallback.
+ */
+export async function analyzePersonalized(contract: PersonalizationContract): Promise<AnalyzeResponse> {
+  const res = await apiFetch(`${base()}/analyze/personalized`, {
+    method: 'POST',
+    headers: { ...jsonHeaders, ...authHeaders() },
+    body: JSON.stringify(contract),
   })
   return res.json() as Promise<AnalyzeResponse>
 }
@@ -492,4 +564,101 @@ export async function fetchAdminAnalyses(filters?: {
     headers: { ...authHeaders() },
   })
   return res.json()
+}
+
+export interface AdminModelStatusResponse {
+  model1: {
+    lastRun: {
+      runId: string
+      trainedAt: string | null
+      promoted: boolean
+      promoteReason: string | null
+      titlesWithData: number
+      sourceWeights: Record<string, number>
+      isLiveModel: boolean
+    } | null
+    liveRun: {
+      runId: string
+      trainedAt: string | null
+      titlesWithData: number
+    } | null
+    runHistory: Array<{
+      runId: string
+      trainedAt: string | null
+      promoted: boolean
+      promoteReason: string | null
+      titlesWithData: number
+    }>
+    titles: Array<{
+      title: string
+      skillCount: number
+      recordsCount: number
+      dataConfidence: 'high' | 'medium' | 'low'
+      timeFeaturesReliable: boolean
+      trends: { rising: number; stable: number; falling: number }
+    }>
+    rawPostingsCount: number
+    pendingExtractionCount: number
+    jobsCount: number
+    langUkSkillsCount: number
+    langUkExtractProgress: { extracted: number; total: number; pending: number }
+    unifiedObservations: { total: number; linkedin: number; langUk: number }
+  }
+}
+
+export async function fetchAdminModelStatus(): Promise<AdminModelStatusResponse> {
+  const res = await apiFetch(`${base()}/admin/model-status`, {
+    headers: { ...authHeaders() },
+  })
+  return res.json()
+}
+
+export interface AdminPipelineRun {
+  id: string
+  status: 'running' | 'completed' | 'failed' | 'aborted'
+  triggeredBy: string
+  command: string
+  startedAt: string
+  finishedAt: string | null
+  exitCode: number | null
+  logTail: string
+  abortedBy?: string | null
+}
+
+export interface AdminPipelineStatusResponse {
+  enabled: boolean
+  manualCommand: string
+  activeRun: AdminPipelineRun | null
+  lastRun: AdminPipelineRun | null
+}
+
+export async function fetchAdminPipelineStatus(): Promise<AdminPipelineStatusResponse> {
+  const res = await apiFetch(`${base()}/admin/pipeline/status`, {
+    headers: { ...authHeaders() },
+  })
+  return res.json()
+}
+
+export async function triggerAdminPipeline(): Promise<AdminPipelineRun> {
+  const res = await apiFetch(`${base()}/admin/pipeline/trigger`, {
+    method: 'POST',
+    headers: { ...authHeaders() },
+  })
+  if (res.status === 202) {
+    return res.json()
+  }
+  const err = await res.json().catch(() => ({}))
+  throw new Error((err as { error?: string }).error || `Pipeline trigger failed (${res.status})`)
+}
+
+export async function abortAdminPipeline(): Promise<{ id: string; status: 'aborted'; abortedBy: string }> {
+  const res = await apiFetch(`${base()}/admin/pipeline/abort`, {
+    method: 'POST',
+    headers: { ...authHeaders() },
+  })
+  if (res.ok) {
+    return res.json()
+  }
+  const err = await res.json().catch(() => ({}))
+  throw new Error((err as { error?: string }).error || `Pipeline abort failed (${res.status})`)
 }

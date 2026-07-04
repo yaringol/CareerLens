@@ -9,7 +9,7 @@ import {
   logCompareStarredBetter,
   logCompareStarredNone,
   logCompareStarredStart,
-} from '../utils/pocLog';
+} from '../utils/logger';
 
 export const MAX_SAVED_CVS = 10;
 export const MAX_FAVORITE_CVS = 3;
@@ -127,6 +127,7 @@ export async function analyzeWithParallelFavoriteCompare(
   ]);
 
   const analysis = await parseAndSaveAnalysis({
+    userId: input.userId,
     cvFileName: input.cvFileName ?? input.jobId,
     cvTextExtracted: trimmedCvText,
     jobId: input.jobId,
@@ -156,6 +157,7 @@ export async function analyzeWithParallelFavoriteCompare(
     logCompareStarredBetter(cv.fileName, scored.matchScore, currentScored.matchScore);
 
     const persisted = await parseAndSaveAnalysis({
+      userId: input.userId,
       cvFileName: cv.fileName,
       cvTextExtracted: cv.cvText,
       jobId: input.jobId,
@@ -226,6 +228,7 @@ export async function compareAgainstFavoriteCvs(input: CompareSavedInput): Promi
   );
 
   const persisted = await parseAndSaveAnalysis({
+    userId: input.userId,
     cvFileName: bestEntry.cv.fileName,
     cvTextExtracted: bestEntry.cv.cvText,
     jobId: input.jobId,

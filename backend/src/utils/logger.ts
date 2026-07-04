@@ -1,17 +1,17 @@
 /**
- * Minimal production-friendly logging for the POC.
- * Set POC_DEBUG=1 for optional text previews (CV snippets, job description input to extractSkills).
+ * Minimal production-friendly logging.
+ * Set DEBUG_TEXT=1 for optional text previews (CV snippets, job description input to extractSkills).
  */
 
 const PREFIX = '[CareerLens]';
 
 function isVerboseDebug(): boolean {
-  const v = process.env.POC_DEBUG?.trim().toLowerCase();
+  const v = process.env.DEBUG_TEXT?.trim().toLowerCase();
   return v === '1' || v === 'true' || v === 'yes';
 }
 
 /** Once per process: remind operators that LLM paths may fall back. */
-export function logPocStartup(): void {
+export function logStartup(): void {
   if (!process.env.OPENAI_API_KEY?.trim()) {
     console.log(
       `${PREFIX} OPENAI_API_KEY not set — skill extraction and scoring use fallbacks when the API is missing or returns an error.`
@@ -99,6 +99,26 @@ export function logLlmScoringRawUnnormalized(jobTitle: string): void {
 }
 
 /** Background compare: started scoring starred CVs in parallel with main analyze. */
+export function logTitleLlmFallbackUsed(title: string): void {
+  console.log(`${PREFIX} CV title: classifier below threshold — LLM fallback picked ${JSON.stringify(title)}`);
+}
+
+export function logTitleLlmFallbackFailed(message: string): void {
+  console.warn(`${PREFIX} CV title: LLM fallback failed, returning classifier results: ${message}`);
+}
+
+/** LLM extracted a self-declared title and it normalized to a canonical title. */
+export function logTitleExtractionOk(selfDeclaredTitle: string, canonicalTitle: string, confidence: number): void {
+  console.log(
+    `${PREFIX} CV title: LLM extracted ${JSON.stringify(selfDeclaredTitle)} -> ${JSON.stringify(canonicalTitle)} (${confidence}%)`
+  );
+}
+
+/** LLM ran successfully but found no self-declared title in the text (not a failure). */
+export function logTitleExtractionNone(): void {
+  console.log(`${PREFIX} CV title: LLM found no self-declared title, falling back to full-CV classifier`);
+}
+
 export function logCompareStarredStart(starredCount: number, jobTitle: string): void {
   console.log(
     `${PREFIX} Checking starred CVs (parallel) job=${JSON.stringify(jobTitle)} starredCount=${starredCount}`

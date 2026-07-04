@@ -5,11 +5,11 @@ import {
   getCoreSkillsById,
   extractDynamicSkills,
 } from '../services/job.service';
-import { getSkillsFromText } from '../services/dsModel';
+import { getSkillsFromText, getTrendingSkills } from '../services/dsModel';
 import { scoreAndPersist } from '../services/scoring.service';
 import { ValidationError } from '../errors';
 import type { IJob } from '../models/job.model';
-import { logAnalyzeOk } from '../utils/pocLog';
+import { logAnalyzeOk } from '../utils/logger';
 import { isGibberish } from '../utils/gibberishDetector';
 import { looksLikeJobUrl } from '../utils/jobUrl';
 import { fetchJobPostingFromUrl } from '../services/jobPostingFetcher.service';
@@ -173,8 +173,7 @@ async function resolveJobDescriptionInput(raw: string): Promise<string> {
  *
  * Current: { canonicalTitle, cvText, jobDescription } — a detected or user-confirmed canonical title
  *          selects the role. The stored Job.description is not used for dynamic skill extraction.
- * POC compatibility: { jobId, cvText, jobDescription } remains supported.
- * Legacy: { jobTitle, jobDescription, cvText }
+ * Also supported: { jobId, cvText, jobDescription } and legacy { jobTitle, jobDescription, cvText }.
  */
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -232,13 +231,27 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     }
 
     const { coreSkills } = await getCoreSkillsById(id);
+
+    // Time-aware skills (recency-weighted) fetched before scoring. Best-effort: a DS
+    // hiccup must never fail analyze. Trending skills are prepended to the dynamic list
+    // so positions 6–10 favour what's currently in demand; each skill's trend is also
+    // threaded to the response for display.
+    let trending: { skill: string; trend: string }[] = [];
+    if (!skipGibberish) {
+      try {
+        trending = await getTrendingSkills(job.title);
+      } catch {
+        trending = [];
+      }
+    }
+    const trendBySkill = new Map(trending.map((t) => [t.skill.toLowerCase(), t.trend]));
+
     const allSkills = skipGibberish
       ? coreSkills.slice(0, 5)
-      : mergeTenSkills(
-          job.title,
-          coreSkills,
-          (await extractDynamicSkills(job.title, descriptionForDynamic)).extractedSkills
-        );
+      : mergeTenSkills(job.title, coreSkills, [
+          ...trending.map((t) => t.skill),
+          ...(await extractDynamicSkills(job.title, descriptionForDynamic)).extractedSkills,
+        ]);
 
     const cvOnlyMode = skipGibberish;
     const expectedSkillCount = cvOnlyMode ? 5 : 10;
@@ -260,7 +273,11 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 
     res.json({
       jobTitle: analysis.jobTitle,
-      skills: analysis.scores.map((s) => ({ name: s.skill, score: s.score })),
+      skills: analysis.scores.map((s) => ({
+        name: s.skill,
+        score: s.score,
+        trend: trendBySkill.get(s.skill.toLowerCase()) ?? 'stable',
+      })),
       matchScore: analysis.matchScore,
       id: analysis._id.toString(),
       cvOnlyMode: analysis.cvOnlyMode ?? false,
@@ -316,6 +333,7 @@ router.post('/skillner', async (req: Request, res: Response, next: NextFunction)
     const allSkills = mergeTenSkills(job.title, coreSkills, dynamicSkills);
 
     const analysis = await scoreAndPersist({
+      userId: req.user!.id,
       jobId: id,
       jobTitle: job.title,
       cvText: cvText!.trim(),
@@ -332,6 +350,78 @@ router.post('/skillner', async (req: Request, res: Response, next: NextFunction)
       id: analysis._id.toString(),
       extractor: 'skillner',
       isEstimated: analysis.isEstimated ?? false,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+const PERSONALIZATION_MODES = ['stable', 'balanced', 'trending', 'custom'] as const;
+type PersonalizationMode = (typeof PERSONALIZATION_MODES)[number];
+
+/**
+ * POST /api/analyze/personalized
+ *
+ * Contract-only endpoint for the upcoming personalized recommendation flow
+ * (Stable / Trending / Personal-Match weighting + focus-skill selection).
+ *
+ * The time-based / personalized model logic is NOT implemented yet, so a valid
+ * request is acknowledged with 501 + PERSONALIZATION_NOT_IMPLEMENTED. The
+ * frontend uses this code to offer an explicit fallback to POST /api/analyze.
+ * Validation runs first so the request contract is exercised end-to-end today.
+ */
+router.post('/personalized', (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { canonicalTitle, cvText, personalization } = req.body as {
+      canonicalTitle?: unknown;
+      cvText?: unknown;
+      personalization?: {
+        mode?: unknown;
+        weights?: { stable?: unknown; trending?: unknown; personalMatch?: unknown };
+        selectedSkillIds?: unknown;
+      };
+    };
+
+    if (typeof canonicalTitle !== 'string' || !canonicalTitle.trim()) {
+      throw new ValidationError('canonicalTitle is required');
+    }
+    if (typeof cvText !== 'string' || cvText.trim().length < 10) {
+      throw new ValidationError('cvText is required (min 10 chars)');
+    }
+    if (!personalization || typeof personalization !== 'object') {
+      throw new ValidationError('personalization is required');
+    }
+
+    const { mode, weights, selectedSkillIds } = personalization;
+    if (!PERSONALIZATION_MODES.includes(mode as PersonalizationMode)) {
+      throw new ValidationError(
+        `personalization.mode must be one of: ${PERSONALIZATION_MODES.join(', ')}`
+      );
+    }
+
+    const { stable, trending, personalMatch } = weights ?? {};
+    if (
+      typeof stable !== 'number' ||
+      typeof trending !== 'number' ||
+      typeof personalMatch !== 'number'
+    ) {
+      throw new ValidationError('personalization.weights must be numbers (stable, trending, personalMatch)');
+    }
+    if (Math.abs(stable + trending + personalMatch - 100) > 0.5) {
+      throw new ValidationError('personalization.weights must sum to 100');
+    }
+
+    if (!Array.isArray(selectedSkillIds)) {
+      throw new ValidationError('personalization.selectedSkillIds must be an array');
+    }
+    if (selectedSkillIds.length > 5) {
+      throw new ValidationError('You can select up to 5 skills only');
+    }
+
+    // Contract validated — personalized model path is not active yet.
+    res.status(501).json({
+      code: 'PERSONALIZATION_NOT_IMPLEMENTED',
+      error: 'Personalized recommendations are not available yet.',
     });
   } catch (err) {
     next(err);

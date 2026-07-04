@@ -3,8 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import AppLogo from '../ui/AppLogo'
 import { useError } from '../../context/ErrorContext'
 import {
-  analyzeCv,
   ApiError,
+  analyzeCv,
   detectCvTitle,
   getCvText,
   getMyCVs,
@@ -17,14 +17,19 @@ import {
   type TitleMatchSuggestion,
 } from '../../services/api'
 import FavoriteStarButton from '../cv/FavoriteStarButton'
+import AdminNavLink from '../admin/AdminNavLink'
 import ScanLoader from '../ui/ScanLoader'
 import { isGibberish } from '../../utils/gibberishDetector'
 import { looksLikeJobUrl } from '../../utils/jobUrl'
 import '../../pages/UploadScreen.css'
 
-const RESULT_KEY = 'pocAnalysisResult'
+const PERSONALIZATION_INPUT_KEY = 'personalizationInput'
+const RESULT_KEY = 'analysisResult'
 const CV_EXTRACT_ERROR = 'Could not extract text from this PDF'
-const AUTO_MATCH_CONFIDENCE_MIN = 90
+// Confidence is the normalised share of the top role among the top-3 candidates
+// (see /cv/role). A dominant top-1 scores ~80-100; a genuine 2-way tie ~50-55.
+// 60 auto-accepts clear detections and routes real ambiguities to manual choice.
+const AUTO_MATCH_CONFIDENCE_MIN = 60
 
 type JobInputMode = 'posting' | 'cv-only'
 
@@ -35,7 +40,13 @@ type UploadFieldErrors = {
 
 type RoleDetection =
   | { status: 'idle' | 'detecting' }
-  | { status: 'ready'; detectedTitle: string; canonicalTitle: string; confidence: number }
+  | {
+      status: 'ready'
+      detectedTitle: string
+      canonicalTitle: string
+      confidence: number
+      source?: 'title_extraction' | 'classifier' | 'llm_fallback'
+    }
   | { status: 'uncertain'; detectedTitle: string; suggestions: TitleMatchSuggestion[] }
   | { status: 'not-found' | 'error' }
 
@@ -91,6 +102,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
   const [manualTitleQuery, setManualTitleQuery] = useState('')
   const [manualTitleSuggestions, setManualTitleSuggestions] = useState<TitleMatchSuggestion[]>([])
   const [isManualTitleSearching, setIsManualTitleSearching] = useState(false)
+  const [showManualOverride, setShowManualOverride] = useState(false)
   const [jobDescription, setJobDescription] = useState('')
   const [fieldErrors, setFieldErrors] = useState<UploadFieldErrors>({})
   const [jobInputMode, setJobInputMode] = useState<JobInputMode>('posting')
@@ -115,7 +127,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
   }, [cvTab, reportError])
 
   useEffect(() => {
-    if (roleDetection.status !== 'not-found') return
+    if (roleDetection.status !== 'not-found' && !showManualOverride) return
     const title = manualTitleQuery.trim()
     if (title.length < 2) {
       setManualTitleSuggestions([])
@@ -145,7 +157,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
       cancelled = true
       window.clearTimeout(timer)
     }
-  }, [manualTitleQuery, reportError, roleDetection.status])
+  }, [manualTitleQuery, reportError, roleDetection.status, showManualOverride])
 
   const clearCvFieldError = () => {
     setFieldErrors((prev) => (prev.cv ? { ...prev, cv: undefined } : prev))
@@ -157,26 +169,23 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
     setRoleDetection({ status: 'idle' })
   }
 
-  async function detectRole(cvText: string) {
+  async function detectRole(cvText: string, headerText?: string) {
     setRoleDetection({ status: 'detecting' })
     try {
-      const detected = await detectCvTitle(cvText)
-      if (!detected.detectedTitle) {
-        setRoleDetection({ status: 'not-found' })
-        return
-      }
-
-      const { suggestions } = await matchTitle(detected.detectedTitle)
+      const detected = await detectCvTitle(cvText, headerText)
+      const suggestions = detected.suggestions ?? []
       const bestMatch = suggestions[0]
       if (!bestMatch) {
         setRoleDetection({ status: 'not-found' })
         return
       }
 
+      const detectedTitle = detected.detectedTitle ?? bestMatch.matchedVariant
+
       if (bestMatch.confidence < AUTO_MATCH_CONFIDENCE_MIN) {
         setRoleDetection({
           status: 'uncertain',
-          detectedTitle: detected.detectedTitle,
+          detectedTitle,
           suggestions,
         })
         return
@@ -184,9 +193,10 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
 
       setRoleDetection({
         status: 'ready',
-        detectedTitle: detected.detectedTitle,
+        detectedTitle,
         canonicalTitle: bestMatch.canonicalTitle,
         confidence: bestMatch.confidence,
+        source: bestMatch.source ?? (detected.source === 'none' ? undefined : detected.source),
       })
     } catch (err) {
       setRoleDetection({ status: 'error' })
@@ -194,6 +204,21 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
     }
   }
 
+  // An LLM-fallback pick is a single constrained answer, not a similarity
+  // score — showing "70% match" would misread as a real confidence number.
+  function matchLabel(suggestion: TitleMatchSuggestion) {
+    return suggestion.source === 'llm_fallback' ? (
+      <span className="badge-ai" title="AI matched this from your CV — no similarity score to show">
+        AI matched
+      </span>
+    ) : (
+      `${suggestion.confidence}% match`
+    )
+  }
+
+  // suggestion always comes from the closed 59-title list (auto-detection
+  // suggestions or /title/normalize search results) — never free text, so the
+  // resulting canonicalTitle is always one the rest of the app can act on.
   function selectSuggestedRole(suggestion: TitleMatchSuggestion) {
     if (roleDetection.status !== 'uncertain' && roleDetection.status !== 'not-found') return
     setRoleDetection({
@@ -203,13 +228,17 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
         : manualTitleQuery.trim(),
       canonicalTitle: suggestion.canonicalTitle,
       confidence: suggestion.confidence,
+      source: suggestion.source,
     })
+    setShowManualOverride(false)
+    setManualTitleQuery('')
+    setManualTitleSuggestions([])
   }
 
   async function detectRoleFromFile(file: File) {
     try {
-      const { cvText } = await uploadPdf(file, false)
-      await detectRole(cvText)
+      const { cvText, headerText } = await uploadPdf(file, false)
+      await detectRole(cvText, headerText)
     } catch (err) {
       setRoleDetection({ status: 'error' })
       if (isCvExtractFailure(err)) {
@@ -257,14 +286,14 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
 
   async function handleSelectSavedCv(cv: SavedCv) {
     try {
-      const { cvText } = await getCvText(cv.cvId)
+      const { cvText, headerText } = await getCvText(cv.cvId)
       setSelectedCvId(cv.cvId)
       setSelectedCvText(cvText)
       setSelectedCvName(cv.fileName)
       setCvFile(null)
       resetRoleDetection()
       clearCvFieldError()
-      await detectRole(cvText)
+      await detectRole(cvText, headerText)
     } catch (err) {
       reportError(err)
     }
@@ -314,33 +343,74 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
   const jdError = fieldErrors.jobDescription
   const hasCv = !!(cvFile || selectedCvText)
 
-  const runAnalysis = async () => {
-    if (isLoading || analysisInFlightRef.current || roleDetection.status !== 'ready') return
+  function validateAnalysisForm(): boolean {
+    if (isLoading || analysisInFlightRef.current || roleDetection.status !== 'ready') return false
     const nextErrors: UploadFieldErrors = {
       jobDescription: jobDescriptionError(jobDescription, jobInputMode),
       cv: hasCv ? undefined : 'Upload or select a CV to continue',
     }
     setFieldErrors(nextErrors)
-    if (nextErrors.jobDescription || nextErrors.cv) return
+    if (nextErrors.jobDescription || nextErrors.cv) return false
     if (hasGibberishDescription) {
+      setGibberishWarning(true)
+      return false
+    }
+    return true
+  }
+
+  async function resolveCvPayload(): Promise<{
+    cvText: string
+    cvFileName: string
+    excludeCvId: string
+  }> {
+    let cvText: string
+    let excludeCvId = selectedCvId ?? ''
+    if (cvFile) {
+      const upload = await uploadPdf(cvFile, saveToLibrary)
+      cvText = upload.cvText
+      if (saveToLibrary && upload.cvId) {
+        excludeCvId = upload.cvId
+      }
+      if (saveToLibrary) getMyCVs().then(setSavedCVs).catch(() => { /* silent */ })
+    } else {
+      cvText = selectedCvText!
+    }
+    const cvFileName = cvFile ? cvFile.name : (selectedCvName ?? 'cv.pdf')
+    return { cvText, cvFileName, excludeCvId }
+  }
+
+  function handleAnalysisError(err: unknown) {
+    if (err instanceof ApiError && err.code === 'GIBBERISH_DETECTED') {
       setGibberishWarning(true)
       return
     }
+    if (
+      err instanceof ApiError
+      && (err.code === 'VALIDATION' || err.code === 'UNPROCESSABLE' || err.status === 422)
+      && isPostingMode
+    ) {
+      setFieldErrors((prev) => ({
+        ...prev,
+        jobDescription: err.message || jobDescriptionError(jobDescription, jobInputMode),
+      }))
+      return
+    }
+    if (isCvExtractFailure(err)) {
+      setFieldErrors((prev) => ({ ...prev, cv: CV_EXTRACT_ERROR }))
+      return
+    }
+    reportError(err)
+  }
+
+  const runStandardAnalysis = async () => {
+    if (!validateAnalysisForm()) return
     analysisInFlightRef.current = true
     setIsLoading(true)
     try {
-      let cvText: string
-      let excludeCvId = selectedCvId ?? ''
-      if (cvFile) {
-        const upload = await uploadPdf(cvFile, saveToLibrary)
-        cvText = upload.cvText
-        if (saveToLibrary && upload.cvId) {
-          excludeCvId = upload.cvId
-        }
-        if (saveToLibrary) getMyCVs().then(setSavedCVs).catch(() => { /* silent */ })
-      } else {
-        cvText = selectedCvText!
-      }
+      const payload = await resolveCvPayload()
+      if (roleDetection.status !== 'ready') return
+
+      const { cvText, cvFileName, excludeCvId } = payload
       const result = await analyzeCv(
         roleDetection.canonicalTitle,
         cvText,
@@ -348,33 +418,47 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
         0.0,
         { skipGibberish: !isPostingMode, excludeCvId: excludeCvId || undefined },
       )
-      const cvFileName = cvFile ? cvFile.name : (selectedCvName ?? 'cv.pdf')
-      sessionStorage.setItem(RESULT_KEY, JSON.stringify({ ...result, cvText, cvFileName }))
-      sessionStorage.setItem('pocJobDescription', isPostingMode ? trimmedJobDescription : '')
-      sessionStorage.setItem('pocCvFileName', cvFileName)
-      sessionStorage.setItem('pocExcludeCvId', excludeCvId)
+      sessionStorage.setItem(
+        RESULT_KEY,
+        JSON.stringify({ ...result, cvText, cvFileName }),
+      )
+      sessionStorage.setItem('jobDescription', isPostingMode ? trimmedJobDescription : '')
+      sessionStorage.setItem('cvFileName', cvFileName)
+      sessionStorage.setItem('excludeCvId', excludeCvId ?? '')
+      sessionStorage.removeItem(PERSONALIZATION_INPUT_KEY)
       navigate('/dashboard', { replace: true })
     } catch (err) {
-      if (err instanceof ApiError && err.code === 'GIBBERISH_DETECTED') {
-        setGibberishWarning(true)
-        return
-      }
-      if (
-        err instanceof ApiError
-        && (err.code === 'VALIDATION' || err.code === 'UNPROCESSABLE' || err.status === 422)
-        && isPostingMode
-      ) {
-        setFieldErrors((prev) => ({
-          ...prev,
-          jobDescription: err.message || jobDescriptionError(jobDescription, jobInputMode),
-        }))
-        return
-      }
-      if (isCvExtractFailure(err)) {
-        setFieldErrors((prev) => ({ ...prev, cv: CV_EXTRACT_ERROR }))
-        return
-      }
-      reportError(err)
+      handleAnalysisError(err)
+    } finally {
+      analysisInFlightRef.current = false
+      setIsLoading(false)
+    }
+  }
+
+  const goToPersonalize = async () => {
+    if (!validateAnalysisForm()) return
+    analysisInFlightRef.current = true
+    setIsLoading(true)
+    try {
+      const payload = await resolveCvPayload()
+      if (roleDetection.status !== 'ready') return
+
+      const { cvText, cvFileName, excludeCvId } = payload
+      sessionStorage.setItem(
+        PERSONALIZATION_INPUT_KEY,
+        JSON.stringify({
+          canonicalTitle: roleDetection.canonicalTitle,
+          detectedTitle: roleDetection.detectedTitle,
+          cvText,
+          cvFileName,
+          jobDescription: isPostingMode ? trimmedJobDescription : '',
+          isPostingMode,
+          excludeCvId: excludeCvId || undefined,
+        }),
+      )
+      navigate('/personalize', { replace: true })
+    } catch (err) {
+      handleAnalysisError(err)
     } finally {
       analysisInFlightRef.current = false
       setIsLoading(false)
@@ -383,7 +467,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    void runAnalysis()
+    void runStandardAnalysis()
   }
 
   const activeCvName = cvFile ? cvFile.name : selectedCvName
@@ -410,6 +494,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               Account
             </Link>
+            <AdminNavLink className="btn-nav-pill btn-nav-pill--admin" />
           </div>
           <div className="step-indicator">
             <div className="step step--active">
@@ -565,7 +650,19 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                 {roleDetection.status === 'ready' && (
                   <div className="detected-role detected-role--ready">
                     <strong>{roleDetection.canonicalTitle}</strong>
-                    <span>Detected as {roleDetection.detectedTitle} · {roleDetection.confidence}% match</span>
+                    <span>
+                      {roleDetection.detectedTitle &&
+                      roleDetection.detectedTitle !== roleDetection.canonicalTitle
+                        ? `Detected as ${roleDetection.detectedTitle} · `
+                        : ''}
+                      {roleDetection.source === 'llm_fallback' ? (
+                        <span className="badge-ai" title="AI matched this from your CV — no similarity score to show">
+                          AI matched
+                        </span>
+                      ) : (
+                        `${roleDetection.confidence}% match`
+                      )}
+                    </span>
                   </div>
                 )}
                 {roleDetection.status === 'uncertain' && (
@@ -583,7 +680,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                           disabled={isLoading}
                         >
                           <span>{suggestion.canonicalTitle}</span>
-                          <span>{suggestion.confidence}% match</span>
+                          <span>{matchLabel(suggestion)}</span>
                         </button>
                       ))}
                     </div>
@@ -612,7 +709,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                             disabled={isLoading}
                           >
                             <span>{suggestion.canonicalTitle}</span>
-                            <span>{suggestion.confidence}% match</span>
+                            <span>{matchLabel(suggestion)}</span>
                           </button>
                         ))}
                       </div>
@@ -621,6 +718,65 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                 )}
                 {roleDetection.status === 'error' && (
                   <p className="detected-role detected-role--error">Role detection is unavailable. Please try another CV.</p>
+                )}
+
+                {(roleDetection.status === 'ready'
+                  || roleDetection.status === 'uncertain'
+                  || roleDetection.status === 'error') && (
+                  <div className="role-override">
+                    {!showManualOverride ? (
+                      <button
+                        type="button"
+                        className="role-override__toggle"
+                        onClick={() => setShowManualOverride(true)}
+                        disabled={isLoading}
+                      >
+                        Not the right role? Choose it manually
+                      </button>
+                    ) : (
+                      <div className="role-search">
+                        <p className="role-search__hint">Type your role and pick the closest supported match.</p>
+                        <input
+                          className="role-search__input"
+                          type="search"
+                          value={manualTitleQuery}
+                          onChange={(e) => setManualTitleQuery(e.target.value)}
+                          placeholder="e.g. Software Engineer"
+                          disabled={isLoading}
+                          autoFocus
+                        />
+                        {isManualTitleSearching && <p className="role-search__status">Searching...</p>}
+                        {manualTitleSuggestions.length > 0 && (
+                          <div className="role-suggestions__list" role="list">
+                            {manualTitleSuggestions.map((suggestion) => (
+                              <button
+                                key={suggestion.canonicalTitle}
+                                type="button"
+                                className="role-suggestion"
+                                onClick={() => selectSuggestedRole(suggestion)}
+                                disabled={isLoading}
+                              >
+                                <span>{suggestion.canonicalTitle}</span>
+                                <span>{matchLabel(suggestion)}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          className="role-override__cancel"
+                          onClick={() => {
+                            setShowManualOverride(false)
+                            setManualTitleQuery('')
+                            setManualTitleSuggestions([])
+                          }}
+                          disabled={isLoading}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
 
@@ -718,10 +874,20 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
           </div>
 
           <div className="upload-cta">
-            <button type="submit" className="btn-primary" disabled={!canSubmit || isLoading}>
-              <span>Analyze Match</span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            </button>
+            <div className="upload-cta-actions">
+              <button type="submit" className="btn-primary" disabled={!canSubmit || isLoading}>
+                <span>{isLoading ? 'Analyzing…' : 'Analyse Match'}</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </button>
+              <button
+                type="button"
+                className="btn-ghost btn-personalize-optional"
+                disabled={!canSubmit || isLoading}
+                onClick={() => void goToPersonalize()}
+              >
+                Customize recommendations
+              </button>
+            </div>
             {!canSubmit && !isLoading && !jdError && !fieldErrors.cv && (
               <p className="cta-hint">
                 {!hasCv

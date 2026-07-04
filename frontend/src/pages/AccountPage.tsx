@@ -9,6 +9,7 @@ import {
 } from '../services/api'
 import FavoriteStarButton from '../components/cv/FavoriteStarButton'
 import AppLogo from '../components/ui/AppLogo'
+import AdminNavLink from '../components/admin/AdminNavLink'
 import './AccountPage.css'
 
 function formatFileSize(bytes: number): string {
@@ -162,6 +163,7 @@ const AccountPage = () => {
           </div>
         </div>
         <div className="account-header-right">
+          <AdminNavLink className="account-admin-link" />
           <button className="account-logout" onClick={() => { logout(); navigate('/login') }}>Sign out</button>
           <AppLogo size="sm" />
         </div>

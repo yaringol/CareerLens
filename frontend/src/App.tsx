@@ -11,6 +11,10 @@ import AdminPage from './pages/AdminPage'
 import AccountPage from './pages/AccountPage'
 import ImproveCVScreen from './pages/ImproveCVScreen'
 import UploadPage from './pages/UploadPage'
+import PersonalizationScreen from './pages/PersonalizationScreen'
+import PersonalizationMock from './pages/PersonalizationMock'
+import MockUploadScreen from './pages/MockUploadScreen'
+import MockHub from './pages/MockHub'
 import ErrorBoundary from './components/ui/ErrorBoundary'
 import ErrorToast from './components/ui/ErrorToast'
 import SplashScreen from './components/ui/SplashScreen'
@@ -47,6 +51,38 @@ function App() {
                       element={
                         <RequireAuth>
                           <UploadPage />
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/personalize"
+                      element={
+                        <RequireAuth>
+                          <PersonalizationScreen />
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/personalize-mock"
+                      element={
+                        <RequireAuth>
+                          <PersonalizationMock />
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/upload-mock"
+                      element={
+                        <RequireAuth>
+                          <MockUploadScreen />
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/mock"
+                      element={
+                        <RequireAuth>
+                          <MockHub />
                         </RequireAuth>
                       }
                     />

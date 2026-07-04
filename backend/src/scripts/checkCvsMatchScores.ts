@@ -1,16 +1,16 @@
 /**
- * Batch-check: for each PDF in repo ../CVs, print matchScore for every POC job.
+ * Batch-check: for each PDF in repo ../CVs, print matchScore for every supported role.
  * Uses the same pipeline as POST /api/analyze (skills merge + scoreAndPersist).
  *
  * Run from backend/: npm run check-cvs
- * Requires: MongoDB seeded (5 jobs), optional OPENAI_API_KEY in .env
+ * Requires: MongoDB seeded (npm run seed), optional OPENAI_API_KEY in .env
  */
 import 'dotenv/config';
 import fs from 'fs';
 import path from 'path';
 import mongoose from 'mongoose';
 import { connectDB } from '../config/db';
-import { getPocJobsForList, getJobById } from '../dal/job.dal';
+import { getAllJobs, getJobById } from '../dal/job.dal';
 import { getCoreSkillsById, extractDynamicSkills } from '../services/job.service';
 import { processUpload } from '../services/cv.service';
 import { scoreAndPersist } from '../services/scoring.service';
@@ -26,9 +26,9 @@ async function main() {
 
   await connectDB();
 
-  const jobs = await getPocJobsForList();
-  if (jobs.length !== 5) {
-    console.error(`Expected 5 POC jobs in DB, got ${jobs.length}. Run: npm run seed`);
+  const jobs = await getAllJobs();
+  if (jobs.length === 0) {
+    console.error('No roles in DB. Run: npm run seed');
     process.exit(1);
   }
 

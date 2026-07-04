@@ -31,6 +31,27 @@
   font-weight: 600;
 }
 
+/* AI-fallback pick: a single constrained answer, not a similarity score —
+   styled distinctly from a %-match value so it doesn't read as a number. */
+.badge-ai {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  background: var(--gradient-accent, linear-gradient(135deg, #8b7cf6, #c084fc));
+  color: #fff;
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge-ai::before {
+  content: '✦';
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
 .title-detect-actions {
   margin-top: 0.35rem;
 }
@@ -181,7 +202,20 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  gap: 1rem;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  row-gap: 1rem;
+}
+
+/* Give the step indicator room and let it shrink so nav/steps/logo never overlap */
+.upload-app-header .step-indicator {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.upload-app-header .step-line {
+  width: 28px;
+  margin: 0 0.45rem;
 }
 .upload-app-nav {
   display: flex;
@@ -692,6 +726,67 @@
   border-color: rgba(220, 38, 38, 0.35);
 }
 
+.role-override {
+  margin-top: 0.625rem;
+}
+
+.role-override__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 38px;
+  padding: 0.5rem 0.875rem;
+  border: 1.5px solid rgba(139, 124, 246, 0.45);
+  border-radius: var(--radius-input);
+  background: rgba(139, 124, 246, 0.1);
+  color: var(--color-accent-start);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.role-override__toggle:hover:not(:disabled),
+.role-override__toggle:focus-visible {
+  background: rgba(139, 124, 246, 0.18);
+  border-color: var(--color-accent-start);
+  box-shadow: 0 0 0 3px rgba(139, 124, 246, 0.14);
+  outline: none;
+}
+
+.role-override__toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.role-override__cancel {
+  align-self: flex-start;
+  margin-top: 0.25rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-accent-start);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.role-override__cancel:hover:not(:disabled),
+.role-override__cancel:focus-visible {
+  color: var(--color-primary);
+  outline: none;
+}
+
+.role-override__cancel:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .field-error {
   font-size: 0.8125rem;
   color: var(--color-error);
@@ -750,6 +845,19 @@
   gap: 0.75rem;
   padding-top: 0.5rem;
   border-top: 1px solid var(--color-border);
+}
+
+.upload-cta-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+}
+
+.btn-personalize-optional {
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
 }
 
 .btn-primary {

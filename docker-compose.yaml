@@ -5,7 +5,7 @@ services:
     image: mongo:6.0
     environment:
       - MONGO_INITDB_ROOT_USERNAME=root
-      - MONGO_INITDB_ROOT_PASSWORD=secretpassword
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD in .env}
     volumes:
       - mongo_data:/data/db
     networks:
@@ -16,13 +16,60 @@ services:
       timeout: 5s
       retries: 3
 
+  backend:
+    container_name: backend
+    restart: always
+    image: careerlens/backend:main
+    build:
+      context: backend
+      dockerfile: Dockerfile
+    environment:
+      - PORT=3000
+      - MONGODB_URI=mongodb://root:${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD in .env}@mongodb:27017/careerlens?authSource=admin
+      - JOBS_MONGO_URI=mongodb://root:${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD in .env}@mongodb:27017/jobs?authSource=admin
+      - DS_MODEL_URL=http://ds:8000
+      - JWT_SECRET=${JWT_SECRET:-dev-insecure-change-me}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - PIPELINE_DOCKER_IMAGE=careerlens/pipeline:main
+      - PIPELINE_DOCKER_NETWORK=app-network
+      - DS_CONTAINER=careerlens-ds
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "3000:3000" # direct API access for testing; the frontend proxies /api -> backend:3000
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  ds:
+    container_name: careerlens-ds
+    restart: always
+    image: careerlens/ds:main
+    build:
+      context: ds
+      dockerfile: Dockerfile
+    environment:
+      - MODEL_DIR=/models
+      - MODEL_PATH=/models/model.joblib
+      - CANONICAL_TITLES_PATH=/models/canonical_titles.json
+    volumes:
+      - model_data:/models # shared with the pipeline; restart reloads the retrained model
+    ports:
+      - "8000:8000"
+    networks:
+      - app-network
+
   scraper:
     container_name: scraper
     restart: always
     image: careerlens/scraper:main
     environment:
-      - MONGODB_URI=mongodb://root:secretpassword@mongodb:27017/mydatabase?authSource=admin
+      - MONGO_URI=mongodb://root:${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD in .env}@mongodb:27017/jobs?authSource=admin
     depends_on:
+      mongodb:
+        condition: service_healthy
     networks:
       - app-network
 
@@ -40,9 +87,50 @@ services:
     networks:
       - app-network
 
+  # Daily batch job: scrape -> retrain -> restart DS. Not started by `up` (profile
+  # "batch"); ofelia launches it on a schedule, or run manually with:
+  #   docker compose --profile batch run --rm pipeline
+  pipeline:
+    container_name: pipeline
+    profiles: ["batch"]
+    restart: "no"
+    image: careerlens/pipeline:main
+    build:
+      context: .
+      dockerfile: pipeline/Dockerfile
+    environment:
+      - MONGO_URI=mongodb://root:${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD in .env}@mongodb:27017/jobs?authSource=admin
+      - MODEL_OUT_DIR=/models
+      - DS_CONTAINER=careerlens-ds
+    volumes:
+      - model_data:/models
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  # Cron sidecar that fires the pipeline daily (see ofelia/config.ini).
+  ofelia:
+    container_name: ofelia
+    restart: always
+    image: mcuadros/ofelia:latest
+    depends_on:
+      - ds
+    command: daemon --config=/etc/ofelia/config.ini
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./ofelia/config.ini:/etc/ofelia/config.ini:ro
+    networks:
+      - app-network
+
 networks:
   app-network:
+    name: app-network
     driver: bridge
 
 volumes:
   mongo_data:
+  model_data:
+    name: model_data

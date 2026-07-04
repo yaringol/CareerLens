@@ -2,14 +2,15 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import HalfCircleGauge, { getStrength } from '../components/ui/HalfCircleGauge'
 import AppLogo from '../components/ui/AppLogo'
+import AdminNavLink from '../components/admin/AdminNavLink'
 import { useError } from '../context/ErrorContext'
 import type { AnalyzeResponse, CompareSavedResponse } from '../services/api'
 import { getCvText } from '../services/api'
 import './SkillsMatchDashboard.css'
 
 
-const RESULT_KEY = 'pocAnalysisResult'
-const CV_FILENAME_KEY = 'pocCvFileName'
+const RESULT_KEY = 'analysisResult'
+const CV_FILENAME_KEY = 'cvFileName'
 
 type StoredAnalysisResult = AnalyzeResponse & {
   cvText?: string
@@ -386,6 +387,12 @@ const SkillsMatchDashboard = () => {
     navigate('/upload')
   }
 
+  const handleBackToUpload = () => {
+    leavingRef.current = true
+    sessionStorage.removeItem(RESULT_KEY)
+    navigate('/upload')
+  }
+
   async function handleViewBetterCv() {
     if (!betterSavedCv || !result) return
 
@@ -399,7 +406,7 @@ const SkillsMatchDashboard = () => {
       isEstimated: saved.isEstimated,
     }
 
-    sessionStorage.setItem('pocExcludeCvId', saved.cvId)
+    sessionStorage.setItem('excludeCvId', saved.cvId)
     sessionStorage.setItem(CV_FILENAME_KEY, saved.fileName)
 
     setBetterSavedCv(null)
@@ -446,7 +453,6 @@ const SkillsMatchDashboard = () => {
 
   return (
     <div className="dashboard-screen">
-      {/* App header — logo right, nav left */}
       <div className="dashboard-nav">
         <div className="dashboard-nav-left">
           <button className="btn-nav-pill" onClick={handleGoHome}>
@@ -457,6 +463,7 @@ const SkillsMatchDashboard = () => {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             Account
           </button>
+          <AdminNavLink className="btn-nav-pill btn-nav-pill--admin" />
         </div>
         <div className="step-indicator">
           <div className="step step--done">
@@ -477,7 +484,6 @@ const SkillsMatchDashboard = () => {
         <AppLogo size="sm" />
       </div>
 
-      {/* Job title */}
       <h1 className="dashboard-title">{result.jobTitle}</h1>
 
       {/* Cards */}
@@ -579,8 +585,8 @@ const SkillsMatchDashboard = () => {
         </div>
 
         <div className="dashboard-bottom-actions">
-          <button className="btn-card-action btn-back-standalone" onClick={handleTryAnotherRole}>
-            ← Try another role
+          <button className="btn-card-action btn-back-standalone" onClick={handleBackToUpload}>
+            ← Back to upload
           </button>
           <button
             className="btn-improve"

@@ -5,6 +5,12 @@ __pycache__/
 .venv311/
 .env
 
+# Secrets (see *.example counterparts)
+secrets/mongo.env
+
+# .env files are never committed, including .example templates (contained a live key once)
+backend/.env.example
+
 # Data outputs
 data/processed/*
 !data/raw/.gitkeep
@@ -21,6 +27,10 @@ CVs/
 # Frontend
 frontend/node_modules/
 
+# Playwright MCP — generated session logs/snapshots/screenshots
+.playwright-mcp/
+qa-*.png
+
 # DS model — versioned snapshots and generated outputs
 ds/model/model_*.joblib
 ds/model/token_dist.json
@@ -31,4 +41,5 @@ ds/model/skill_db_relax_*.json
 *.md
 !README.md
 !docs/TESTING.md
+!docs/ds-models/*.md
 *node_modules*

@@ -8,7 +8,7 @@ import { ValidationError } from '../errors';
 const router = Router();
 router.use(authenticate);
 
-// GET /jobs — List all POC jobs for dropdown
+// GET /jobs — List all supported roles for the dropdown
 router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const jobs = await getAllJobs();

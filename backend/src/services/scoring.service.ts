@@ -9,7 +9,7 @@ import {
   logLlmScoringOk,
   logLlmScoringRawUnnormalized,
   logLlmScoringUniformReplaced,
-} from '../utils/pocLog';
+} from '../utils/logger';
 
 const MIN_CV_TEXT_LENGTH = 50;
 const SCORE_MIN = 0;
@@ -118,6 +118,7 @@ function normalizeLlmScoringJson(
 }
 
 export interface ScoreRequest {
+  userId?: string;
   jobId: string;
   jobTitle: string;
   cvText: string;
@@ -216,6 +217,7 @@ export async function scoreAndPersist(req: ScoreRequest): Promise<ICvAnalysis> {
   const validatedSkills = validateSkillArray(req.skills, expectedSkillCount);
 
   const baseInput = {
+    userId: req.userId,
     cvFileName: req.cvFileName ?? req.jobId,
     cvTextExtracted: req.cvText,
     jobId: req.jobId,
