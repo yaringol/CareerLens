@@ -3,10 +3,9 @@ import { Types } from 'mongoose';
 import { uploadMiddleware } from '../middleware/upload';
 import { authenticate } from '../middleware/auth.middleware';
 import { processUpload } from '../services/cv.service';
-import { detectTitleFromCv, rolesToSuggestions } from '../services/dsModel';
+import { detectTitleFromCv, rolesToSuggestions, extractTitleFromCv } from '../services/dsModel';
 import { CvFile } from '../models/cvFile.model';
 import { ValidationError } from '../errors';
-import { extractTitleFromCv } from '../services/dsModel';
 import {
   enforceSavedCvLimit,
   MAX_SAVED_CVS,

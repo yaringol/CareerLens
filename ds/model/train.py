@@ -11,6 +11,8 @@ from datetime import datetime, timezone
 import joblib
 import numpy as np
 from pymongo import MongoClient
+from promotion_gate import evaluate_promotion, load_baseline_record_counts
+from skill_schema import build_skill_records, compute_stability_score, weighted_scores_from_records
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.neighbors import NearestNeighbors
 
@@ -128,6 +130,15 @@ def resolve_canonical(og_title, actual_title):
     return None
 
 def extract_weighted_skills(item, canonical):
+    records = build_skill_records(
+        item,
+        canonical=canonical,
+        normalizer=normalize_skill,
+        is_valid=is_valid_skill,
+    )
+    if records:
+        return weighted_scores_from_records(records)
+
     full_raw = {m['doc_node_value'].lower() for m in item['skills'].get('full_matches', [])}
     scores = defaultdict(float)
     for sk in full_raw:
@@ -146,56 +157,175 @@ def extract_weighted_skills(item, canonical):
             scores[sk] += score
     return dict(scores)
 
+def parse_source_weights():
+    """
+    Multi-source training:
+      legacy:  SOURCE_WEIGHTS=jobs:1.0,lang-uk-job-skills:0.3
+      unified: TRAIN_USE_UNIFIED=1 SOURCE_WEIGHTS=linkedin:1.0,lang_uk:0.3
+    Falls back to MONGO_COLLECTION at weight 1.0 when unset.
+    """
+    raw = os.getenv('SOURCE_WEIGHTS', '').strip()
+    if raw:
+        sources = []
+        for part in raw.split(','):
+            part = part.strip()
+            if not part:
+                continue
+            if ':' in part:
+                name, weight = part.rsplit(':', 1)
+                sources.append((name.strip(), float(weight.strip())))
+            else:
+                sources.append((part, 1.0))
+        return sources
+    return [(MONGO_COLLECTION, 1.0)]
+
+
+def _empty_accumulators():
+    return {
+        'role_skill_scores': {t: defaultdict(float) for t in CANONICAL_TITLES},
+        'role_skill_counts': {t: defaultdict(int) for t in CANONICAL_TITLES},
+        'role_record_weight': defaultdict(float),
+        'record_counts': defaultdict(int),
+        'recent_skill_scores': {t: defaultdict(float) for t in CANONICAL_TITLES},
+        'recent_record_count': defaultdict(int),
+        'skill_observation_dates': {
+            t: defaultdict(list) for t in CANONICAL_TITLES
+        },
+    }
+
+
+def accumulate_from_collection(collection, source_weight, acc):
+    """Read one Mongo collection into shared accumulators (weighted by source)."""
+    loaded = 0
+    skipped = 0
+    for item in collection.find({}):
+        try:
+            og_title     = item.get('og_title') or item.get('og_tite')
+            actual_title = item.get('title', '')
+            canonical    = resolve_canonical(og_title, actual_title)
+            if canonical is None:
+                skipped += 1
+                continue
+            skills = item.get('skills') or {}
+            total = (len(skills.get('full_matches', [])) +
+                     len(skills.get('ngram_matches', [])))
+            if total < 5:
+                skipped += 1
+                continue
+            weighted = extract_weighted_skills(item, canonical)
+            if not weighted:
+                skipped += 1
+                continue
+
+            records = build_skill_records(
+                item,
+                canonical=canonical,
+                normalizer=normalize_skill,
+                is_valid=is_valid_skill,
+            )
+            for rec in records:
+                obs = rec.get('observed_at')
+                if obs is not None:
+                    acc['skill_observation_dates'][canonical][rec['skill']].append(obs)
+
+            w = recency_weight(item) * source_weight
+            age = age_days(item)
+            is_recent = age is not None and age <= TREND_WINDOW_DAYS
+
+            for skill, score in weighted.items():
+                acc['role_skill_scores'][canonical][skill] += score * w
+                acc['role_skill_counts'][canonical][skill] += 1
+                if is_recent:
+                    acc['recent_skill_scores'][canonical][skill] += score
+            acc['role_record_weight'][canonical] += w
+            acc['record_counts'][canonical] += 1
+            if is_recent:
+                acc['recent_record_count'][canonical] += 1
+            loaded += 1
+        except (KeyError, TypeError):
+            skipped += 1
+            continue
+    return loaded, skipped
+
+
+def accumulate_from_unified(collection, source_label, source_weight, acc):
+    """Read flat role_skill_observations (one row per skill) into accumulators."""
+    loaded = 0
+    skipped = 0
+    job_weights_added = acc.setdefault('_job_weights_added', set())
+
+    for obs in collection.find({'source': source_label}):
+        try:
+            canonical = obs.get('canonical_title')
+            if canonical not in CANONICAL_TITLES:
+                skipped += 1
+                continue
+            skill = obs.get('skill')
+            if not skill:
+                skipped += 1
+                continue
+            score = float(obs.get('score', 1.0))
+            observed_at = obs.get('observed_at')
+            pseudo_item = {'datePosted': observed_at, 'scraped_at': observed_at}
+            w = recency_weight(pseudo_item) * source_weight
+            age = age_days(pseudo_item)
+            is_recent = age is not None and age <= TREND_WINDOW_DAYS
+
+            job_key = (canonical, str(obs.get('job_id', '')))
+            if job_key[1] and job_key not in job_weights_added:
+                job_weights_added.add(job_key)
+                acc['role_record_weight'][canonical] += w
+                acc['record_counts'][canonical] += 1
+                if is_recent:
+                    acc['recent_record_count'][canonical] += 1
+                loaded += 1
+
+            acc['role_skill_scores'][canonical][skill] += score * w
+            acc['role_skill_counts'][canonical][skill] += 1
+            if is_recent:
+                acc['recent_skill_scores'][canonical][skill] += score
+            if observed_at is not None:
+                acc['skill_observation_dates'][canonical][skill].append(observed_at)
+        except (KeyError, TypeError, ValueError):
+            skipped += 1
+            continue
+    return loaded, skipped
+
+
 # ── Load & aggregate (from MongoDB, recency-weighted) ──────────────────────────
-# A Mongo document already has the same shape the old JSONL loop expected
-# (og_title, title, skills.full_matches/ngram_matches), plus datePosted/scraped_at
-# which we use to weight recent postings higher.
-
-# Recency-weighted accumulators (drive prevalence so trending skills surface):
-role_skill_scores = {t: defaultdict(float) for t in CANONICAL_TITLES}   # Σ score·w
-role_skill_counts = {t: defaultdict(int)   for t in CANONICAL_TITLES}   # raw frequency
-role_record_weight = defaultdict(float)                                  # Σ w  (weighted denom)
-record_counts      = defaultdict(int)                                    # raw # postings (confidence)
-
-# Recent-window accumulators (for the rising/stable/falling trend label):
-recent_skill_scores = {t: defaultdict(float) for t in CANONICAL_TITLES}  # Σ score in window
-recent_record_count = defaultdict(int)                                   # # postings in window
 
 mongo = MongoClient(MONGO_URI, serverSelectionTimeoutMS=8000)
-jobs_collection = mongo.get_default_database()[MONGO_COLLECTION]
-print(f"Reading jobs from MongoDB: {MONGO_URI.split('@')[-1]} collection={MONGO_COLLECTION}")
+fdb = mongo.get_default_database()
+USE_UNIFIED = os.getenv('TRAIN_USE_UNIFIED', '0').lower() in ('1', 'true', 'yes')
+UNIFIED_COLL = os.getenv('UNIFIED_SKILLS_COLLECTION', 'role_skill_observations')
+source_weights = parse_source_weights()
+source_label = '+'.join(f'{n}:{w}' for n, w in source_weights)
 
-for item in jobs_collection.find({}):
-    try:
-        og_title     = item.get('og_title') or item.get('og_tite')
-        actual_title = item.get('title', '')
-        canonical    = resolve_canonical(og_title, actual_title)
-        if canonical is None:
-            continue
-        skills = item.get('skills') or {}
-        total = (len(skills.get('full_matches', [])) +
-                 len(skills.get('ngram_matches', [])))
-        if total < 5:
-            continue
-        weighted = extract_weighted_skills(item, canonical)
-        if not weighted:
-            continue
+acc = _empty_accumulators()
+print(f"Reading from MongoDB: {MONGO_URI.split('@')[-1]} sources={source_label}")
 
-        w   = recency_weight(item)
-        age = age_days(item)
-        is_recent = age is not None and age <= TREND_WINDOW_DAYS
+if USE_UNIFIED:
+    coll = fdb[UNIFIED_COLL]
+    total_loaded = 0
+    total_skipped = 0
+    for source_name, weight in source_weights:
+        loaded, skipped = accumulate_from_unified(coll, source_name, weight, acc)
+        print(f"  {UNIFIED_COLL} source={source_name} (w={weight}): loaded_jobs={loaded} skipped={skipped}")
+        total_loaded += loaded
+        total_skipped += skipped
+else:
+    for coll_name, weight in source_weights:
+        coll = fdb[coll_name]
+        loaded, skipped = accumulate_from_collection(coll, weight, acc)
+        print(f"  {coll_name} (w={weight}): loaded={loaded} skipped={skipped}")
 
-        for skill, score in weighted.items():
-            role_skill_scores[canonical][skill] += score * w
-            role_skill_counts[canonical][skill] += 1
-            if is_recent:
-                recent_skill_scores[canonical][skill] += score
-        role_record_weight[canonical] += w
-        record_counts[canonical]      += 1
-        if is_recent:
-            recent_record_count[canonical] += 1
-    except (KeyError, TypeError):
-        continue
+role_skill_scores = acc['role_skill_scores']
+role_skill_counts = acc['role_skill_counts']
+role_record_weight = acc['role_record_weight']
+record_counts = acc['record_counts']
+recent_skill_scores = acc['recent_skill_scores']
+recent_record_count = acc['recent_record_count']
+skill_observation_dates = acc['skill_observation_dates']
 
 print("Records loaded per role (raw count | weighted):")
 for title in CANONICAL_TITLES:
@@ -226,7 +356,8 @@ def trend_label(recent_prev, overall_prev):
     return 'stable'
 
 def compute_feature_matrix(role_skill_scores, role_skill_counts, role_record_weight,
-                           recent_skill_scores, recent_record_count):
+                           recent_skill_scores, recent_record_count,
+                           skill_observation_dates):
     n_titles = len(CANONICAL_TITLES)
     skill_title_count = defaultdict(int)
     for skills in role_skill_scores.values():
@@ -248,12 +379,16 @@ def compute_feature_matrix(role_skill_scores, role_skill_counts, role_record_wei
                                 if recent_denom > 0 else 0.0)
             idf        = np.log(n_titles / skill_title_count[skill]) if skill_title_count[skill] > 0 else 0
             specificity = idf / np.log(max(n_titles, 2))
+            stability_meta = compute_stability_score(
+                skill_observation_dates[title].get(skill, [])
+            )
             fm[title][skill] = {
                 'frequency':         frequency,
                 'prevalence':        prevalence,
                 'recent_prevalence': recent_prev_raw,
                 'trend':             trend_label(recent_prev_raw, prevalence),
                 'title_specificity': float(np.clip(specificity, 0.0, 1.0)),
+                **stability_meta,
             }
 
     # Normalize prevalence (and recent_prevalence on the same scale) to [0, 1] per title.
@@ -267,7 +402,7 @@ def compute_feature_matrix(role_skill_scores, role_skill_counts, role_record_wei
 
 feature_matrix = compute_feature_matrix(
     role_skill_scores, role_skill_counts, role_record_weight,
-    recent_skill_scores, recent_record_count,
+    recent_skill_scores, recent_record_count, skill_observation_dates,
 )
 
 # ── Build KNN ─────────────────────────────────────────────────────────────────
@@ -306,9 +441,27 @@ model_artifacts = {
 os.makedirs(MODEL_OUT, exist_ok=True)
 versioned = os.path.join(MODEL_OUT, f'model_{timestamp}.joblib')
 latest    = os.path.join(MODEL_OUT, 'model.joblib')
+
+baseline_counts = load_baseline_record_counts(
+    fdb, model_out=MODEL_OUT, canonical_titles=CANONICAL_TITLES,
+)
+new_counts_dict = {t: int(record_counts[t]) for t in CANONICAL_TITLES}
+promoted, promote_reason = evaluate_promotion(
+    new_counts_dict, baseline_counts, CANONICAL_TITLES,
+)
+if baseline_counts:
+    print(f"Baseline: last promoted run ({sum(baseline_counts.values())} total records)")
+else:
+    print('Baseline: none (first live promote when thresholds met)')
+
 joblib.dump(model_artifacts, versioned)
-joblib.dump(model_artifacts, latest)
-print(f"Saved: {latest}")
+print(f"Saved versioned snapshot: {versioned}")
+
+if promoted:
+    joblib.dump(model_artifacts, latest)
+    print(f"Promoted to production: {latest}")
+else:
+    print(f"NOT promoted ({promote_reason}) — keeping existing {latest}")
 
 # ── Save canonical_titles.json ────────────────────────────────────────────────
 
@@ -325,9 +478,12 @@ canonical_data = {
 }
 
 json_path = os.path.join(MODEL_OUT, 'canonical_titles.json')
-with open(json_path, 'w', encoding='utf-8') as f:
-    json.dump(canonical_data, f, indent=2, ensure_ascii=False)
-print(f"Saved: {json_path}")
+if promoted:
+    with open(json_path, 'w', encoding='utf-8') as f:
+        json.dump(canonical_data, f, indent=2, ensure_ascii=False)
+    print(f"Saved: {json_path}")
+else:
+    print(f"Skipped updating {json_path} (not promoted)")
 
 # ── Persist the learned skill<->title mapping to MongoDB ────────────────────────
 # So experiments across data sources (jobs / JOBS_EXAMPLE / lang-uk-job ...) are
@@ -339,25 +495,32 @@ if os.getenv('PERSIST_FEATURES', '1').lower() not in ('0', 'false', 'no'):
     fdb        = mongo.get_default_database()
     runs_coll  = fdb[os.getenv('RUNS_COLLECTION', 'model_runs')]
     feats_coll = fdb[os.getenv('FEATURES_COLLECTION', 'role_skill_features')]
-    run_id = f"{MONGO_COLLECTION}@{timestamp}"
+    run_id = f"{source_label}@{timestamp}"
 
     runs_coll.replace_one({'_id': run_id}, {
         '_id':                 run_id,
         'source_collection':   MONGO_COLLECTION,
+        'source_weights':      {n: w for n, w in source_weights},
+        'promoted':            promoted,
+        'promote_reason':      promote_reason,
         'trained_at':          timestamp,
         'half_life_days':      HALF_LIFE_DAYS,
         'trend_window_days':   TREND_WINDOW_DAYS,
-        'record_counts':       {t: int(record_counts[t]) for t in CANONICAL_TITLES},
+        'record_counts':       new_counts_dict,
         'titles_with_data':    sum(1 for t in CANONICAL_TITLES if record_counts[t] > 0),
     }, upsert=True)
 
     feats_coll.delete_many({'run_id': run_id})
     rows = [
         {
-            'run_id': run_id, 'source': MONGO_COLLECTION, 'title': title, 'skill': skill,
+            'run_id': run_id, 'source': source_label, 'title': title, 'skill': skill,
             'prevalence':        round(float(f['prevalence']), 4),
             'recent_prevalence': round(float(f.get('recent_prevalence', 0.0)), 4),
             'trend':             f.get('trend', 'stable'),
+            'stability_score':   round(float(f.get('stability_score', 0.5)), 4),
+            'observation_count': int(f.get('observation_count', 0)),
+            'observation_weeks': int(f.get('observation_weeks', 0)),
+            'time_coverage_reliable': bool(f.get('time_coverage_reliable', False)),
             'frequency':         int(f['frequency']),
             'title_specificity': round(float(f['title_specificity']), 4),
         }
@@ -377,3 +540,5 @@ for title in ["Software Engineer", "Data Scientist", "Machine Learning Engineer"
     if title in variant_labels:
         idx = variant_labels.index(title)
         print(f"  {title}: {skills_data[idx][:5]}")
+
+sys.exit(0 if promoted else 2)

@@ -11,6 +11,7 @@ import {
   type SkillContext,
 } from '../services/api'
 import AppLogo from '../components/ui/AppLogo'
+import AdminNavLink from '../components/admin/AdminNavLink'
 import './ImproveCVScreen.css'
 
 const RESULT_KEY = 'analysisResult'
@@ -685,6 +686,7 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           Account
         </button>
+        <AdminNavLink className="btn-nav-pill btn-nav-pill--admin" />
       </div>
 
       <div className="improve-steps">
@@ -693,18 +695,13 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
           <span className="improve-step-label">Upload</span>
         </div>
         <div className="improve-step-line" />
-        <div className="improve-step improve-step--done">
-          <span className="improve-step-dot">✓</span>
-          <span className="improve-step-label">Personalize</span>
-        </div>
-        <div className="improve-step-line" />
         <button className="improve-step improve-step--done improve-step--link" onClick={handleClose}>
           <span className="improve-step-dot">✓</span>
           <span className="improve-step-label">Results</span>
         </button>
         <div className="improve-step-line" />
         <div className="improve-step improve-step--active">
-          <span className="improve-step-dot">4</span>
+          <span className="improve-step-dot">3</span>
           <span className="improve-step-label">Improve</span>
         </div>
       </div>

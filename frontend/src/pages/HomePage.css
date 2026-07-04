@@ -314,6 +314,16 @@
   background: rgba(255, 255, 255, 0.14);
 }
 
+a.btn-hero-logout {
+  text-decoration: none;
+}
+
+.btn-hero-admin {
+  border-color: rgba(192, 132, 252, 0.45);
+  color: #e9d5ff;
+  background: rgba(124, 58, 237, 0.2);
+}
+
 /* ─── CL-6: How It Works ────────────────────────────────────────────── */
 .how-it-works {
   background: #0d0a30;

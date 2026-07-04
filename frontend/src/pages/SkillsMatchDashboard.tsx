@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import HalfCircleGauge, { getStrength } from '../components/ui/HalfCircleGauge'
 import AppLogo from '../components/ui/AppLogo'
+import AdminNavLink from '../components/admin/AdminNavLink'
 import { useError } from '../context/ErrorContext'
 import type { AnalyzeResponse, CompareSavedResponse } from '../services/api'
 import { getCvText } from '../services/api'
@@ -386,12 +387,10 @@ const SkillsMatchDashboard = () => {
     navigate('/upload')
   }
 
-  // New flow (Upload → Personalize → Results → Improve): going back from Results
-  // returns to Personalization. Keep personalizationInput so it re-renders.
-  const handleBackToPersonalize = () => {
+  const handleBackToUpload = () => {
     leavingRef.current = true
     sessionStorage.removeItem(RESULT_KEY)
-    navigate('/personalize')
+    navigate('/upload')
   }
 
   async function handleViewBetterCv() {
@@ -454,7 +453,6 @@ const SkillsMatchDashboard = () => {
 
   return (
     <div className="dashboard-screen">
-      {/* App header — logo right, nav left */}
       <div className="dashboard-nav">
         <div className="dashboard-nav-left">
           <button className="btn-nav-pill" onClick={handleGoHome}>
@@ -465,6 +463,7 @@ const SkillsMatchDashboard = () => {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             Account
           </button>
+          <AdminNavLink className="btn-nav-pill btn-nav-pill--admin" />
         </div>
         <div className="step-indicator">
           <div className="step step--done">
@@ -472,25 +471,19 @@ const SkillsMatchDashboard = () => {
             <span className="step-label">Upload</span>
           </div>
           <div className="step-line" />
-          <div className="step step--done">
-            <div className="step-dot">✓</div>
-            <span className="step-label">Personalize</span>
-          </div>
-          <div className="step-line" />
           <div className="step step--active">
-            <div className="step-dot">3</div>
+            <div className="step-dot">2</div>
             <span className="step-label">Results</span>
           </div>
           <div className="step-line" />
           <div className="step">
-            <div className="step-dot">4</div>
+            <div className="step-dot">3</div>
             <span className="step-label">Improve</span>
           </div>
         </div>
         <AppLogo size="sm" />
       </div>
 
-      {/* Job title */}
       <h1 className="dashboard-title">{result.jobTitle}</h1>
 
       {/* Cards */}
@@ -592,8 +585,8 @@ const SkillsMatchDashboard = () => {
         </div>
 
         <div className="dashboard-bottom-actions">
-          <button className="btn-card-action btn-back-standalone" onClick={handleBackToPersonalize}>
-            ← Back to personalize
+          <button className="btn-card-action btn-back-standalone" onClick={handleBackToUpload}>
+            ← Back to upload
           </button>
           <button
             className="btn-improve"

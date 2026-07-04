@@ -3,6 +3,7 @@ uvicorn
 joblib
 numpy
 pymongo
+datasets
 scikit-learn
 spacy>=3.8,<3.9
 skillNer==1.0.3

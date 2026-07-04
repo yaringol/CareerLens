@@ -565,3 +565,100 @@ export async function fetchAdminAnalyses(filters?: {
   })
   return res.json()
 }
+
+export interface AdminModelStatusResponse {
+  model1: {
+    lastRun: {
+      runId: string
+      trainedAt: string | null
+      promoted: boolean
+      promoteReason: string | null
+      titlesWithData: number
+      sourceWeights: Record<string, number>
+      isLiveModel: boolean
+    } | null
+    liveRun: {
+      runId: string
+      trainedAt: string | null
+      titlesWithData: number
+    } | null
+    runHistory: Array<{
+      runId: string
+      trainedAt: string | null
+      promoted: boolean
+      promoteReason: string | null
+      titlesWithData: number
+    }>
+    titles: Array<{
+      title: string
+      skillCount: number
+      recordsCount: number
+      dataConfidence: 'high' | 'medium' | 'low'
+      timeFeaturesReliable: boolean
+      trends: { rising: number; stable: number; falling: number }
+    }>
+    rawPostingsCount: number
+    pendingExtractionCount: number
+    jobsCount: number
+    langUkSkillsCount: number
+    langUkExtractProgress: { extracted: number; total: number; pending: number }
+    unifiedObservations: { total: number; linkedin: number; langUk: number }
+  }
+}
+
+export async function fetchAdminModelStatus(): Promise<AdminModelStatusResponse> {
+  const res = await apiFetch(`${base()}/admin/model-status`, {
+    headers: { ...authHeaders() },
+  })
+  return res.json()
+}
+
+export interface AdminPipelineRun {
+  id: string
+  status: 'running' | 'completed' | 'failed' | 'aborted'
+  triggeredBy: string
+  command: string
+  startedAt: string
+  finishedAt: string | null
+  exitCode: number | null
+  logTail: string
+  abortedBy?: string | null
+}
+
+export interface AdminPipelineStatusResponse {
+  enabled: boolean
+  manualCommand: string
+  activeRun: AdminPipelineRun | null
+  lastRun: AdminPipelineRun | null
+}
+
+export async function fetchAdminPipelineStatus(): Promise<AdminPipelineStatusResponse> {
+  const res = await apiFetch(`${base()}/admin/pipeline/status`, {
+    headers: { ...authHeaders() },
+  })
+  return res.json()
+}
+
+export async function triggerAdminPipeline(): Promise<AdminPipelineRun> {
+  const res = await apiFetch(`${base()}/admin/pipeline/trigger`, {
+    method: 'POST',
+    headers: { ...authHeaders() },
+  })
+  if (res.status === 202) {
+    return res.json()
+  }
+  const err = await res.json().catch(() => ({}))
+  throw new Error((err as { error?: string }).error || `Pipeline trigger failed (${res.status})`)
+}
+
+export async function abortAdminPipeline(): Promise<{ id: string; status: 'aborted'; abortedBy: string }> {
+  const res = await apiFetch(`${base()}/admin/pipeline/abort`, {
+    method: 'POST',
+    headers: { ...authHeaders() },
+  })
+  if (res.ok) {
+    return res.json()
+  }
+  const err = await res.json().catch(() => ({}))
+  throw new Error((err as { error?: string }).error || `Pipeline abort failed (${res.status})`)
+}
