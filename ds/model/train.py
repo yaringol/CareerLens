@@ -24,10 +24,9 @@ EXTRACTOR  = os.path.join(BASE_DIR, '..', 'extractor')
 MODEL_OUT  = os.getenv('MODEL_OUT_DIR', BASE_DIR)
 
 # ── Mongo source (single source of truth, shared with the scraper) ─────────────
-MONGO_URI = os.getenv(
-    'MONGO_URI',
-    'mongodb://root:secretpassword@82.70.215.125:27017/jobs?authSource=admin',
-)
+from mongo_env import get_mongo_uri
+
+MONGO_URI = get_mongo_uri()
 # Collection to train from — set MONGO_COLLECTION=JOBS_EXAMPLE to train on the
 # synthetic trend dataset instead of the live scraped `jobs`.
 MONGO_COLLECTION = os.getenv('MONGO_COLLECTION', 'jobs')

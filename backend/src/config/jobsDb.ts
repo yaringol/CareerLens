@@ -1,12 +1,10 @@
 import mongoose from 'mongoose';
+import { requireMongoUri } from './mongoUri';
 
 let jobsConnection: mongoose.Connection | null = null;
 
 export function getJobsMongoUri(): string {
-  return (
-    process.env.JOBS_MONGO_URI ??
-    'mongodb://root:secretpassword@82.70.215.125:27017/jobs?authSource=admin'
-  );
+  return requireMongoUri('JOBS_MONGO_URI');
 }
 
 export async function getJobsConnection(): Promise<mongoose.Connection> {

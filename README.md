@@ -1,6 +1,6 @@
 # CareerLens — Local development
 
-Run **three processes** (DS model + backend + frontend). MongoDB is the **shared team server** — no local install needed unless you opt out via env vars.
+Run **three processes** (DS model + backend + frontend). MongoDB connection strings live in `.env` files — see setup below.
 
 ## Quick start (after one-time setup)
 
@@ -18,25 +18,25 @@ Open **http://localhost:8080** → register or log in → upload a CV → analyz
 
 ## One-time setup
 
-### 1. MongoDB (shared team server)
+### 1. MongoDB
 
-Default connection (used when env vars are unset):
+Set connection strings in env files (never commit real credentials to git):
 
-```bash
-# App DB (users, CVs, analyses)
-MONGODB_URI=mongodb://root:secretpassword@82.70.215.125:27017/careerlens?authSource=admin
+| File | Variables |
+|------|-----------|
+| `backend/.env` | `MONGODB_URI`, `JOBS_MONGO_URI` |
+| `ds/model/.env` | `MONGO_URI` (or rely on `JOBS_MONGO_URI` from `backend/.env`) |
+| `scraping/.env` | `MONGO_URI` (for LinkedIn scraper) |
 
-# Jobs / pipeline / DS training
-MONGO_URI=mongodb://root:secretpassword@82.70.215.125:27017/jobs?authSource=admin
-JOBS_MONGO_URI=mongodb://root:secretpassword@82.70.215.125:27017/jobs?authSource=admin
-```
+Copy the matching `.env.example` in each directory and fill in your URI.
 
-Optional: run MongoDB locally and override these in `backend/.env`.
+**Local MongoDB** (optional):
 
 ```bash
 brew tap mongodb/brew
 brew install mongodb-community
 brew services start mongodb-community
+# Then use e.g. mongodb://localhost:27017/careerlens and mongodb://localhost:27017/jobs
 ```
 
 Or with Docker:
@@ -52,11 +52,11 @@ cd backend
 npm install
 ```
 
-Create `backend/.env`:
+Create `backend/.env` (copy from `backend/.env.example`):
 
 ```env
-MONGODB_URI=mongodb://root:secretpassword@82.70.215.125:27017/careerlens?authSource=admin
-JOBS_MONGO_URI=mongodb://root:secretpassword@82.70.215.125:27017/jobs?authSource=admin
+MONGODB_URI=mongodb://localhost:27017/careerlens
+JOBS_MONGO_URI=mongodb://localhost:27017/jobs
 PORT=3000
 JWT_SECRET=your-local-dev-secret
 JWT_EXPIRY=7d
@@ -84,6 +84,8 @@ pip install -r requirements-server.txt
 
 First run downloads the spaCy `en_core_web_lg` model (~500 MB).
 
+Copy `ds/model/.env.example` to `ds/model/.env` and set `MONGO_URI` (pipeline scripts also read `backend/.env`).
+
 ### 4. Frontend
 
 ```bash
@@ -100,7 +102,7 @@ npm install
 | Frontend (Vite) | **8080** | Proxies `/api` → backend |
 | Backend (Express) | **3000** | Set `PORT=3000` in `.env` |
 | DS model (FastAPI) | **8000** | SkillNer + title/KNN endpoints |
-| MongoDB (shared) | **82.70.215.125:27017** | Databases `careerlens` + `jobs` |
+| MongoDB | **27017** (or your team server) | Databases `careerlens` + `jobs` — set URIs in `.env` |
 
 The backend code defaults to port `8000`, which **conflicts** with the DS model. Always use `PORT=3000` in `backend/.env`.
 

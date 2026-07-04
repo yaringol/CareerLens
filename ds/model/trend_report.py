@@ -16,8 +16,9 @@ from datetime import datetime, timezone
 
 from pymongo import MongoClient
 
-MONGO_URI  = os.getenv("MONGO_URI",
-    "mongodb://root:secretpassword@82.70.215.125:27017/jobs?authSource=admin")
+from mongo_env import get_mongo_uri
+
+MONGO_URI  = get_mongo_uri()
 COLLECTION = os.getenv("EXAMPLE_COLLECTION", "JOBS_EXAMPLE")
 OUT_DIR    = os.getenv("REPORT_OUT_DIR", os.path.dirname(os.path.abspath(__file__)))
 

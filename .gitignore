@@ -5,11 +5,8 @@ __pycache__/
 .venv311/
 .env
 
-# Secrets (see *.example counterparts)
+# Secrets (see *.example counterparts — placeholders only, no real credentials)
 secrets/mongo.env
-
-# .env files are never committed, including .example templates (contained a live key once)
-backend/.env.example
 
 # Data outputs
 data/processed/*

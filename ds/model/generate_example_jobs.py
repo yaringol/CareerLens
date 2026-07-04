@@ -24,8 +24,9 @@ from datetime import datetime, timezone, timedelta
 
 from pymongo import MongoClient
 
-MONGO_URI         = os.getenv("MONGO_URI",
-    "mongodb://root:secretpassword@82.70.215.125:27017/jobs?authSource=admin")
+from mongo_env import get_mongo_uri
+
+MONGO_URI         = get_mongo_uri()
 TARGET_COLLECTION = os.getenv("EXAMPLE_COLLECTION", "JOBS_EXAMPLE")
 N_JOBS            = int(os.getenv("N_JOBS", "10000"))
 random.seed(int(os.getenv("SEED", "42")))

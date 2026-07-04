@@ -66,7 +66,8 @@ API: `GET /title/skills` מחזיר `skills[]` עם שני המדדים + `sugge
 ```bash
 # backfill jobs + lang-uk-job-skills
 cd ds/model
-MONGO_URI=mongodb://root:secretpassword@82.70.215.125:27017/jobs?authSource=admin python migrate_skill_records.py
+# Set MONGO_URI in ds/model/.env first (see .env.example)
+python migrate_skill_records.py
 
 # train מחדש (אחרי lang-uk batch)
 SOURCE_WEIGHTS=jobs:1.0,lang-uk-job-skills:0.3 python train.py
@@ -105,19 +106,21 @@ SOURCE_WEIGHTS=jobs:1.0,lang-uk-job-skills:0.3 python train.py
 ```bash
 cd ds/model
 # 1) backfill skill_records on job docs (optional if extract already wrote them)
-MONGO_URI=mongodb://root:secretpassword@82.70.215.125:27017/jobs?authSource=admin python migrate_skill_records.py
+python migrate_skill_records.py
 
 # 2) unify into role_skill_observations
-MONGO_URI=mongodb://root:secretpassword@82.70.215.125:27017/jobs?authSource=admin python migrate_unified_skill_observations.py
+# Set MONGO_URI in ds/model/.env first (see .env.example)
+python migrate_unified_skill_observations.py
 ```
 
 ### אימון מה-collection המאוחד
 
 ```bash
+# Set MONGO_URI in ds/model/.env first (see .env.example)
 TRAIN_USE_UNIFIED=1 \
 SOURCE_WEIGHTS=linkedin:1.0,lang_uk:0.3 \
 UNIFIED_SKILLS_COLLECTION=role_skill_observations \
-MONGO_URI=mongodb://root:secretpassword@82.70.215.125:27017/jobs?authSource=admin python train.py
+python train.py
 ```
 
 `jobs` + `lang-uk-job-skills` נשארים כ-archival; train קורא מ-unified.
