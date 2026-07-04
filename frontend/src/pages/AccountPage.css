@@ -95,6 +95,23 @@
   color: var(--color-primary);
 }
 
+.account-admin-link {
+  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #7c3aed;
+  background: rgba(124, 58, 237, 0.08);
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  border-radius: var(--radius-input);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.account-admin-link:hover {
+  background: rgba(124, 58, 237, 0.15);
+}
+
 /* ─── Body ───────────────────────────────────────────────────────── */
 .account-body {
   max-width: 680px;

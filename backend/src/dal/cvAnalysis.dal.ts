@@ -9,6 +9,7 @@ export interface AgentScoringResponse {
 
 // Caller-supplied context needed to build a complete analysis document
 export interface SaveAnalysisInput {
+  userId?: string;
   cvFileName: string;
   cvTextExtracted: string;
   jobId: string;
@@ -94,6 +95,7 @@ export async function parseAndSaveAnalysis(input: SaveAnalysisInput): Promise<IC
   const matchScore = calcMatchScore(scores.map((s) => s.score));
 
   return CvAnalysis.create({
+    ...(input.userId ? { userId: new Types.ObjectId(input.userId) } : {}),
     cvFileName: input.cvFileName,
     cvTextExtracted: input.cvTextExtracted,
     jobId: new Types.ObjectId(input.jobId),

@@ -174,6 +174,33 @@
   gap: 0.5rem;
 }
 
+.card-eyebrow-row--spaced {
+  justify-content: space-between;
+}
+
+.btn-card-mini {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 0.25rem 0.625rem;
+  border: 1px solid rgba(139, 116, 246, 0.35);
+  border-radius: var(--radius-full);
+  background: rgba(139, 116, 246, 0.1);
+  color: var(--color-accent-start);
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
+}
+
+.btn-card-mini:hover {
+  background: rgba(139, 116, 246, 0.16);
+  border-color: rgba(139, 116, 246, 0.55);
+  transform: translateY(-1px);
+}
+
 .estimated-badge {
   display: inline-flex;
   align-items: center;

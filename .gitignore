@@ -5,11 +5,8 @@ __pycache__/
 .venv311/
 .env
 
-# Secrets (see *.example counterparts)
+# Secrets (see *.example counterparts — placeholders only, no real credentials)
 secrets/mongo.env
-
-# .env files are never committed, including .example templates (contained a live key once)
-backend/.env.example
 
 # Data outputs
 data/processed/*
@@ -31,8 +28,9 @@ frontend/node_modules/
 .playwright-mcp/
 qa-*.png
 
-# DS model — versioned snapshots and generated outputs
-ds/model/model_*.joblib
+# DS model — keep timestamped snapshots in git; ignore the mutable production copy
+ds/model/model.joblib
+ds/model/logs/
 ds/model/token_dist.json
 ds/model/tsne_map.html
 ds/model/.ipynb_checkpoints/

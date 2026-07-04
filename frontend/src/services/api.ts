@@ -157,10 +157,12 @@ export interface PersonalizationContract {
   canonicalTitle: string
   cvText: string
   jobDescription?: string
+  excludeCvId?: string
   personalization: {
     mode: RecommendationMode
     weights: PersonalizationWeights
     selectedSkillIds: string[]
+    selectedSkillNames?: string[]
   }
 }
 
@@ -331,12 +333,13 @@ export async function analyzeCv(
 
 /**
  * Fetch the data the Personalization screen renders: detected title, the user's
- * CV-extracted skills, and the role-derived focus-skill pool (top 5 pre-selected).
+ * CV-extracted skills, and, in posting mode, the dynamic focus-skill pool.
  */
 export async function getPersonalizationOptions(payload: {
   canonicalTitle: string
   cvText: string
   jobDescription?: string
+  isPostingMode?: boolean
 }): Promise<PersonalizationOptions> {
   const res = await apiFetch(`${base()}/personalize/options`, {
     method: 'POST',
@@ -564,4 +567,166 @@ export async function fetchAdminAnalyses(filters?: {
     headers: { ...authHeaders() },
   })
   return res.json()
+}
+
+export interface AdminModelTitleRow {
+  title: string
+  skillCount: number
+  recordsCount: number
+  dataConfidence: 'high' | 'medium' | 'low'
+  timeFeaturesReliable: boolean
+  trends: { rising: number; stable: number; falling: number }
+}
+
+export interface AdminLangUkExtractProgress {
+  extracted: number | null
+  total: number
+  pending: number | null
+}
+
+export interface AdminModelStatusSummaryResponse {
+  model1: {
+    lastRun: {
+      runId: string
+      trainedAt: string | null
+      promoted: boolean
+      promoteReason: string | null
+      titlesWithData: number
+      sourceWeights: Record<string, number>
+      isLiveModel: boolean
+    } | null
+    liveRun: {
+      runId: string
+      trainedAt: string | null
+      titlesWithData: number
+    } | null
+    runHistory: Array<{
+      runId: string
+      trainedAt: string | null
+      promoted: boolean
+      promoteReason: string | null
+      titlesWithData: number
+    }>
+    titlesRunId: string | null
+    titlesTotal: number
+    rawPostingsCount: number
+    pendingExtractionCount: number | null
+    jobsCount: number
+    langUkSkillsCount: number
+    langUkExtractProgress: AdminLangUkExtractProgress
+    unifiedObservations: { total: number; linkedin: number; langUk: number }
+    countsAreEstimated?: boolean
+  }
+}
+
+export interface AdminModelStatusCollectionStatsResponse {
+  pendingExtractionCount: number
+  langUkExtractProgress: {
+    extracted: number
+    total: number
+    pending: number
+  }
+}
+
+export interface AdminModelStatusTitlesResponse {
+  runId: string
+  titles: AdminModelTitleRow[]
+  total: number
+  offset: number
+  limit: number
+  hasMore: boolean
+}
+
+/** @deprecated Prefer fetchAdminModelStatusSummary + chunked loaders. */
+export type AdminModelStatusResponse = AdminModelStatusSummaryResponse & {
+  model1: AdminModelStatusSummaryResponse['model1'] & {
+    titles: AdminModelTitleRow[]
+    pendingExtractionCount: number
+    langUkExtractProgress: { extracted: number; total: number; pending: number }
+  }
+}
+
+export async function fetchAdminModelStatusSummary(): Promise<AdminModelStatusSummaryResponse> {
+  const res = await apiFetch(`${base()}/admin/model-status`, {
+    headers: { ...authHeaders() },
+  })
+  return res.json()
+}
+
+export async function fetchAdminModelStatusCollectionStats(): Promise<AdminModelStatusCollectionStatsResponse> {
+  const res = await apiFetch(`${base()}/admin/model-status/collection-stats`, {
+    headers: { ...authHeaders() },
+  })
+  return res.json()
+}
+
+export async function fetchAdminModelStatusTitles(
+  runId: string,
+  offset = 0,
+  limit = 25,
+): Promise<AdminModelStatusTitlesResponse> {
+  const params = new URLSearchParams({
+    runId,
+    offset: String(offset),
+    limit: String(limit),
+  })
+  const res = await apiFetch(`${base()}/admin/model-status/titles?${params.toString()}`, {
+    headers: { ...authHeaders() },
+  })
+  return res.json()
+}
+
+/** @deprecated Prefer fetchAdminModelStatusSummary. */
+export async function fetchAdminModelStatus(): Promise<AdminModelStatusResponse> {
+  return fetchAdminModelStatusSummary() as Promise<AdminModelStatusResponse>
+}
+
+export interface AdminPipelineRun {
+  id: string
+  status: 'running' | 'completed' | 'failed' | 'aborted'
+  triggeredBy: string
+  command: string
+  startedAt: string
+  finishedAt: string | null
+  exitCode: number | null
+  logTail: string
+  abortedBy?: string | null
+}
+
+export interface AdminPipelineStatusResponse {
+  enabled: boolean
+  manualCommand: string
+  activeRun: AdminPipelineRun | null
+  lastRun: AdminPipelineRun | null
+}
+
+export async function fetchAdminPipelineStatus(): Promise<AdminPipelineStatusResponse> {
+  const res = await apiFetch(`${base()}/admin/pipeline/status`, {
+    headers: { ...authHeaders() },
+  })
+  return res.json()
+}
+
+export async function triggerAdminPipeline(): Promise<AdminPipelineRun> {
+  const res = await apiFetch(`${base()}/admin/pipeline/trigger`, {
+    method: 'POST',
+    headers: { ...authHeaders() },
+  })
+  if (res.status === 202) {
+    return res.json()
+  }
+  const err = await res.json().catch(() => ({}))
+  throw new Error((err as { error?: string }).error || `Pipeline trigger failed (${res.status})`)
+}
+
+export async function abortAdminPipeline(): Promise<{ id: string; status: 'aborted'; abortedBy: string }> {
+  const res = await apiFetch(`${base()}/admin/pipeline/abort`, {
+    method: 'POST',
+    headers: { ...authHeaders() },
+  })
+  if (res.ok) {
+    return res.json()
+  }
+  const err = await res.json().catch(() => ({}))
+  throw new Error((err as { error?: string }).error || `Pipeline abort failed (${res.status})`)
 }

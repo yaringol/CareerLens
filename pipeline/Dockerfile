@@ -13,13 +13,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get purge -y curl && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
 
+# Daily batch: scrape -> extract (SkillNer) -> train -> restart DS.
 COPY pipeline/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Reuse the exact scraper + trainer sources (single source of truth).
-COPY scraping/external/linkedin.py /app/linkedin.py
-COPY ds/model/train.py            /app/train.py
-COPY pipeline/run_daily.sh        /app/run_daily.sh
+COPY scraping/external/linkedin.py  /app/linkedin.py
+COPY ds/model/extract_skills.py     /app/extract_skills.py
+COPY ds/model/skill_schema.py      /app/skill_schema.py
+COPY ds/model/promotion_gate.py   /app/promotion_gate.py
+COPY ds/model/migrate_unified_skill_observations.py /app/migrate_unified_skill_observations.py
+COPY ds/model/migrate_skill_records.py /app/migrate_skill_records.py
+COPY ds/model/train.py              /app/train.py
+COPY pipeline/run_daily.sh          /app/run_daily.sh
 RUN chmod +x /app/run_daily.sh
 
 CMD ["/app/run_daily.sh"]

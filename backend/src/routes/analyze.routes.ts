@@ -337,6 +337,7 @@ router.post('/skillner', async (req: Request, res: Response, next: NextFunction)
     const allSkills = mergeTenSkills(job.title, coreSkills, dynamicSkills);
 
     const analysis = await scoreAndPersist({
+      userId: req.user!.id,
       jobId: id,
       jobTitle: job.title,
       cvText: cvText!.trim(),
@@ -375,14 +376,16 @@ type PersonalizationMode = (typeof PERSONALIZATION_MODES)[number];
  */
 router.post('/personalized', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { canonicalTitle, cvText, jobDescription, personalization } = req.body as {
+    const { canonicalTitle, cvText, jobDescription, personalization, excludeCvId } = req.body as {
       canonicalTitle?: unknown;
       cvText?: unknown;
       jobDescription?: unknown;
+      excludeCvId?: unknown;
       personalization?: {
         mode?: unknown;
         weights?: { stable?: unknown; trending?: unknown; personalMatch?: unknown };
         selectedSkillIds?: unknown;
+        selectedSkillNames?: unknown;
       };
     };
 
@@ -470,6 +473,7 @@ router.post('/personalized', async (req: Request, res: Response, next: NextFunct
       skills: allSkills,
       cvOnlyMode,
       expectedSkillCount,
+      excludeCvId: typeof excludeCvId === 'string' ? excludeCvId : undefined,
       cvFileName: id,
       keywordOnly: cvOnlyMode,
     });

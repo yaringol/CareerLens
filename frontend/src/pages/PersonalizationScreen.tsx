@@ -122,6 +122,7 @@ export default function PersonalizationScreen() {
       canonicalTitle: input.canonicalTitle,
       cvText: input.cvText,
       jobDescription: input.jobDescription || undefined,
+      isPostingMode: input.isPostingMode,
     })
       .then((data) => {
         if (cancelled) return
@@ -172,6 +173,7 @@ export default function PersonalizationScreen() {
         canonicalTitle: input.canonicalTitle,
         cvText: input.cvText,
         jobDescription: input.jobDescription || undefined,
+        excludeCvId: input.excludeCvId || undefined,
         personalization: { mode, weights, selectedSkillIds: selectedIds },
       })
       sessionStorage.setItem(
@@ -226,35 +228,18 @@ export default function PersonalizationScreen() {
 
   const detectedTitle = options?.detectedTitle ?? input.detectedTitle ?? input.canonicalTitle
   const selectedCount = selectedIds.length
+  const showFocusSkills = input.isPostingMode
 
   return (
-    <section className="upload-section upload-section--visible personalize-flow">
+    <section className="upload-section upload-section--visible">
       <div className="upload-wrapper">
-        <div className="upload-app-header">
+        <div className="upload-app-header upload-app-header--standalone">
           <div className="upload-app-nav">
+            <Link to="/upload" className="btn-nav-pill btn-nav-pill--back">
+              ← Back to upload
+            </Link>
             <Link to="/" className="btn-nav-pill">Home</Link>
             <Link to="/account" className="btn-nav-pill">Account</Link>
-          </div>
-          <div className="step-indicator">
-            <div className="step step--done">
-              <div className="step-dot">✓</div>
-              <span className="step-label">Upload</span>
-            </div>
-            <div className="step-line" />
-            <div className="step step--active">
-              <div className="step-dot">2</div>
-              <span className="step-label">Personalize</span>
-            </div>
-            <div className="step-line" />
-            <div className="step">
-              <div className="step-dot">3</div>
-              <span className="step-label">Results</span>
-            </div>
-            <div className="step-line" />
-            <div className="step">
-              <div className="step-dot">4</div>
-              <span className="step-label">Improve</span>
-            </div>
           </div>
           <AppLogo size="sm" />
         </div>
@@ -264,7 +249,7 @@ export default function PersonalizationScreen() {
             <h1 className="personalize-title">Tailor your recommendations</h1>
             <p className="personalize-detected">
               Detected role: <strong>{detectedTitle}</strong>
-              <span className="personalize-detected-note"> · detected from your CV in the previous step</span>
+              <span className="personalize-detected-note"> · optional step — skip anytime with standard results</span>
             </p>
           </div>
 
@@ -318,44 +303,43 @@ export default function PersonalizationScreen() {
           )}
         </section>
 
-        {/* ── Area 2: Focus Skills ─────────────────────────────────── */}
-        <section className="personalize-section">
-          <h2 className="personalize-section-title">Focus Skills</h2>
-          <p className="personalize-section-sub">
-            Skills derived from <strong>this specific role</strong> ({detectedTitle}). Pick up to{' '}
-            {MAX_FOCUS_SKILLS} to focus on — only the selected ones move to your results.{' '}
-            <span className="focus-count">({selectedCount}/{MAX_FOCUS_SKILLS} selected)</span>
-          </p>
+        {showFocusSkills && (
+          <section className="personalize-section">
+            <h2 className="personalize-section-title">Focus Skills</h2>
+            <p className="personalize-section-sub">
+              Top dynamic skills extracted from this job posting. Pick up to{' '}
+              {MAX_FOCUS_SKILLS} to focus on — only the selected ones move to your results.{' '}
+              <span className="focus-count">({selectedCount}/{MAX_FOCUS_SKILLS} selected)</span>
+            </p>
 
-          {loadingOptions ? (
-            <p className="personalize-loading">Loading skills…</p>
-          ) : options && options.roleDerivedSkills.length > 0 ? (
-            <div className="focus-skill-grid">
-              {options.roleDerivedSkills.map((skill) => {
-                const checked = selectedIds.includes(skill.id)
-                const atLimit = !checked && selectedCount >= MAX_FOCUS_SKILLS
-                return (
-                  <button
-                    key={skill.id}
-                    type="button"
-                    className={`focus-skill-chip${checked ? ' focus-skill-chip--selected' : ''}${atLimit ? ' focus-skill-chip--disabled' : ''}`}
-                    onClick={() => toggleSkill(skill)}
-                    aria-pressed={checked}
-                  >
-                    <span className="focus-skill-name">{skill.name}</span>
-                    {skill.source !== 'role' && (
+            {loadingOptions ? (
+              <p className="personalize-loading">Loading skills…</p>
+            ) : options && options.roleDerivedSkills.length > 0 ? (
+              <div className="focus-skill-grid">
+                {options.roleDerivedSkills.map((skill) => {
+                  const checked = selectedIds.includes(skill.id)
+                  const atLimit = !checked && selectedCount >= MAX_FOCUS_SKILLS
+                  return (
+                    <button
+                      key={skill.id}
+                      type="button"
+                      className={`focus-skill-chip${checked ? ' focus-skill-chip--selected' : ''}${atLimit ? ' focus-skill-chip--disabled' : ''}`}
+                      onClick={() => toggleSkill(skill)}
+                      aria-pressed={checked}
+                    >
+                      <span className="focus-skill-name">{skill.name}</span>
                       <span className={`focus-skill-source focus-skill-source--${skill.source}`}>
                         {skill.source === 'cv' ? 'from CV' : 'from posting'}
                       </span>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-          ) : (
-            <p className="personalize-loading">No skills available for this role.</p>
-          )}
-        </section>
+                    </button>
+                  )
+                })}
+              </div>
+            ) : (
+              <p className="personalize-loading">No dynamic skills available for this posting.</p>
+            )}
+          </section>
+        )}
 
         {/* ── Footer / actions ─────────────────────────────────────── */}
         {notImplemented ? (
@@ -364,6 +348,14 @@ export default function PersonalizationScreen() {
               Personalized recommendations are coming soon. You can continue with standard results for now.
             </p>
             <div className="personalize-actions">
+              <button
+                type="button"
+                className="btn-back"
+                onClick={() => navigate('/upload')}
+                disabled={submitting}
+              >
+                Back to upload
+              </button>
               <button
                 type="button"
                 className="btn-primary"
@@ -382,7 +374,7 @@ export default function PersonalizationScreen() {
               onClick={() => navigate('/upload')}
               disabled={submitting}
             >
-              Back
+              Back to upload
             </button>
             <button
               type="button"
@@ -390,7 +382,15 @@ export default function PersonalizationScreen() {
               onClick={handleContinue}
               disabled={submitting || loadingOptions}
             >
-              {submitting ? 'Submitting…' : 'Analyse Match'}
+              {submitting ? 'Submitting…' : 'Analyse with preferences'}
+            </button>
+            <button
+              type="button"
+              className="btn-ghost personalize-skip"
+              onClick={continueWithStandard}
+              disabled={submitting}
+            >
+              {submitting ? 'Analyzing…' : 'Skip — use standard results'}
             </button>
           </div>
         )}

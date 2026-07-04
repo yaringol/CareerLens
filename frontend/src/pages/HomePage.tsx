@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import ShaderBackground from '../components/ui/ShaderBackground'
 import CvUploadSection from '../components/upload/CvUploadSection'
+import AdminNavLink from '../components/admin/AdminNavLink'
 import './HomePage.css'
 
 const HomePage = () => {
@@ -65,6 +66,7 @@ const HomePage = () => {
               </svg>
             </button>
             <Link to="/account" className="btn-hero-logout">My Account</Link>
+            <AdminNavLink className="btn-hero-logout btn-hero-admin" />
             <button className="btn-hero-logout" onClick={() => { logout(); navigate('/login') }} title="Sign out">Sign out</button>
           </div>
 

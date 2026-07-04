@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import HalfCircleGauge, { getStrength } from '../components/ui/HalfCircleGauge'
 import AppLogo from '../components/ui/AppLogo'
+import AdminNavLink from '../components/admin/AdminNavLink'
 import { useError } from '../context/ErrorContext'
 import type { AnalyzeResponse, CompareSavedResponse } from '../services/api'
 import { getCvText } from '../services/api'
@@ -10,6 +11,7 @@ import './SkillsMatchDashboard.css'
 
 const RESULT_KEY = 'analysisResult'
 const CV_FILENAME_KEY = 'cvFileName'
+const PERSONALIZATION_INPUT_KEY = 'personalizationInput'
 
 type StoredAnalysisResult = AnalyzeResponse & {
   cvText?: string
@@ -386,12 +388,10 @@ const SkillsMatchDashboard = () => {
     navigate('/upload')
   }
 
-  // New flow (Upload → Personalize → Results → Improve): going back from Results
-  // returns to Personalization. Keep personalizationInput so it re-renders.
-  const handleBackToPersonalize = () => {
+  const handleBackToUpload = () => {
     leavingRef.current = true
     sessionStorage.removeItem(RESULT_KEY)
-    navigate('/personalize')
+    navigate('/upload')
   }
 
   async function handleViewBetterCv() {
@@ -451,10 +451,10 @@ const SkillsMatchDashboard = () => {
   const dynamicSkills = result.skills.slice(5, 10)
   const matchPercent  = Math.round((result.matchScore / 10) * 100)
   const analyzedSkillCount = result.cvOnlyMode ? 5 : 10
+  const canCustomize = !result.cvOnlyMode && Boolean(sessionStorage.getItem(PERSONALIZATION_INPUT_KEY))
 
   return (
     <div className="dashboard-screen">
-      {/* App header — logo right, nav left */}
       <div className="dashboard-nav">
         <div className="dashboard-nav-left">
           <button className="btn-nav-pill" onClick={handleGoHome}>
@@ -465,6 +465,7 @@ const SkillsMatchDashboard = () => {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             Account
           </button>
+          <AdminNavLink className="btn-nav-pill btn-nav-pill--admin" />
         </div>
         <div className="step-indicator">
           <div className="step step--done">
@@ -472,25 +473,19 @@ const SkillsMatchDashboard = () => {
             <span className="step-label">Upload</span>
           </div>
           <div className="step-line" />
-          <div className="step step--done">
-            <div className="step-dot">✓</div>
-            <span className="step-label">Personalize</span>
-          </div>
-          <div className="step-line" />
           <div className="step step--active">
-            <div className="step-dot">3</div>
+            <div className="step-dot">2</div>
             <span className="step-label">Results</span>
           </div>
           <div className="step-line" />
           <div className="step">
-            <div className="step-dot">4</div>
+            <div className="step-dot">3</div>
             <span className="step-label">Improve</span>
           </div>
         </div>
         <AppLogo size="sm" />
       </div>
 
-      {/* Job title */}
       <h1 className="dashboard-title">{result.jobTitle}</h1>
 
       {/* Cards */}
@@ -576,10 +571,21 @@ const SkillsMatchDashboard = () => {
           {/* ── Dynamic skills card ── */}
           {!result.cvOnlyMode && (
             <ScoreCard>
-              <p className="card-eyebrow">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                Dynamic Skills
-              </p>
+              <div className="card-eyebrow-row card-eyebrow-row--spaced">
+                <p className="card-eyebrow">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                  Dynamic Skills
+                </p>
+                {canCustomize && (
+                  <button
+                    type="button"
+                    className="btn-card-mini"
+                    onClick={() => navigate('/personalize')}
+                  >
+                    Customize
+                  </button>
+                )}
+              </div>
               <div className="skills-list">
                 {dynamicSkills.map((s, i) => (
                   <SkillRow key={s.name} name={s.name} score={s.score} max={10} delay={500 + i * 80} />
@@ -592,8 +598,8 @@ const SkillsMatchDashboard = () => {
         </div>
 
         <div className="dashboard-bottom-actions">
-          <button className="btn-card-action btn-back-standalone" onClick={handleBackToPersonalize}>
-            ← Back to personalize
+          <button className="btn-card-action btn-back-standalone" onClick={handleBackToUpload}>
+            ← Back to upload
           </button>
           <button
             className="btn-improve"

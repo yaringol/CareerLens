@@ -7,3 +7,20 @@
   width: 100%;
   min-height: 100vh;
 }
+
+/* Admin nav — visible only when user.role === admin (see AdminNavLink) */
+a.btn-nav-pill--admin,
+.btn-nav-pill--admin {
+  border-color: rgba(124, 58, 237, 0.4) !important;
+  color: #6d28d9 !important;
+  background: rgba(124, 58, 237, 0.1) !important;
+  font-weight: 600 !important;
+  text-decoration: none !important;
+}
+
+a.btn-nav-pill--admin:hover,
+.btn-nav-pill--admin:hover {
+  color: #5b21b6 !important;
+  background: rgba(124, 58, 237, 0.16) !important;
+  border-color: rgba(124, 58, 237, 0.55) !important;
+}
