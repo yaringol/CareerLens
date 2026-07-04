@@ -5,7 +5,35 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-MONGO_URI="${MONGO_URI:-mongodb://localhost:27017/jobs}"
+load_env_file() {
+  local file="$1"
+  if [[ ! -f "$file" ]]; then
+    return 1
+  fi
+  set -a
+  # shellcheck disable=SC1090
+  source "$file"
+  set +a
+  return 0
+}
+
+if [[ -z "${MONGO_URI:-}" ]]; then
+  load_env_file "$SCRIPT_DIR/.env" \
+    || load_env_file "$SCRIPT_DIR/../../.env" \
+    || load_env_file "$SCRIPT_DIR/../../backend/.env" \
+    || true
+fi
+
+if [[ -z "${MONGO_URI:-}" && -n "${JOBS_MONGO_URI:-}" ]]; then
+  MONGO_URI="$JOBS_MONGO_URI"
+fi
+
+if [[ -z "${MONGO_URI:-}" ]]; then
+  echo "MONGO_URI is required. Copy ds/model/.env.example to ds/model/.env and set your connection string." >&2
+  exit 1
+fi
+
+export MONGO_URI
 PYTHON="${PYTHON:-$SCRIPT_DIR/.venv/bin/python}"
 POLL_SECONDS="${POLL_SECONDS:-300}"
 SOURCE_COLLECTION="${SOURCE_COLLECTION:-lang-uk-job}"

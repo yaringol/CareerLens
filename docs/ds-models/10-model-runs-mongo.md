@@ -112,8 +112,9 @@ Baseline נלקח מה-run האחרון עם `promoted: true` ב-`model_runs`.
 ## איך לשאול את Mongo
 
 ```bash
+# Set MONGO_URI in ds/model/.env or export it, then:
 # כל הריצות, מהישנה לחדשה
-mongosh mongodb://localhost:27017/jobs --eval '
+mongosh "$MONGO_URI" --eval '
   db.model_runs.find().sort({trained_at: 1}).forEach(r => {
     const total = Object.values(r.record_counts).reduce((a,b)=>a+b, 0);
     print(r._id, "| promoted:", r.promoted, "| total:", total,
@@ -122,7 +123,7 @@ mongosh mongodb://localhost:27017/jobs --eval '
 '
 
 # הריצה האחרונה שעברה promote
-mongosh mongodb://localhost:27017/jobs --eval '
+mongosh "$MONGO_URI" --eval '
   db.model_runs.findOne({promoted: true}, {sort: {trained_at: -1}})
 '
 ```
@@ -134,7 +135,8 @@ mongosh mongodb://localhost:27017/jobs --eval '
 לכל run_id יש שורות עם: `title`, `skill`, `prevalence`, `recent_prevalence`, `trend`, `frequency`, `title_specificity`.
 
 ```bash
-mongosh mongodb://localhost:27017/jobs --eval '
+# Set MONGO_URI in ds/model/.env or export it, then:
+mongosh "$MONGO_URI" --eval '
   db.role_skill_features.countDocuments({
     run_id: "jobs:1.0+lang-uk-job-skills:0.3@20260703_172348"
   })

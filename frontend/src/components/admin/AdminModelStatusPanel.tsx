@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useState } from 'react'
-import { fetchAdminModelStatus, type AdminModelStatusResponse } from '../../services/api'
+import {
+  fetchAdminModelStatusCollectionStats,
+  fetchAdminModelStatusSummary,
+  fetchAdminModelStatusTitles,
+  type AdminLangUkExtractProgress,
+  type AdminModelStatusSummaryResponse,
+  type AdminModelTitleRow,
+} from '../../services/api'
 import AdminPipelinePanel from './AdminPipelinePanel'
+
+const TITLES_PAGE_SIZE = 25
 
 function formatDateTime(iso: string | null): string {
   if (!iso) return '-'
@@ -33,6 +42,20 @@ function formatWeights(weights: Record<string, number>): string {
   return entries.map(([k, v]) => `${k}:${v}`).join(' + ')
 }
 
+function formatCount(value: number | null, approximate = false): string {
+  if (value === null) return '…'
+  const formatted = value.toLocaleString()
+  return approximate ? `~${formatted}` : formatted
+}
+
+function formatLangUkProgress(uk: AdminLangUkExtractProgress): string {
+  if (uk.extracted === null) {
+    return `${formatCount(uk.total, true)} total`
+  }
+  const pct = uk.total > 0 ? Math.round((uk.extracted / uk.total) * 100) : 0
+  return `${uk.extracted.toLocaleString()} / ${uk.total.toLocaleString()} (${pct}%)`
+}
+
 interface AdminModelStatusPanelProps {
   onError: (message: string) => void
   onPipelineError: (message: string) => void
@@ -44,25 +67,87 @@ export default function AdminModelStatusPanel({
   onPipelineError,
   onPipelineSuccess,
 }: AdminModelStatusPanelProps) {
-  const [status, setStatus] = useState<AdminModelStatusResponse | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [status, setStatus] = useState<AdminModelStatusSummaryResponse | null>(null)
+  const [pendingCount, setPendingCount] = useState<number | null>(null)
+  const [langUkProgress, setLangUkProgress] = useState<AdminLangUkExtractProgress | null>(null)
+  const [titles, setTitles] = useState<AdminModelTitleRow[]>([])
+  const [titlesTotal, setTitlesTotal] = useState(0)
+  const [titlesHasMore, setTitlesHasMore] = useState(false)
+  const [isSummaryLoading, setIsSummaryLoading] = useState(true)
+  const [isStatsLoading, setIsStatsLoading] = useState(false)
+  const [isTitlesLoading, setIsTitlesLoading] = useState(false)
+  const [isLoadingMoreTitles, setIsLoadingMoreTitles] = useState(false)
 
-  const load = useCallback(async () => {
-    setIsLoading(true)
+  const loadTitlesChunk = useCallback(async (runId: string, offset: number, append: boolean) => {
+    if (append) {
+      setIsLoadingMoreTitles(true)
+    } else {
+      setIsTitlesLoading(true)
+    }
+
     try {
-      setStatus(await fetchAdminModelStatus())
+      const chunk = await fetchAdminModelStatusTitles(runId, offset, TITLES_PAGE_SIZE)
+      setTitlesTotal(chunk.total)
+      setTitlesHasMore(chunk.hasMore)
+      setTitles((prev) => (append ? [...prev, ...chunk.titles] : chunk.titles))
     } catch (err) {
-      onError(err instanceof Error ? err.message : 'Failed to load model status')
+      onError(err instanceof Error ? err.message : 'Failed to load title features')
     } finally {
-      setIsLoading(false)
+      setIsTitlesLoading(false)
+      setIsLoadingMoreTitles(false)
     }
   }, [onError])
 
+  const load = useCallback(async () => {
+    setIsSummaryLoading(true)
+    setIsStatsLoading(true)
+    setTitles([])
+    setTitlesTotal(0)
+    setTitlesHasMore(false)
+    setPendingCount(null)
+    setLangUkProgress(null)
+
+    try {
+      const summary = await fetchAdminModelStatusSummary()
+      setStatus(summary)
+      setPendingCount(summary.model1.pendingExtractionCount)
+      setLangUkProgress(summary.model1.langUkExtractProgress)
+
+      const runId = summary.model1.titlesRunId
+      if (runId) {
+        void loadTitlesChunk(runId, 0, false)
+      }
+
+      void fetchAdminModelStatusCollectionStats()
+        .then((stats) => {
+          setPendingCount(stats.pendingExtractionCount)
+          setLangUkProgress(stats.langUkExtractProgress)
+        })
+        .catch((err) => {
+          onError(err instanceof Error ? err.message : 'Failed to load collection stats')
+        })
+        .finally(() => {
+          setIsStatsLoading(false)
+        })
+    } catch (err) {
+      onError(err instanceof Error ? err.message : 'Failed to load model status')
+      setIsStatsLoading(false)
+    } finally {
+      setIsSummaryLoading(false)
+    }
+  }, [loadTitlesChunk, onError])
+
   useEffect(() => {
-    load()
+    void load()
   }, [load])
 
-  if (isLoading) {
+  const handleLoadMoreTitles = () => {
+    const runId = status?.model1.titlesRunId
+    if (!runId || isLoadingMoreTitles || !titlesHasMore) return
+    void loadTitlesChunk(runId, titles.length, true)
+  }
+
+  if (isSummaryLoading) {
     return <div className="admin-loading">Loading model status...</div>
   }
 
@@ -73,14 +158,14 @@ export default function AdminModelStatusPanel({
   const { model1 } = status
   const live = model1.liveRun
   const last = model1.lastRun
-  const uk = model1.langUkExtractProgress
-  const ukPct = uk.total > 0 ? Math.round((uk.extracted / uk.total) * 100) : 0
+  const uk = langUkProgress ?? model1.langUkExtractProgress
+  const countsApproximate = model1.countsAreEstimated ?? false
 
   return (
     <div className="model-status-panel">
       <div className="model-status-header">
         <h2 className="model-status-title">Model 1 - Title to Skills</h2>
-        <button type="button" className="btn-filter-reset" onClick={load}>Refresh</button>
+        <button type="button" className="btn-filter-reset" onClick={() => { void load() }}>Refresh</button>
       </div>
 
       <div className="model-status-cards">
@@ -110,27 +195,27 @@ export default function AdminModelStatusPanel({
 
       <div className="model-status-cards model-status-cards-sm">
         <div className="model-stat">
-          <span className="model-stat-num">{model1.jobsCount.toLocaleString()}</span>
+          <span className="model-stat-num">{formatCount(model1.jobsCount, countsApproximate)}</span>
           <span className="model-stat-label">LinkedIn jobs</span>
         </div>
         <div className="model-stat">
-          <span className="model-stat-num">{model1.rawPostingsCount.toLocaleString()}</span>
+          <span className="model-stat-num">{formatCount(model1.rawPostingsCount, countsApproximate)}</span>
           <span className="model-stat-label">Raw postings</span>
         </div>
         <div className="model-stat">
-          <span className="model-stat-num">{model1.pendingExtractionCount.toLocaleString()}</span>
-          <span className="model-stat-label">Pending extract</span>
+          <span className="model-stat-num">{formatCount(pendingCount, false)}</span>
+          <span className="model-stat-label">Pending extract{isStatsLoading ? ' (loading)' : ''}</span>
         </div>
         <div className="model-stat">
-          <span className="model-stat-num">{model1.langUkSkillsCount.toLocaleString()}</span>
+          <span className="model-stat-num">{formatCount(model1.langUkSkillsCount, countsApproximate)}</span>
           <span className="model-stat-label">lang-uk skills</span>
         </div>
         <div className="model-stat">
-          <span className="model-stat-num">{uk.extracted.toLocaleString()} / {uk.total.toLocaleString()}</span>
-          <span className="model-stat-label">lang-uk extract ({ukPct}%)</span>
+          <span className="model-stat-num">{formatLangUkProgress(uk)}</span>
+          <span className="model-stat-label">lang-uk extract{isStatsLoading && uk.extracted === null ? ' (loading)' : ''}</span>
         </div>
         <div className="model-stat">
-          <span className="model-stat-num">{model1.unifiedObservations.total.toLocaleString()}</span>
+          <span className="model-stat-num">{formatCount(model1.unifiedObservations.total, false)}</span>
           <span className="model-stat-label">Unified obs</span>
         </div>
       </div>
@@ -171,7 +256,14 @@ export default function AdminModelStatusPanel({
         </table>
       </div>
 
-      <h3 className="model-section-title">Titles (latest run features)</h3>
+      <div className="model-status-header">
+        <h3 className="model-section-title">Titles (latest run features)</h3>
+        {titlesTotal > 0 && (
+          <span className="model-section-meta">
+            Showing {titles.length.toLocaleString()} of {titlesTotal.toLocaleString()}
+          </span>
+        )}
+      </div>
       <div className="admin-table-wrap">
         <table className="admin-table">
           <thead>
@@ -184,10 +276,12 @@ export default function AdminModelStatusPanel({
             </tr>
           </thead>
           <tbody>
-            {model1.titles.length === 0 ? (
+            {isTitlesLoading ? (
+              <tr><td colSpan={5} className="admin-empty">Loading titles...</td></tr>
+            ) : titles.length === 0 ? (
               <tr><td colSpan={5} className="admin-empty">No title features</td></tr>
             ) : (
-              model1.titles.map((row) => (
+              titles.map((row) => (
                 <tr key={row.title}>
                   <td>{row.title}</td>
                   <td>{row.skillCount}</td>
@@ -205,6 +299,18 @@ export default function AdminModelStatusPanel({
             )}
           </tbody>
         </table>
+        {titlesHasMore && (
+          <div className="model-chunk-actions">
+            <button
+              type="button"
+              className="btn-filter"
+              disabled={isLoadingMoreTitles}
+              onClick={handleLoadMoreTitles}
+            >
+              {isLoadingMoreTitles ? 'Loading…' : `Load ${TITLES_PAGE_SIZE} more`}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -4,7 +4,7 @@ Backfill skill_records on existing normalized collections (jobs, lang-uk-job-ski
 Does NOT re-run SkillNer - builds skill_records from legacy skills + observed_at.
 
 Usage:
-  MONGO_URI=mongodb://localhost:27017/jobs \\
+  # Set MONGO_URI in ds/model/.env (see .env.example), then:
   COLLECTIONS=jobs,lang-uk-job-skills \\
   python migrate_skill_records.py
 """
@@ -15,6 +15,7 @@ from typing import Any
 
 from pymongo import MongoClient, UpdateOne
 from skill_schema import build_skill_records
+from mongo_env import get_mongo_uri
 
 
 def mongo_safe(value: Any) -> Any:
@@ -31,7 +32,7 @@ def mongo_safe(value: Any) -> Any:
         return [mongo_safe(v) for v in value]
     return value
 
-MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017/jobs')
+MONGO_URI = get_mongo_uri()
 COLLECTIONS = [c.strip() for c in os.getenv('COLLECTIONS', 'jobs,lang-uk-job-skills').split(',') if c.strip()]
 BATCH_SIZE = int(os.getenv('BATCH_SIZE', '500'))
 FORCE_REBUILD = os.getenv('FORCE_REBUILD', '0').lower() in ('1', 'true', 'yes')

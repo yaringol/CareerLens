@@ -569,7 +569,22 @@ export async function fetchAdminAnalyses(filters?: {
   return res.json()
 }
 
-export interface AdminModelStatusResponse {
+export interface AdminModelTitleRow {
+  title: string
+  skillCount: number
+  recordsCount: number
+  dataConfidence: 'high' | 'medium' | 'low'
+  timeFeaturesReliable: boolean
+  trends: { rising: number; stable: number; falling: number }
+}
+
+export interface AdminLangUkExtractProgress {
+  extracted: number | null
+  total: number
+  pending: number | null
+}
+
+export interface AdminModelStatusSummaryResponse {
   model1: {
     lastRun: {
       runId: string
@@ -592,28 +607,78 @@ export interface AdminModelStatusResponse {
       promoteReason: string | null
       titlesWithData: number
     }>
-    titles: Array<{
-      title: string
-      skillCount: number
-      recordsCount: number
-      dataConfidence: 'high' | 'medium' | 'low'
-      timeFeaturesReliable: boolean
-      trends: { rising: number; stable: number; falling: number }
-    }>
+    titlesRunId: string | null
+    titlesTotal: number
     rawPostingsCount: number
-    pendingExtractionCount: number
+    pendingExtractionCount: number | null
     jobsCount: number
     langUkSkillsCount: number
-    langUkExtractProgress: { extracted: number; total: number; pending: number }
+    langUkExtractProgress: AdminLangUkExtractProgress
     unifiedObservations: { total: number; linkedin: number; langUk: number }
+    countsAreEstimated?: boolean
   }
 }
 
-export async function fetchAdminModelStatus(): Promise<AdminModelStatusResponse> {
+export interface AdminModelStatusCollectionStatsResponse {
+  pendingExtractionCount: number
+  langUkExtractProgress: {
+    extracted: number
+    total: number
+    pending: number
+  }
+}
+
+export interface AdminModelStatusTitlesResponse {
+  runId: string
+  titles: AdminModelTitleRow[]
+  total: number
+  offset: number
+  limit: number
+  hasMore: boolean
+}
+
+/** @deprecated Prefer fetchAdminModelStatusSummary + chunked loaders. */
+export type AdminModelStatusResponse = AdminModelStatusSummaryResponse & {
+  model1: AdminModelStatusSummaryResponse['model1'] & {
+    titles: AdminModelTitleRow[]
+    pendingExtractionCount: number
+    langUkExtractProgress: { extracted: number; total: number; pending: number }
+  }
+}
+
+export async function fetchAdminModelStatusSummary(): Promise<AdminModelStatusSummaryResponse> {
   const res = await apiFetch(`${base()}/admin/model-status`, {
     headers: { ...authHeaders() },
   })
   return res.json()
+}
+
+export async function fetchAdminModelStatusCollectionStats(): Promise<AdminModelStatusCollectionStatsResponse> {
+  const res = await apiFetch(`${base()}/admin/model-status/collection-stats`, {
+    headers: { ...authHeaders() },
+  })
+  return res.json()
+}
+
+export async function fetchAdminModelStatusTitles(
+  runId: string,
+  offset = 0,
+  limit = 25,
+): Promise<AdminModelStatusTitlesResponse> {
+  const params = new URLSearchParams({
+    runId,
+    offset: String(offset),
+    limit: String(limit),
+  })
+  const res = await apiFetch(`${base()}/admin/model-status/titles?${params.toString()}`, {
+    headers: { ...authHeaders() },
+  })
+  return res.json()
+}
+
+/** @deprecated Prefer fetchAdminModelStatusSummary. */
+export async function fetchAdminModelStatus(): Promise<AdminModelStatusResponse> {
+  return fetchAdminModelStatusSummary() as Promise<AdminModelStatusResponse>
 }
 
 export interface AdminPipelineRun {

@@ -421,6 +421,17 @@
   color: rgba(255, 255, 255, 0.75);
 }
 
+.model-section-meta {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.model-chunk-actions {
+  display: flex;
+  justify-content: center;
+  padding: 0.75rem 0 0.25rem;
+}
+
 .admin-empty-block {
   text-align: center;
   color: rgba(255, 255, 255, 0.35);

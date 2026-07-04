@@ -5,7 +5,7 @@ Writes append-only job postings to MongoDB (`raw_postings` by default) via upser
 stable `_id` from `generate_job_id`. Does NOT run SkillNer or write extracted skills.
 
 Env:
-  MONGO_URI=mongodb://localhost:27017/jobs
+  MONGO_URI   — set in scraping/.env or ds/model/.env (see .env.example)
   RAW_COLLECTION=raw_postings
   JSONL_BACKUP=path/to/backup.jsonl   # optional append-only backup (not source of truth)
 """
@@ -17,8 +17,10 @@ import json
 import os
 import random
 import re
+import sys
 import time
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Iterator, Optional
 from urllib.parse import quote_plus
 
@@ -26,6 +28,11 @@ import requests
 from bs4 import BeautifulSoup
 from pymongo import MongoClient
 from pymongo.collection import Collection
+
+_MODEL_DIR = Path(__file__).resolve().parents[2] / "ds" / "model"
+if str(_MODEL_DIR) not in sys.path:
+    sys.path.insert(0, str(_MODEL_DIR))
+from mongo_env import get_mongo_uri
 
 HEADERS = {
     "User-Agent": (
@@ -35,7 +42,7 @@ HEADERS = {
     "Accept-Language": "en-US,en;q=0.9,he;q=0.8",
 }
 
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/jobs")
+MONGO_URI = get_mongo_uri()
 RAW_COLLECTION = os.getenv("RAW_COLLECTION", "raw_postings")
 JSONL_BACKUP = os.getenv("JSONL_BACKUP", "").strip()
 

@@ -66,7 +66,7 @@ if __name__ == "__main__":
 נפרדת** לזרימה החיה הזו (זה פישוט לעומת התכנון המקורי כאן).
 - פעולה: להביא (`git show`/`cherry-pick`/copy ידני) את [scraping/external/linkedin.py](../../scraping/external/linkedin.py)
   מ-`origin/yarin/deploy` לתוך `model-improvment`, להתאים רק את `MONGO_URI` לברירת המחדל של branch זה
-  (`mongodb://localhost:27017/jobs`, כמו ב-[train.py:25-28](../../ds/model/train.py#L25-L28)) ולהחליף
+  (`$MONGO_URI` from `ds/model/.env`, כמו ב-[train.py](../../ds/model/train.py)) ולהחליף
   `f_TPR=r86400` (24h, כמו ב-`yarin/deploy`) מול `r7776000` (90 יום, כמו ב-`model-improvment` הנוכחי) —
   להחליט לפי כמה "טרי" רוצים שהסקרייפ היומי יהיה (ל-`growth_trend`/`stability_score` ב-A4 עדיף חלון קצר
   ועקבי, אז מומלץ 24h כמו ב-`yarin/deploy`).
