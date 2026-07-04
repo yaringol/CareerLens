@@ -9,3 +9,8 @@ skillNer==1.0.3
 ipython
 PyMuPDF
 en-core-web-lg @ https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.8.0/en_core_web_lg-3.8.0-py3-none-any.whl
+# title_normalizer.joblib (short title-phrase -> canonical title, /cv/title):
+# install with --extra-index-url https://download.pytorch.org/whl/cpu (see Dockerfile)
+# to get the CPU-only torch build instead of the multi-GB CUDA default.
+sentence-transformers
+torch

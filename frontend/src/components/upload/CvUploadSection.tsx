@@ -37,7 +37,13 @@ type UploadFieldErrors = {
 
 type RoleDetection =
   | { status: 'idle' | 'detecting' }
-  | { status: 'ready'; detectedTitle: string; canonicalTitle: string; confidence: number }
+  | {
+      status: 'ready'
+      detectedTitle: string
+      canonicalTitle: string
+      confidence: number
+      source?: 'title_extraction' | 'classifier' | 'llm_fallback'
+    }
   | { status: 'uncertain'; detectedTitle: string; suggestions: TitleMatchSuggestion[] }
   | { status: 'not-found' | 'error' }
 
@@ -161,10 +167,10 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
     setRoleDetection({ status: 'idle' })
   }
 
-  async function detectRole(cvText: string) {
+  async function detectRole(cvText: string, headerText?: string) {
     setRoleDetection({ status: 'detecting' })
     try {
-      const detected = await detectCvTitle(cvText)
+      const detected = await detectCvTitle(cvText, headerText)
       const suggestions = detected.suggestions ?? []
       const bestMatch = suggestions[0]
       if (!detected.detectedTitle || !bestMatch) {
@@ -186,6 +192,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
         detectedTitle: detected.detectedTitle,
         canonicalTitle: bestMatch.canonicalTitle,
         confidence: bestMatch.confidence,
+        source: bestMatch.source ?? (detected.source === 'none' ? undefined : detected.source),
       })
     } catch (err) {
       setRoleDetection({ status: 'error' })
@@ -193,6 +200,21 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
     }
   }
 
+  // An LLM-fallback pick is a single constrained answer, not a similarity
+  // score — showing "70% match" would misread as a real confidence number.
+  function matchLabel(suggestion: TitleMatchSuggestion) {
+    return suggestion.source === 'llm_fallback' ? (
+      <span className="badge-ai" title="AI matched this from your CV — no similarity score to show">
+        AI matched
+      </span>
+    ) : (
+      `${suggestion.confidence}% match`
+    )
+  }
+
+  // suggestion always comes from the closed 59-title list (auto-detection
+  // suggestions or /title/normalize search results) — never free text, so the
+  // resulting canonicalTitle is always one the rest of the app can act on.
   function selectSuggestedRole(suggestion: TitleMatchSuggestion) {
     const detectedTitle =
       roleDetection.status === 'uncertain' || roleDetection.status === 'ready'
@@ -203,20 +225,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
       detectedTitle,
       canonicalTitle: suggestion.canonicalTitle,
       confidence: suggestion.confidence,
-    })
-    setShowManualOverride(false)
-    setManualTitleQuery('')
-    setManualTitleSuggestions([])
-  }
-
-  function applyManualRole(title: string) {
-    const trimmed = title.trim()
-    if (!trimmed) return
-    setRoleDetection({
-      status: 'ready',
-      detectedTitle: trimmed,
-      canonicalTitle: trimmed,
-      confidence: 100,
+      source: suggestion.source,
     })
     setShowManualOverride(false)
     setManualTitleQuery('')
@@ -225,8 +234,8 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
 
   async function detectRoleFromFile(file: File) {
     try {
-      const { cvText } = await uploadPdf(file, false)
-      await detectRole(cvText)
+      const { cvText, headerText } = await uploadPdf(file, false)
+      await detectRole(cvText, headerText)
     } catch (err) {
       setRoleDetection({ status: 'error' })
       if (isCvExtractFailure(err)) {
@@ -274,14 +283,14 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
 
   async function handleSelectSavedCv(cv: SavedCv) {
     try {
-      const { cvText } = await getCvText(cv.cvId)
+      const { cvText, headerText } = await getCvText(cv.cvId)
       setSelectedCvId(cv.cvId)
       setSelectedCvText(cvText)
       setSelectedCvName(cv.fileName)
       setCvFile(null)
       resetRoleDetection()
       clearCvFieldError()
-      await detectRole(cvText)
+      await detectRole(cvText, headerText)
     } catch (err) {
       reportError(err)
     }
@@ -593,8 +602,15 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                     <span>
                       {roleDetection.detectedTitle &&
                       roleDetection.detectedTitle !== roleDetection.canonicalTitle
-                        ? `Detected as ${roleDetection.detectedTitle} · ${roleDetection.confidence}% match`
-                        : `${roleDetection.confidence}% match`}
+                        ? `Detected as ${roleDetection.detectedTitle} · `
+                        : ''}
+                      {roleDetection.source === 'llm_fallback' ? (
+                        <span className="badge-ai" title="AI matched this from your CV — no similarity score to show">
+                          AI matched
+                        </span>
+                      ) : (
+                        `${roleDetection.confidence}% match`
+                      )}
                     </span>
                   </div>
                 )}
@@ -613,7 +629,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                           disabled={isLoading}
                         >
                           <span>{suggestion.canonicalTitle}</span>
-                          <span>{suggestion.confidence}% match</span>
+                          <span>{matchLabel(suggestion)}</span>
                         </button>
                       ))}
                     </div>
@@ -642,7 +658,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                             disabled={isLoading}
                           >
                             <span>{suggestion.canonicalTitle}</span>
-                            <span>{suggestion.confidence}% match</span>
+                            <span>{matchLabel(suggestion)}</span>
                           </button>
                         ))}
                       </div>
@@ -668,7 +684,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                       </button>
                     ) : (
                       <div className="role-search">
-                        <p className="role-search__hint">Type your role and pick a match, or use exactly what you typed.</p>
+                        <p className="role-search__hint">Type your role and pick the closest supported match.</p>
                         <input
                           className="role-search__input"
                           type="search"
@@ -690,20 +706,10 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                                 disabled={isLoading}
                               >
                                 <span>{suggestion.canonicalTitle}</span>
-                                <span>{suggestion.confidence}% match</span>
+                                <span>{matchLabel(suggestion)}</span>
                               </button>
                             ))}
                           </div>
-                        )}
-                        {manualTitleQuery.trim().length >= 2 && (
-                          <button
-                            type="button"
-                            className="role-override__use"
-                            onClick={() => applyManualRole(manualTitleQuery)}
-                            disabled={isLoading}
-                          >
-                            Use "{manualTitleQuery.trim()}"
-                          </button>
                         )}
                         <button
                           type="button"

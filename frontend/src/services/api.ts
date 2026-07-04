@@ -98,13 +98,14 @@ export interface RoleOption {
 export interface UploadPdfResponse {
   cvId: string
   cvText: string
+  headerText?: string
   fileName: string
 }
 
 export interface DetectedCvTitle {
   detectedTitle: string | null
   confidence: number
-  source: 'headline' | 'experience' | 'none'
+  source: 'classifier' | 'llm_fallback' | 'none'
   suggestions: TitleMatchSuggestion[]
 }
 
@@ -112,6 +113,7 @@ export interface TitleMatchSuggestion {
   canonicalTitle: string
   matchedVariant: string
   confidence: number
+  source?: 'title_extraction' | 'classifier' | 'llm_fallback'
 }
 
 export interface AnalyzeResponse {
@@ -204,11 +206,11 @@ export async function uploadPdf(file: File, saveToLibrary = true): Promise<Uploa
   return res.json() as Promise<UploadPdfResponse>
 }
 
-export async function detectCvTitle(cvText: string): Promise<DetectedCvTitle> {
+export async function detectCvTitle(cvText: string, headerText?: string): Promise<DetectedCvTitle> {
   const res = await apiFetch(`${base()}/cv/title`, {
     method: 'POST',
     headers: { ...jsonHeaders, ...authHeaders() },
-    body: JSON.stringify({ cvText }),
+    body: JSON.stringify({ cvText, headerText }),
   })
   return res.json()
 }
@@ -270,7 +272,7 @@ export async function getMyCVs(): Promise<SavedCv[]> {
   return rows.map((row) => ({ ...row, isFavorite: row.isFavorite ?? false }))
 }
 
-export async function getCvText(cvId: string): Promise<{ cvId: string; cvText: string; fileName: string }> {
+export async function getCvText(cvId: string): Promise<{ cvId: string; cvText: string; headerText?: string; fileName: string }> {
   const res = await apiFetch(`${base()}/cv/${cvId}`, {
     headers: { ...authHeaders() },
   })
