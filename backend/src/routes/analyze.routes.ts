@@ -7,7 +7,8 @@ import {
 } from '../services/job.service';
 import { getSkillsFromText, getTrendingSkills } from '../services/dsModel';
 import { scoreAndPersist } from '../services/scoring.service';
-import { ValidationError } from '../errors';
+import { ValidationError, DsModelError } from '../errors';
+import { computeStabilityPreference } from '../services/personalization.service';
 import type { IJob } from '../models/job.model';
 import { logAnalyzeOk } from '../utils/logger';
 import { isGibberish } from '../utils/gibberishDetector';
@@ -239,7 +240,10 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     let trending: { skill: string; trend: string }[] = [];
     if (!skipGibberish) {
       try {
-        trending = await getTrendingSkills(job.title);
+        // Pinned to 5 explicitly: getTrendingSkills' own default is also 5 today, but
+        // the personalized route below asks for 10 — pin here so a future default
+        // change there can't silently change this route's behavior too.
+        trending = await getTrendingSkills(job.title, 5);
       } catch {
         trending = [];
       }
@@ -362,16 +366,18 @@ type PersonalizationMode = (typeof PERSONALIZATION_MODES)[number];
 /**
  * POST /api/analyze/personalized
  *
- * Personalized recommendation flow. In posting mode the selected focus skills become
- * the five dynamic skill slots; in CV-only mode only core skills are scored (5 total).
+ * Personalized recommendation flow. Weights are validated for the UI contract and
+ * collapsed to stabilityPreference for the response. In posting mode the user's
+ * selected focus skills (from the agent pool) become the five dynamic slots; in
+ * CV-only mode only core skills are scored (5 total).
  */
 router.post('/personalized', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { canonicalTitle, cvText, personalization, excludeCvId, jobDescription, isPostingMode } = req.body as {
       canonicalTitle?: unknown;
       cvText?: unknown;
-      excludeCvId?: unknown;
       jobDescription?: unknown;
+      excludeCvId?: unknown;
       isPostingMode?: unknown;
       personalization?: {
         mode?: unknown;
@@ -416,10 +422,11 @@ router.post('/personalized', async (req: Request, res: Response, next: NextFunct
     if (selectedSkillIds.length > 5) {
       throw new ValidationError('You can select up to 5 skills only');
     }
-
     if (!Array.isArray(selectedSkillNames)) {
       throw new ValidationError('personalization.selectedSkillNames must be an array');
     }
+
+    const stabilityPreference = computeStabilityPreference(stable, trending);
 
     const postingMode = isPostingMode === true || (
       isPostingMode !== false &&
@@ -439,11 +446,28 @@ router.post('/personalized', async (req: Request, res: Response, next: NextFunct
       if (focusSkills.length > 5) {
         throw new ValidationError('You can select up to 5 focus skills only');
       }
+      const jd = typeof jobDescription === 'string' ? jobDescription.trim() : '';
+      if (jd && isGibberish(jd)) {
+        res.status(400).json({
+          code: 'GIBBERISH_DETECTED',
+          error: 'The job description does not look like readable English.',
+        });
+        return;
+      }
     }
 
     const job = await validateJobTitle(canonicalTitle.trim());
     const id = job._id.toString();
     const { coreSkills } = await getCoreSkillsById(id);
+
+    let trendBySkill = new Map<string, string>();
+    try {
+      const candidates = await getTrendingSkills(job.title, 10);
+      trendBySkill = new Map(candidates.map((c) => [c.skill.toLowerCase(), c.trend]));
+    } catch {
+      trendBySkill = new Map();
+    }
+
     const cvOnlyMode = !postingMode;
     const allSkills = cvOnlyMode
       ? coreSkills.slice(0, 5)
@@ -470,13 +494,14 @@ router.post('/personalized', async (req: Request, res: Response, next: NextFunct
       skills: analysis.scores.map((s) => ({
         name: s.skill,
         score: s.score,
-        trend: 'stable',
+        trend: trendBySkill.get(s.skill.toLowerCase()) ?? 'stable',
       })),
       matchScore: analysis.matchScore,
       id: analysis._id.toString(),
       cvOnlyMode: analysis.cvOnlyMode ?? false,
       isEstimated: analysis.isEstimated ?? false,
       bestSavedCv,
+      personalization: { mode, stabilityPreference: Math.round(stabilityPreference * 100) / 100 },
     });
   } catch (err) {
     next(err);

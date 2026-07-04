@@ -253,27 +253,42 @@ export type SkillTrend = 'rising' | 'stable' | 'falling';
 export interface TrendingSkill {
   skill: string;
   trend: SkillTrend;
+  prevalence: number | null;
+  // 0..1: 0 = flat/stable over time, 1 = steep/trendy. Slope of monthly occurrence,
+  // fit at train time (see ds/model/train.py's compute_stability_features). Defaults
+  // to a neutral 0.5 (with timeFeaturesReliable=false) when there isn't enough dated
+  // history yet — never a crash/error.
+  stabilityScore: number;
+  timeFeaturesReliable: boolean;
 }
 
 /**
  * Calls /title/trending-skills — recency-weighted skills for a role, each tagged with a
- * rising/stable/falling trend. Intended to run before analyze so the dynamic skill slots
- * favour what is currently in demand.
+ * rising/stable/falling trend plus a stability score. Intended to run before analyze so
+ * the dynamic skill slots favour what is currently in demand.
  */
 export async function getTrendingSkills(title: string, n = 5): Promise<TrendingSkill[]> {
   try {
-    const response = await axios.get<{ skills?: Array<{ skill?: unknown; trend?: unknown }> }>(
-      `${DS_MODEL_URL}/title/trending-skills`,
-      {
-        params: { title, n },
-        timeout: DS_MODEL_TIMEOUT_MS,
-      }
-    );
+    const response = await axios.get<{
+      skills?: Array<{
+        skill?: unknown;
+        trend?: unknown;
+        prevalence?: unknown;
+        stability_score?: unknown;
+        time_features_reliable?: unknown;
+      }>;
+    }>(`${DS_MODEL_URL}/title/trending-skills`, {
+      params: { title, n },
+      timeout: DS_MODEL_TIMEOUT_MS,
+    });
 
     return (response.data?.skills ?? [])
       .map((s) => ({
         skill: typeof s.skill === 'string' ? s.skill.trim() : '',
         trend: (s.trend === 'rising' || s.trend === 'falling' ? s.trend : 'stable') as SkillTrend,
+        prevalence: typeof s.prevalence === 'number' ? s.prevalence : null,
+        stabilityScore: typeof s.stability_score === 'number' ? s.stability_score : 0.5,
+        timeFeaturesReliable: s.time_features_reliable === true,
       }))
       .filter((s) => s.skill);
   } catch (err) {

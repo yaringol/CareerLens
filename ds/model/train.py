@@ -28,7 +28,11 @@ from mongo_env import get_mongo_uri
 
 MONGO_URI = get_mongo_uri()
 # Collection to train from — set MONGO_COLLECTION=JOBS_EXAMPLE to train on the
-# synthetic trend dataset instead of the live scraped `jobs`.
+# synthetic trend dataset instead of the live scraped `jobs`. When
+# TRAIN_USE_UNIFIED=1, training instead reads from UNIFIED_SKILLS_COLLECTION
+# (role_skill_observations — one row per (job posting, skill) observation,
+# already carrying canonical_title/skill resolved by the ingestion pipeline,
+# schema_version 2 — see accumulate_from_unified below).
 MONGO_COLLECTION = os.getenv('MONGO_COLLECTION', 'jobs')
 
 # ── Recency / time-feature tuning ──────────────────────────────────────────────
@@ -40,6 +44,19 @@ TREND_WINDOW_DAYS = float(os.getenv('TREND_WINDOW_DAYS', '7'))
 TREND_RISING      = 1.25
 TREND_FALLING     = 0.80
 NOW               = datetime.now(timezone.utc)
+
+# ── Stability score (slope of monthly occurrence over time) ───────────────────
+# Unlike the single-ratio TREND_WINDOW_DAYS 'trend' label above, this fits a real
+# regression over each posting's own datePosted spread within THIS training run —
+# no dependency on multiple calendar-spaced training runs or a scraper cron. Moved
+# to stability.py (a pure function, no Mongo/side effects at import time) so it can
+# be unit-tested directly — see ds/model/test_stability.py.
+from stability import (  # noqa: F401  (re-exported for backwards compatibility)
+    compute_stability_features,
+    MIN_RELIABLE_MONTHS,
+    NEUTRAL_STABILITY_SCORE,
+    NEUTRAL_GROWTH_TREND,
+)
 
 
 def _parse_dt(raw):
@@ -190,7 +207,34 @@ def _empty_accumulators():
         'skill_observation_dates': {
             t: defaultdict(list) for t in CANONICAL_TITLES
         },
+        # Monthly buckets for the stability slope (stability.py's
+        # compute_stability_features): role_skill_month_counts[title][skill][month] =
+        # count, role_month_totals[title][month] = postings-with-a-known-date count
+        # that month. Independent bookkeeping from the recency/trend accumulators
+        # above — anchored to the posting's own observed date, not scrape recency.
+        'role_skill_month_counts': {
+            t: defaultdict(lambda: defaultdict(int)) for t in CANONICAL_TITLES
+        },
+        'role_month_totals': {t: defaultdict(int) for t in CANONICAL_TITLES},
+        # Tracks which (title, job_id) already contributed to role_month_totals,
+        # so a job's multiple skill rows (unified source) don't double-count it.
+        '_month_job_seen': set(),
     }
+
+
+def _bucket_month(acc, canonical, job_key, posted_dt, skills):
+    """Record one posting's month bucket for the stability slope, once per job."""
+    if posted_dt is None:
+        return
+    month_key = f"{posted_dt.year:04d}-{posted_dt.month:02d}"
+    seen_key = (canonical, job_key, month_key)
+    if job_key is not None:
+        if seen_key in acc['_month_job_seen']:
+            return
+        acc['_month_job_seen'].add(seen_key)
+    acc['role_month_totals'][canonical][month_key] += 1
+    for skill in skills:
+        acc['role_skill_month_counts'][canonical][skill][month_key] += 1
 
 
 def accumulate_from_collection(collection, source_weight, acc):
@@ -241,6 +285,12 @@ def accumulate_from_collection(collection, source_weight, acc):
             if is_recent:
                 acc['recent_record_count'][canonical] += 1
             loaded += 1
+
+            # Stability slope bucketing — anchored to when the job was POSTED
+            # (falls back to scraped/extracted_at via _parse_dt's callers above).
+            posted_dt = _parse_dt(item.get('datePosted')) or _parse_dt(item.get('scraped_at'))
+            job_id = item.get('_id') or item.get('job_id')
+            _bucket_month(acc, canonical, str(job_id) if job_id else None, posted_dt, weighted)
         except (KeyError, TypeError):
             skipped += 1
             continue
@@ -285,6 +335,12 @@ def accumulate_from_unified(collection, source_label, source_weight, acc):
                 acc['recent_skill_scores'][canonical][skill] += score
             if observed_at is not None:
                 acc['skill_observation_dates'][canonical][skill].append(observed_at)
+
+            # Stability slope bucketing — anchored to the observation's own
+            # posted/observed date, once per (title, job_id, month).
+            posted_dt = _parse_dt(observed_at)
+            job_id = obs.get('job_id')
+            _bucket_month(acc, canonical, str(job_id) if job_id else None, posted_dt, [skill])
         except (KeyError, TypeError, ValueError):
             skipped += 1
             continue
@@ -325,6 +381,8 @@ record_counts = acc['record_counts']
 recent_skill_scores = acc['recent_skill_scores']
 recent_record_count = acc['recent_record_count']
 skill_observation_dates = acc['skill_observation_dates']
+role_skill_month_counts = acc['role_skill_month_counts']
+role_month_totals = acc['role_month_totals']
 
 print("Records loaded per role (raw count | weighted):")
 for title in CANONICAL_TITLES:
@@ -403,6 +461,25 @@ feature_matrix = compute_feature_matrix(
     role_skill_scores, role_skill_counts, role_record_weight,
     recent_skill_scores, recent_record_count, skill_observation_dates,
 )
+
+stability_features = compute_stability_features(
+    CANONICAL_TITLES, role_skill_month_counts, role_month_totals
+)
+
+# Merge stability fields into the existing feature_matrix — a strict superset,
+# no existing consumer of feature_matrix's shape breaks.
+for title, skills in feature_matrix.items():
+    for skill, feats in skills.items():
+        sf = stability_features.get(title, {}).get(skill, {
+            'growth_trend': NEUTRAL_GROWTH_TREND,
+            'stability_score': NEUTRAL_STABILITY_SCORE,
+            'time_features_reliable': False,
+            'history_months': 0,
+        })
+        feats['growth_trend']           = sf['growth_trend']
+        feats['stability_score']        = sf['stability_score']
+        feats['time_features_reliable'] = sf['time_features_reliable']
+        feats['history_months']         = sf['history_months']
 
 # ── Build KNN ─────────────────────────────────────────────────────────────────
 
@@ -516,12 +593,15 @@ if os.getenv('PERSIST_FEATURES', '1').lower() not in ('0', 'false', 'no'):
             'prevalence':        round(float(f['prevalence']), 4),
             'recent_prevalence': round(float(f.get('recent_prevalence', 0.0)), 4),
             'trend':             f.get('trend', 'stable'),
-            'stability_score':   round(float(f.get('stability_score', 0.5)), 4),
             'observation_count': int(f.get('observation_count', 0)),
             'observation_weeks': int(f.get('observation_weeks', 0)),
             'time_coverage_reliable': bool(f.get('time_coverage_reliable', False)),
             'frequency':         int(f['frequency']),
             'title_specificity': round(float(f['title_specificity']), 4),
+            'growth_trend':           round(float(f.get('growth_trend', NEUTRAL_GROWTH_TREND)), 4),
+            'stability_score':        round(float(f.get('stability_score', NEUTRAL_STABILITY_SCORE)), 4),
+            'time_features_reliable': bool(f.get('time_features_reliable', False)),
+            'history_months':         int(f.get('history_months', 0)),
         }
         for title, skills in feature_matrix.items()
         for skill, f in skills.items()
@@ -533,11 +613,18 @@ if os.getenv('PERSIST_FEATURES', '1').lower() not in ('0', 'false', 'no'):
     print(f"Persisted {len(rows)} feature rows to '{feats_coll.name}' (run_id={run_id})")
 
 # ── Sanity check ──────────────────────────────────────────────────────────────
-print("\nTop 5 skills per sample title:")
+print("\nTop 5 skills per sample title (stability_score, reliable):")
 for title in ["Software Engineer", "Data Scientist", "Machine Learning Engineer",
               "DevOps Engineer", "Frontend Developer"]:
     if title in variant_labels:
         idx = variant_labels.index(title)
-        print(f"  {title}: {skills_data[idx][:5]}")
+        top5 = skills_data[idx][:5]
+        feats = feature_matrix.get(title, {})
+        detail = [
+            f"{s}(stab={feats.get(s, {}).get('stability_score', 'n/a')}, "
+            f"reliable={feats.get(s, {}).get('time_features_reliable', False)})"
+            for s in top5
+        ]
+        print(f"  {title}: {detail}")
 
 sys.exit(0 if promoted else 2)

@@ -342,7 +342,8 @@ export default function PersonalizationScreen() {
   }
 
   async function handleContinue() {
-    if (!input || submitting) return
+    if (!input || submitting || submittedRef.current) return
+    submittedRef.current = true
     setSubmitting(true)
     try {
       const pool = options?.roleDerivedSkills ?? []
@@ -370,6 +371,7 @@ export default function PersonalizationScreen() {
       sessionStorage.removeItem(PREVIOUS_RESULT_KEY)
       navigate('/dashboard', { replace: true })
     } catch (err) {
+      submittedRef.current = false
       if (err instanceof ApiError && err.code === 'PERSONALIZATION_NOT_IMPLEMENTED') {
         setNotImplemented(true)
         return
