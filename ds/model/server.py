@@ -534,6 +534,11 @@ def trending_skills(title: str, n: int = 5):
     """
     Time-aware skills for a role (call before analyze). `prevalence` is recency-weighted at
     train time so ranking by it surfaces current demand; `trend` flags rising/stable/falling.
+    `stability_score` (0..1, 0=flat/stable, 1=steep/trendy) and `growth_trend` (-1..1) are
+    fit from per-posting datePosted monthly buckets within the training run (see train.py's
+    compute_stability_features) — `time_features_reliable=False` when the title/skill has
+    fewer than MIN_RELIABLE_MONTHS distinct months of data, in which case both default to a
+    neutral midpoint rather than a misleading number.
     Falls back to the plain pre-sorted skill list when the model has no time fields yet.
     """
     vec = vectorizer.transform([title])
@@ -547,16 +552,22 @@ def trending_skills(title: str, n: int = 5):
         ranked = sorted(feats.items(), key=lambda kv: -kv[1].get('prevalence', 0.0))[:n]
         skills = [
             {
-                "skill":             s,
-                "prevalence":        round(float(f.get('prevalence', 0.0)), 4),
-                "recent_prevalence": round(float(f.get('recent_prevalence', 0.0)), 4),
-                "trend":             f.get('trend', 'stable'),
+                "skill":                   s,
+                "prevalence":              round(float(f.get('prevalence', 0.0)), 4),
+                "recent_prevalence":       round(float(f.get('recent_prevalence', 0.0)), 4),
+                "trend":                   f.get('trend', 'stable'),
+                "growth_trend":            round(float(f.get('growth_trend', 0.0)), 4),
+                "stability_score":         round(float(f.get('stability_score', 0.5)), 4),
+                "time_features_reliable":  bool(f.get('time_features_reliable', False)),
             }
             for s, f in ranked
         ]
     else:
         skills = [
-            {"skill": s, "prevalence": None, "recent_prevalence": None, "trend": "stable"}
+            {
+                "skill": s, "prevalence": None, "recent_prevalence": None, "trend": "stable",
+                "growth_trend": 0.0, "stability_score": 0.5, "time_features_reliable": False,
+            }
             for s in skills_data[idx][:n]
         ]
 

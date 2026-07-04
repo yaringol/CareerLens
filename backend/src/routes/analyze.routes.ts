@@ -7,7 +7,8 @@ import {
 } from '../services/job.service';
 import { getSkillsFromText, getTrendingSkills } from '../services/dsModel';
 import { scoreAndPersist } from '../services/scoring.service';
-import { ValidationError } from '../errors';
+import { ValidationError, DsModelError } from '../errors';
+import { computeStabilityPreference, selectPersonalizedSkills } from '../services/personalization.service';
 import type { IJob } from '../models/job.model';
 import { logAnalyzeOk } from '../utils/logger';
 import { isGibberish } from '../utils/gibberishDetector';
@@ -239,7 +240,10 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     let trending: { skill: string; trend: string }[] = [];
     if (!skipGibberish) {
       try {
-        trending = await getTrendingSkills(job.title);
+        // Pinned to 5 explicitly: getTrendingSkills' own default is also 5 today, but
+        // the personalized route below asks for 10 — pin here so a future default
+        // change there can't silently change this route's behavior too.
+        trending = await getTrendingSkills(job.title, 5);
       } catch {
         trending = [];
       }
@@ -361,19 +365,20 @@ type PersonalizationMode = (typeof PERSONALIZATION_MODES)[number];
 /**
  * POST /api/analyze/personalized
  *
- * Contract-only endpoint for the upcoming personalized recommendation flow
- * (Stable / Trending / Personal-Match weighting + focus-skill selection).
- *
- * The time-based / personalized model logic is NOT implemented yet, so a valid
- * request is acknowledged with 501 + PERSONALIZATION_NOT_IMPLEMENTED. The
- * frontend uses this code to offer an explicit fallback to POST /api/analyze.
- * Validation runs first so the request contract is exercised end-to-end today.
+ * Stable / Trending / Personal-Match weighting + focus-skill selection. The 3
+ * weights collapse to a single stabilityPreference (0=stable..1=trending, see
+ * computeStabilityPreference) which picks 5 of the 10 DS-returned skills whose
+ * own stabilityScore best fits that preference (selectPersonalizedSkills),
+ * unless the user already picked skills manually (selectedSkillIds). From
+ * there the pipeline mirrors POST /api/analyze (mergeTenSkills + the same
+ * scoring call) so the two routes stay behaviorally consistent.
  */
-router.post('/personalized', (req: Request, res: Response, next: NextFunction) => {
+router.post('/personalized', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { canonicalTitle, cvText, personalization } = req.body as {
+    const { canonicalTitle, cvText, jobDescription, personalization } = req.body as {
       canonicalTitle?: unknown;
       cvText?: unknown;
+      jobDescription?: unknown;
       personalization?: {
         mode?: unknown;
         weights?: { stable?: unknown; trending?: unknown; personalMatch?: unknown };
@@ -416,11 +421,74 @@ router.post('/personalized', (req: Request, res: Response, next: NextFunction) =
     if (selectedSkillIds.length > 5) {
       throw new ValidationError('You can select up to 5 skills only');
     }
+    const selectedSkillIdStrings = selectedSkillIds.filter(
+      (v): v is string => typeof v === 'string'
+    );
 
-    // Contract validated — personalized model path is not active yet.
-    res.status(501).json({
-      code: 'PERSONALIZATION_NOT_IMPLEMENTED',
-      error: 'Personalized recommendations are not available yet.',
+    const stabilityPreference = computeStabilityPreference(stable, trending);
+
+    const job = await validateJobTitle(canonicalTitle.trim());
+    const id = job._id.toString();
+
+    const jd = typeof jobDescription === 'string' ? jobDescription.trim() : '';
+    const skipGibberish = !jd;
+    if (!skipGibberish && isGibberish(jd)) {
+      res.status(400).json({
+        code: 'GIBBERISH_DETECTED',
+        error: 'The job description does not look like readable English.',
+      });
+      return;
+    }
+
+    const candidates = await getTrendingSkills(job.title, 10);
+    if (candidates.length === 0) {
+      throw new DsModelError(`No trending-skills data available for job title "${job.title}"`, 503);
+    }
+
+    const coreFive = selectPersonalizedSkills(candidates, stabilityPreference, selectedSkillIdStrings);
+    if (coreFive.length !== 5) {
+      throw new DsModelError('Failed to select 5 personalized core skills', 503);
+    }
+
+    const trendBySkill = new Map(candidates.map((c) => [c.skill.toLowerCase(), c.trend]));
+
+    const allSkills = skipGibberish
+      ? coreFive
+      : mergeTenSkills(job.title, coreFive, [
+          ...candidates.map((c) => c.skill),
+          ...(await extractDynamicSkills(job.title, jd)).extractedSkills,
+        ]);
+
+    const cvOnlyMode = skipGibberish;
+    const expectedSkillCount = cvOnlyMode ? 5 : 10;
+
+    const { analysis, bestSavedCv } = await analyzeWithParallelFavoriteCompare({
+      userId: req.user!.id,
+      jobId: id,
+      jobTitle: job.title,
+      cvText: cvText.trim(),
+      skills: allSkills,
+      cvOnlyMode,
+      expectedSkillCount,
+      cvFileName: id,
+      keywordOnly: cvOnlyMode,
+    });
+
+    logAnalyzeOk(job.title);
+
+    res.json({
+      jobTitle: analysis.jobTitle,
+      skills: analysis.scores.map((s) => ({
+        name: s.skill,
+        score: s.score,
+        trend: trendBySkill.get(s.skill.toLowerCase()) ?? 'stable',
+      })),
+      matchScore: analysis.matchScore,
+      id: analysis._id.toString(),
+      cvOnlyMode: analysis.cvOnlyMode ?? false,
+      isEstimated: analysis.isEstimated ?? false,
+      bestSavedCv,
+      personalization: { mode, stabilityPreference: Math.round(stabilityPreference * 100) / 100 },
     });
   } catch (err) {
     next(err);

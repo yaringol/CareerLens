@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate } from '../middleware/auth.middleware';
 import { ValidationError } from '../errors';
 import { extractTitleFromCv, getSkillsFromText, getCoreSkills } from '../services/dsModel';
+import { skillId } from '../services/personalization.service';
 
 const router = Router();
 router.use(authenticate);
@@ -18,10 +19,6 @@ export interface SkillOption {
 
 const ROLE_SKILL_POOL_SIZE = 10;
 const DEFAULT_SELECTED_COUNT = 5;
-
-function skillId(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-}
 
 /**
  * Build the focus-skill candidate pool for the Personalization screen.
