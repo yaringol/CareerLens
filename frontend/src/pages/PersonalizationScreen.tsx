@@ -7,12 +7,16 @@ import {
   ApiError,
   analyzeCv,
   analyzePersonalized,
+  clearSavedPersonalization,
   getPersonalizationOptions,
+  getSavedPersonalization,
+  savePersonalization,
 } from '../services/api'
 import type {
   PersonalizationOptions,
   PersonalizationWeights,
   RecommendationMode,
+  SavedPersonalization,
   SkillOption,
 } from '../services/api'
 import './PersonalizationScreen.css'
@@ -58,6 +62,7 @@ const WEIGHT_LABELS: Record<WeightKey, string> = {
   trending: 'Trending',
   personalMatch: 'Personal Match',
 }
+
 
 /** Move one weight to `value` and rebalance the other two so the sum stays 100. */
 function rebalanceWeights(
@@ -105,6 +110,8 @@ export default function PersonalizationScreen() {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [notImplemented, setNotImplemented] = useState(false)
+  const [savedPreference, setSavedPreference] = useState<SavedPersonalization | null>(null)
+  const [rememberPreference, setRememberPreference] = useState(false)
   const submittedRef = useRef(false)
 
   // No carried input (e.g. direct navigation / refresh) → send back to upload.
@@ -113,6 +120,22 @@ export default function PersonalizationScreen() {
       navigate('/upload', { replace: true })
     }
   }, [input, navigate])
+
+  useEffect(() => {
+    let cancelled = false
+    getSavedPersonalization()
+      .then((preference) => {
+        if (cancelled) return
+        setSavedPreference(preference)
+        setRememberPreference(preference !== null)
+      })
+      .catch(() => {
+        /* no saved preference to offer — not fatal */
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     if (!input) return
@@ -164,6 +187,26 @@ export default function PersonalizationScreen() {
     })
   }
 
+  function restoreSavedPreference() {
+    if (savedPreference === null) return
+    setMode(savedPreference.mode)
+    setWeights(savedPreference.weights)
+    showToast('Restored your saved recommendation balance', 'info')
+  }
+
+  /** Best-effort — never blocks navigation to the results screen on failure. */
+  async function syncSavedPreference() {
+    try {
+      if (rememberPreference) {
+        await savePersonalization({ mode, weights })
+      } else if (savedPreference !== null) {
+        await clearSavedPersonalization()
+      }
+    } catch {
+      /* saving the preference is a convenience, not required for analysis to proceed */
+    }
+  }
+
   async function handleContinue() {
     if (!input || submitting || submittedRef.current) return
     submittedRef.current = true
@@ -176,6 +219,7 @@ export default function PersonalizationScreen() {
         excludeCvId: input.excludeCvId || undefined,
         personalization: { mode, weights, selectedSkillIds: selectedIds },
       })
+      await syncSavedPreference()
       sessionStorage.setItem(
         RESULT_KEY,
         JSON.stringify({ ...result, cvText: input.cvText, cvFileName: input.cvFileName })
@@ -277,6 +321,23 @@ export default function PersonalizationScreen() {
             ))}
           </div>
           <p className="personalize-hint">{MODE_HINTS[mode]}</p>
+
+          <div className="personalize-preference-row">
+            <label className="save-toggle">
+              <input
+                type="checkbox"
+                checked={rememberPreference}
+                onChange={(e) => setRememberPreference(e.target.checked)}
+              />
+              <span className="save-toggle-track" />
+              <span className="save-toggle-label">Remember this balance for next time</span>
+            </label>
+            {savedPreference !== null && (
+              <button type="button" className="btn-ghost" onClick={restoreSavedPreference}>
+                Restore saved balance
+              </button>
+            )}
+          </div>
 
           {mode === 'custom' && (
             <div className="weights-body">

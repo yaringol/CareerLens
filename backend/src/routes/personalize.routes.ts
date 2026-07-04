@@ -7,6 +7,7 @@ import { isGibberish } from '../utils/gibberishDetector';
 import { looksLikeJobUrl } from '../utils/jobUrl';
 import { fetchJobPostingFromUrl } from '../services/jobPostingFetcher.service';
 import { skillId } from '../services/personalization.service';
+import { User } from '../models/user.model';
 
 const router = Router();
 router.use(authenticate);
@@ -169,6 +170,70 @@ router.post('/options', async (req: Request, res: Response, next: NextFunction):
     const roleDerivedSkills = buildSkillOptions(focusSkills ?? []);
 
     res.json({ detectedTitle, extractedCvSkills, roleDerivedSkills });
+  } catch (err) {
+    next(err);
+  }
+});
+
+const PREFERENCE_MODES = ['stable', 'balanced', 'trending', 'custom'] as const;
+
+/**
+ * GET /api/personalize/preference
+ *
+ * Returns the signed-in user's saved Recommendation Balance ({ mode, stable, trending,
+ * personalMatch }), or null if they've never saved one. The stable/trending scalar the
+ * model filters on is recomputed from these weights at analyze time, not stored here.
+ */
+router.get('/preference', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const user = await User.findById(req.user!.id).select('personalizationPreference').lean();
+    res.json({ preference: user?.personalizationPreference ?? null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * PUT /api/personalize/preference
+ *
+ * Persists the full Recommendation Balance (mode + the 3 weights) to the User collection
+ * so the Personalization screen can be restored exactly on future runs.
+ */
+router.put('/preference', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { mode, weights } = req.body as {
+      mode?: unknown;
+      weights?: { stable?: unknown; trending?: unknown; personalMatch?: unknown };
+    };
+    if (typeof mode !== 'string' || !PREFERENCE_MODES.includes(mode as (typeof PREFERENCE_MODES)[number])) {
+      throw new ValidationError(`mode must be one of: ${PREFERENCE_MODES.join(', ')}`);
+    }
+    const { stable, trending, personalMatch } = weights ?? {};
+    const inRange = (v: unknown): v is number =>
+      typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 100;
+    if (!inRange(stable) || !inRange(trending) || !inRange(personalMatch)) {
+      throw new ValidationError('weights.{stable,trending,personalMatch} must be numbers between 0 and 100');
+    }
+    if (Math.abs(stable + trending + personalMatch - 100) > 0.5) {
+      throw new ValidationError('weights must sum to 100');
+    }
+    const preference = { mode, stable, trending, personalMatch };
+    await User.findByIdAndUpdate(req.user!.id, { personalizationPreference: preference });
+    res.json({ preference });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * DELETE /api/personalize/preference
+ *
+ * Clears the saved Recommendation Balance (used when the user turns the save toggle off).
+ */
+router.delete('/preference', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    await User.findByIdAndUpdate(req.user!.id, { $unset: { personalizationPreference: '' } });
+    res.json({ preference: null });
   } catch (err) {
     next(err);
   }
