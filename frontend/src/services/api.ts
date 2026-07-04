@@ -364,6 +364,39 @@ export async function analyzePersonalized(contract: PersonalizationContract): Pr
   return res.json() as Promise<AnalyzeResponse>
 }
 
+/** Saved Recommendation Balance — full mode + weights, persisted on the user's account. */
+export interface SavedPersonalization {
+  mode: RecommendationMode
+  weights: PersonalizationWeights
+}
+
+export async function getSavedPersonalization(): Promise<SavedPersonalization | null> {
+  const res = await apiFetch(`${base()}/personalize/preference`, {
+    headers: { ...authHeaders() },
+  })
+  const data = (await res.json()) as {
+    preference: ({ mode: RecommendationMode } & PersonalizationWeights) | null
+  }
+  if (!data.preference) return null
+  const { mode, stable, trending, personalMatch } = data.preference
+  return { mode, weights: { stable, trending, personalMatch } }
+}
+
+export async function savePersonalization(pref: SavedPersonalization): Promise<void> {
+  await apiFetch(`${base()}/personalize/preference`, {
+    method: 'PUT',
+    headers: { ...jsonHeaders, ...authHeaders() },
+    body: JSON.stringify({ mode: pref.mode, weights: pref.weights }),
+  })
+}
+
+export async function clearSavedPersonalization(): Promise<void> {
+  await apiFetch(`${base()}/personalize/preference`, {
+    method: 'DELETE',
+    headers: { ...authHeaders() },
+  })
+}
+
 // ── CV Improve ────────────────────────────────────────────────────────
 
 export type Proficiency = 'no_knowledge' | 'beginner' | 'intermediate' | 'proficient' | 'expert'
