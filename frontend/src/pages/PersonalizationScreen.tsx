@@ -255,7 +255,6 @@ export default function PersonalizationScreen() {
   })
   const [returningToResults, setReturningToResults] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const [returningToResults, setReturningToResults] = useState(false)
   const [notImplemented, setNotImplemented] = useState(false)
   const [savedPreference, setSavedPreference] = useState<SavedPersonalization | null>(null)
   const [rememberPreference, setRememberPreference] = useState(false)
