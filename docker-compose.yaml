@@ -61,6 +61,18 @@ services:
     networks:
       - app-network
 
+  scraper:
+    container_name: scraper
+    restart: always
+    image: careerlens/scraper:main
+    environment:
+      - MONGO_URI=mongodb://root:${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD in .env}@mongodb:27017/jobs?authSource=admin
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - app-network
+
   frontend:
     container_name: frontend
     restart: always
