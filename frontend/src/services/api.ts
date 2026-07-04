@@ -1,6 +1,8 @@
 /**
  * API base: relative `/api` in dev (Vite proxies to backend) unless VITE_API_BASE_URL is set.
  */
+import { clearUserFlowSession } from '../utils/userFlowSession'
+
 function apiBase(): string {
   const raw = import.meta.env.VITE_API_BASE_URL?.trim()
   if (raw) return raw.replace(/\/$/, '')
@@ -74,6 +76,7 @@ function authHeaders(): Record<string, string> {
 
 async function handleUnauthorized(res: Response): Promise<void> {
   if (res.status === 401) {
+    clearUserFlowSession()
     localStorage.removeItem('auth_token')
     sessionStorage.setItem('auth_redirect', window.location.pathname + window.location.search)
     window.location.href = '/login'
@@ -364,7 +367,7 @@ export async function analyzePersonalized(contract: PersonalizationContract): Pr
   return res.json() as Promise<AnalyzeResponse>
 }
 
-/** Saved Recommendation Balance — full mode + weights, persisted on the user's account. */
+/** Saved Recommendation Balance - full mode + weights, persisted on the user's account. */
 export interface SavedPersonalization {
   mode: RecommendationMode
   weights: PersonalizationWeights
@@ -589,18 +592,38 @@ export async function fetchAdminAnalyses(filters?: {
   minScore?: number
   startDate?: string
   endDate?: string
-}): Promise<Array<{ id: string; jobTitle: string; matchScore: number; createdAt: string; userEmail: string | null }>> {
+  limit?: number
+  offset?: number
+}): Promise<{
+  items: Array<{ id: string; jobTitle: string; matchScore: number; createdAt: string; userEmail: string | null }>
+  total: number
+  limit: number
+  offset: number
+  hasMore: boolean
+}> {
   const params = new URLSearchParams()
   if (filters?.jobTitle) params.set('jobTitle', filters.jobTitle)
   if (filters?.minScore !== undefined) params.set('minScore', String(filters.minScore))
   if (filters?.startDate) params.set('startDate', filters.startDate)
   if (filters?.endDate) params.set('endDate', filters.endDate)
+  if (filters?.limit !== undefined) params.set('limit', String(filters.limit))
+  if (filters?.offset !== undefined) params.set('offset', String(filters.offset))
 
   const query = params.toString() ? `?${params.toString()}` : ''
   const res = await apiFetch(`${base()}/admin/analyses${query}`, {
     headers: { ...authHeaders() },
   })
-  return res.json()
+  const body = await res.json()
+  if (Array.isArray(body)) {
+    return {
+      items: body,
+      total: body.length,
+      limit: body.length,
+      offset: 0,
+      hasMore: false,
+    }
+  }
+  return body
 }
 
 export interface AdminModelTitleRow {

@@ -1,11 +1,11 @@
 """
 Per-skill stability score: the slope of a skill's monthly occurrence over time,
-fit from each job posting's own datePosted spread within a single training run —
+fit from each job posting's own datePosted spread within a single training run -
 no dependency on multiple calendar-spaced training runs or a scraper cron.
 
 Factored out of train.py (which executes a live pipeline at import time, including
 a MongoDB connection) so this pure function can be unit-tested directly against a
-hand-built fixture — see test_stability.py.
+hand-built fixture - see test_stability.py.
 """
 import numpy as np
 

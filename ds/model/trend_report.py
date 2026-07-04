@@ -3,7 +3,7 @@ Trend report over a jobs collection (default: JOBS_EXAMPLE).
 
 For a set of tracked skills, computes their monthly prevalence (fraction of postings in
 that month whose skills contain the term) bucketed by `datePosted`, writes a tidy CSV,
-and — if matplotlib is available — a PNG line chart. This is the "trendiness graph":
+and - if matplotlib is available - a PNG line chart. This is the "trendiness graph":
 stable skills (C#, Java) stay flat; trending skills (ML/AI) ramp up toward the end.
 
 Usage:
@@ -95,14 +95,14 @@ def main():
             plt.plot(months, ys, style, label=f"{term} ({kind})")
         plt.xticks(rotation=45, ha="right")
         plt.ylabel("prevalence (fraction of monthly postings)")
-        plt.title(f"Skill trendiness over time — {COLLECTION}")
+        plt.title(f"Skill trendiness over time - {COLLECTION}")
         plt.legend(loc="upper left", fontsize=8, ncol=2)
         plt.tight_layout()
         png_path = os.path.join(OUT_DIR, "trend_report.png")
         plt.savefig(png_path, dpi=120)
         print(f"Wrote {png_path}")
     except ImportError:
-        print("(matplotlib not installed — CSV only; `pip install matplotlib` for the chart)")
+        print("(matplotlib not installed - CSV only; `pip install matplotlib` for the chart)")
 
 
 if __name__ == "__main__":

@@ -97,7 +97,7 @@ const MERGE_PADDING_BY_TITLE: Record<string, string[]> = {
 };
 
 /**
- * Positions 1–5: canonical core skills. Positions 6–10: dynamics (LLM or fallback), minus near-duplicates of core, then role-specific padding.
+ * Positions 1-5: canonical core skills. Positions 6-10: dynamics (LLM or fallback), minus near-duplicates of core, then role-specific padding.
  */
 export function mergeTenSkills(jobTitle: string, core: string[], dynamic: string[]): string[] {
   const coreFive = core.slice(0, 5);
@@ -172,7 +172,7 @@ async function resolveJobDescriptionInput(raw: string): Promise<string> {
 /**
  * POST /api/analyze
  *
- * Current: { canonicalTitle, cvText, jobDescription } — a detected or user-confirmed canonical title
+ * Current: { canonicalTitle, cvText, jobDescription } - a detected or user-confirmed canonical title
  *          selects the role. The stored Job.description is not used for dynamic skill extraction.
  * Also supported: { jobId, cvText, jobDescription } and legacy { jobTitle, jobDescription, cvText }.
  */
@@ -202,13 +202,13 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
           typeof jobDescription === 'string' ? jobDescription.trim() : '';
         if (!jd) {
           throw new ValidationError(
-            'jobDescription is required — paste the job posting text or a link'
+            'jobDescription is required - paste the job posting text or a link'
           );
         }
         descriptionForDynamic = await resolveJobDescriptionInput(jd);
         if (descriptionForDynamic.length < MIN_JOB_DESCRIPTION_CHARS) {
           throw new ValidationError(
-            `jobDescription is required (at least ${MIN_JOB_DESCRIPTION_CHARS} characters) — paste the job posting for skill extraction`
+            `jobDescription is required (at least ${MIN_JOB_DESCRIPTION_CHARS} characters) - paste the job posting for skill extraction`
           );
         }
       }
@@ -235,13 +235,13 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 
     // Time-aware skills (recency-weighted) fetched before scoring. Best-effort: a DS
     // hiccup must never fail analyze. Trending skills are prepended to the dynamic list
-    // so positions 6–10 favour what's currently in demand; each skill's trend is also
+    // so positions 6-10 favour what's currently in demand; each skill's trend is also
     // threaded to the response for display.
     let trending: { skill: string; trend: string }[] = [];
     if (!skipGibberish) {
       try {
         // Pinned to 5 explicitly: getTrendingSkills' own default is also 5 today, but
-        // the personalized route below asks for 10 — pin here so a future default
+        // the personalized route below asks for 10 - pin here so a future default
         // change there can't silently change this route's behavior too.
         trending = await getTrendingSkills(job.title, 5);
       } catch {

@@ -1,6 +1,6 @@
-# CareerLens — Local development
+# CareerLens - Local development
 
-Run **three processes** (DS model + backend + frontend). MongoDB connection strings live in `.env` files — see setup below.
+Run **three processes** (DS model + backend + frontend). MongoDB connection strings live in `.env` files - see setup below.
 
 ## Quick start (after one-time setup)
 
@@ -62,7 +62,7 @@ JWT_SECRET=your-local-dev-secret
 JWT_EXPIRY=7d
 BCRYPT_ROUNDS=10
 DS_MODEL_URL=http://localhost:8000
-OPENAI_API_KEY=sk-...          # optional — real AI scoring; omit for keyword fallback
+OPENAI_API_KEY=sk-...          # optional - real AI scoring; omit for keyword fallback
 ```
 
 Seed the 5 POC jobs:
@@ -102,7 +102,7 @@ npm install
 | Frontend (Vite) | **8080** | Proxies `/api` → backend |
 | Backend (Express) | **3000** | Set `PORT=3000` in `.env` |
 | DS model (FastAPI) | **8000** | SkillNer + title/KNN endpoints |
-| MongoDB | **27017** (or your team server) | Databases `careerlens` + `jobs` — set URIs in `.env` |
+| MongoDB | **27017** (or your team server) | Databases `careerlens` + `jobs` - set URIs in `.env` |
 
 The backend code defaults to port `8000`, which **conflicts** with the DS model. Always use `PORT=3000` in `backend/.env`.
 
@@ -114,7 +114,7 @@ The backend code defaults to port `8000`, which **conflicts** with the DS model.
 # DS model
 curl "http://localhost:8000/text/skills?text=python"
 
-# Backend (401 without login token is OK — server is up)
+# Backend (401 without login token is OK - server is up)
 curl http://localhost:3000/api/jobs
 
 # Frontend
@@ -150,7 +150,7 @@ curl -X POST http://localhost:3000/api/auth/register \
 
 | Problem | Fix |
 |---------|-----|
-| `address already in use` on 8000 | DS model already running — OK. Or kill: `lsof -ti:8000 \| xargs kill` |
+| `address already in use` on 8000 | DS model already running - OK. Or kill: `lsof -ti:8000 \| xargs kill` |
 | `address already in use` on 3000 | `lsof -ti:3000 \| xargs kill` then restart backend |
 | `address already in use` on 8080 | `lsof -ti:8080 \| xargs kill` then restart frontend |
 | Jobs dropdown empty | Run `cd backend && npm run seed` |

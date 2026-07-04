@@ -72,7 +72,7 @@ export default function MockHub() {
           <span className="mock-badge">QA · Mock hub</span>
           <h1 className="mock-title">Flow mock pages</h1>
           <p className="mock-sub">
-            Jump to any step of the flow with seeded data — no real CV upload needed. Each opens the
+            Jump to any step of the flow with seeded data. No real CV upload needed. Each opens the
             real screen so you can see how it looks as part of the full flow.
           </p>
         </header>

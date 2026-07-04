@@ -4,6 +4,7 @@ import { Job, IJob } from '../models/job.model';
 import { getCoreSkills } from './dsModel';
 import { extractSkillPool, SKILL_POOL_SIZE, TOP_SKILL_COUNT } from '../agents/skillExtraction.agent';
 import { ValidationError, NotFoundError, DsModelError } from '../errors';
+import { dedupeSkills } from '../utils/skillDedup';
 import {
   logFallbackDynamicSkills,
   logJobDescriptionForExtraction,
@@ -45,7 +46,7 @@ export async function getCoreSkillsById(jobId: string, titleMatch = 0.0): Promis
   return { jobId: String(job._id), jobTitle: job.title, coreSkills };
 }
 
-/** Per-job static fallback when LLM skill extraction fails — avoids identical dynamics for every role. */
+/** Per-job static fallback when LLM skill extraction fails - avoids identical dynamics for every role. */
 const FALLBACK_DYNAMIC_BY_TITLE: Record<string, string[]> = {
   'Software Engineer': [
     'REST and API design',
@@ -96,17 +97,7 @@ const FALLBACK_DYNAMIC_GENERIC = [
 export { SKILL_POOL_SIZE, TOP_SKILL_COUNT } from '../agents/skillExtraction.agent';
 
 function padFallbackPool(primary: string[], secondary: string[]): string[] {
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const raw of [...primary, ...secondary]) {
-    const name = raw.trim();
-    const key = name.toLowerCase();
-    if (!name || seen.has(key)) continue;
-    seen.add(key);
-    out.push(name);
-    if (out.length >= SKILL_POOL_SIZE) break;
-  }
-  return out;
+  return dedupeSkills([...primary, ...secondary], SKILL_POOL_SIZE);
 }
 
 export type DynamicSkillsSource = 'llm_job_description' | 'static_fallback_per_job' | 'static_fallback_generic';

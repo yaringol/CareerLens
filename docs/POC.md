@@ -6,11 +6,11 @@ Short overview: the POC is a **single linear path** in the React app. The user u
 
 # Main Demo Flow
 
-1. **Upload CV** — PDF only; `POST /api/upload` returns extracted normalized text.
-2. **Choose one of 5 jobs** — `GET /api/jobs` loads the list; dropdown uses Mongo-backed jobs (seed script inserts five titles).
-3. **Paste job description** — User-provided posting text (min 40 characters); **not** taken from the `Job` document for extraction.
-4. **Analyze** — `POST /api/analyze` with `jobId` + `cvText` + `jobDescription` from the previous steps.
-5. **View results** — Navigate to `/dashboard`; UI reads `sessionStorage` key `pocAnalysisResult` and shows job title, 10 skill bars, and match score.
+1. **Upload CV** - PDF only; `POST /api/upload` returns extracted normalized text.
+2. **Choose one of 5 jobs** - `GET /api/jobs` loads the list; dropdown uses Mongo-backed jobs (seed script inserts five titles).
+3. **Paste job description** - User-provided posting text (min 40 characters); **not** taken from the `Job` document for extraction.
+4. **Analyze** - `POST /api/analyze` with `jobId` + `cvText` + `jobDescription` from the previous steps.
+5. **View results** - Navigate to `/dashboard`; UI reads `sessionStorage` key `pocAnalysisResult` and shows job title, 10 skill bars, and match score.
 
 ---
 
@@ -30,11 +30,11 @@ All are mounted under **`/api`** in `backend/src/app.ts` (default backend port *
 
 | Piece | Path |
 |--------|------|
-| Entry / routes | `frontend/src/App.tsx` — `/` → `/upload`; `/upload`, `/dashboard`. |
-| Upload + submit | `frontend/src/pages/UploadScreen.tsx` — loads jobs, file pick, calls API, writes `sessionStorage`, navigates to dashboard. |
-| Results UI | `frontend/src/pages/SkillsMatchDashboard.tsx` — reads `sessionStorage`, renders gauge + `SkillBar` list. |
-| HTTP client | `frontend/src/services/api.ts` — `fetchJobs`, `uploadPdf`, `analyzeCv`; base URL `/api` or `VITE_API_BASE_URL`. |
-| Dev proxy | `frontend/vite.config.ts` — proxies `/api` → `http://localhost:8000`. |
+| Entry / routes | `frontend/src/App.tsx` - `/` → `/upload`; `/upload`, `/dashboard`. |
+| Upload + submit | `frontend/src/pages/UploadScreen.tsx` - loads jobs, file pick, calls API, writes `sessionStorage`, navigates to dashboard. |
+| Results UI | `frontend/src/pages/SkillsMatchDashboard.tsx` - reads `sessionStorage`, renders gauge + `SkillBar` list. |
+| HTTP client | `frontend/src/services/api.ts` - `fetchJobs`, `uploadPdf`, `analyzeCv`; base URL `/api` or `VITE_API_BASE_URL`. |
+| Dev proxy | `frontend/vite.config.ts` - proxies `/api` → `http://localhost:8000`. |
 | UI components | `frontend/src/components/ui/CircularGauge.tsx`, `SkillBar.tsx` |
 
 ---
@@ -43,13 +43,13 @@ All are mounted under **`/api`** in `backend/src/app.ts` (default backend port *
 
 | Layer | Path |
 |--------|------|
-| Mount | `backend/src/app.ts` — `app.use('/api', api)`; CORS + JSON body. |
+| Mount | `backend/src/app.ts` - `app.use('/api', api)`; CORS + JSON body. |
 | Jobs | `backend/src/routes/jobs.routes.ts` → `controllers/jobs.controller.ts` → `services/job.service.ts` / `dal/job.dal.ts`. |
 | Upload | `backend/src/routes/cv.routes.ts` → `middleware/upload.ts` → `controllers/cv.controller.ts` → `services/cv.service.ts` (pdf-parse + normalize). |
 | Analyze | `backend/src/routes/analyze.routes.ts` → `job.service` (core + dynamic skills), `scoring.service.ts` → `dal/cvAnalysis.dal.ts` (parse + persist). |
 | LLM | `backend/src/agents/skillExtraction.agent.ts`, `scoring.agent.ts` → `infra/llm/llmCall.ts`, `openaiClient.ts`, `parseJson.ts`. |
-| Static “DS” core | `backend/src/services/dsModel.ts` — fixed 5 skills per known job title (not a live ML service). |
-| Seed data | `backend/src/scripts/seed.ts` — five `Job` documents (run manually when setting up DB). |
+| Static “DS” core | `backend/src/services/dsModel.ts` - fixed 5 skills per known job title (not a live ML service). |
+| Seed data | `backend/src/scripts/seed.ts` - five `Job` documents (run manually when setting up DB). |
 
 ---
 
@@ -58,7 +58,7 @@ All are mounted under **`/api`** in `backend/src/app.ts` (default backend port *
 ### `POST /api/upload`
 
 - **Request:** `multipart/form-data`, field name **`file`** (PDF).
-- **Response (200):** `{ "cvText": string }` — normalized lowercase text; server rejects empty/too-short extract.
+- **Response (200):** `{ "cvText": string }` - normalized lowercase text; server rejects empty/too-short extract.
 
 ### `POST /api/analyze`
 
@@ -112,6 +112,6 @@ All are mounted under **`/api`** in `backend/src/app.ts` (default backend port *
 
 - **Do not break** the `UploadScreen` sequence: upload → `analyzeCv` → `sessionStorage.setItem('pocAnalysisResult', ...)` → `navigate('/dashboard')`. The dashboard does **not** re-fetch analyze; it only reads storage.
 - **OpenAI:** config and client live in `backend/src/infra/llm/`; prompts in `backend/src/agents/`. Adjust models/env there; keep fallbacks in `job.service.ts` and `scoring.service.ts` if you need offline demos.
-- **Avoid** duplicating `/api` paths or adding a second “mock” API layer on the frontend — extend **`frontend/src/services/api.ts`** and keep types aligned with `analyze` responses.
+- **Avoid** duplicating `/api` paths or adding a second “mock” API layer on the frontend - extend **`frontend/src/services/api.ts`** and keep types aligned with `analyze` responses.
 - **Jobs count:** `GET /api/jobs` is limited to the five seeded titles; keep `seed.ts` titles in sync with `POC_JOB_TITLES` in `job.dal.ts`.
 - **Env:** backend needs Mongo (`MONGODB_URI`) and optionally `OPENAI_API_KEY`; frontend optional `VITE_API_BASE_URL` (defaults to relative `/api` with Vite proxy).

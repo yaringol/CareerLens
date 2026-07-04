@@ -42,4 +42,8 @@ const CvAnalysisSchema = new Schema<ICvAnalysis>(
   { timestamps: { createdAt: true, updatedAt: false } }
 );
 
+CvAnalysisSchema.index({ createdAt: -1 });
+CvAnalysisSchema.index({ jobTitle: 1, createdAt: -1 });
+CvAnalysisSchema.index({ matchScore: 1, createdAt: -1 });
+
 export const CvAnalysis = model<ICvAnalysis>('CvAnalysis', CvAnalysisSchema);

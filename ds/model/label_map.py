@@ -110,7 +110,7 @@ def consolidate(label):
     return RAW_TO_FINAL.get(label.strip().title())
 
 
-# Distinct kept labels — handy for sanity checks / ordering.
+# Distinct kept labels - handy for sanity checks / ordering.
 FINAL_LABELS = sorted({v for v in RAW_TO_FINAL.values() if v is not None})
 
 
@@ -119,7 +119,7 @@ FINAL_LABELS = sorted({v for v in RAW_TO_FINAL.values() if v is not None})
 # fetched via getCoreSkills → /title/skills, whose KNN only knows train.py's
 # canonical set (CANONICAL_TITLES). For the ~17 labels absent there we map to the
 # closest *semantically* sensible supported title. We deliberately do NOT reuse
-# the char-ngram title KNN for this — it matches on spelling, not meaning
+# the char-ngram title KNN for this - it matches on spelling, not meaning
 # (e.g. "iOS Developer"→"Kernel Developer", "JavaScript Developer"→"Java
 # Developer", "SQL Developer"→"Frontend Developer"), which would fetch the wrong
 # skills. Targets below are all present in train.py CANONICAL_TITLES.

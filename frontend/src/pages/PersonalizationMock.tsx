@@ -96,7 +96,7 @@ export default function PersonalizationMock() {
           <span className="mock-badge">QA · Mock</span>
           <h1 className="mock-title">Personalization mock profiles</h1>
           <p className="mock-sub">
-            Pick a sample profile to open the Personalization screen with seeded data — no CV upload
+            Pick a sample profile to open the Personalization screen with seeded data. No CV upload
             needed. It calls the real backend, so you see real role skills and the live 501 fallback.
           </p>
         </header>

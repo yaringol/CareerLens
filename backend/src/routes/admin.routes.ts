@@ -16,13 +16,17 @@ import {
 
 const router = Router();
 
+const ANALYSES_DEFAULT_LIMIT = 50;
+const ANALYSES_MAX_LIMIT = 200;
+
 router.get(
   '/analyses',
   authenticate,
   requireRole('admin'),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { jobTitle, minScore, startDate, endDate } = req.query as Record<string, string | undefined>;
+      const { jobTitle, minScore, startDate, endDate, limit: limitParam, offset: offsetParam } =
+        req.query as Record<string, string | undefined>;
 
       const filter: Record<string, unknown> = {};
 
@@ -40,7 +44,23 @@ router.get(
         filter.createdAt = dateFilter;
       }
 
-      const analyses = await CvAnalysis.find(filter).sort({ createdAt: -1 }).lean();
+      const limitRaw = parseInt(String(limitParam ?? ANALYSES_DEFAULT_LIMIT), 10);
+      const limit = Math.min(
+        Math.max(1, Number.isFinite(limitRaw) ? limitRaw : ANALYSES_DEFAULT_LIMIT),
+        ANALYSES_MAX_LIMIT
+      );
+      const offsetRaw = parseInt(String(offsetParam ?? '0'), 10);
+      const offset = Math.max(0, Number.isFinite(offsetRaw) ? offsetRaw : 0);
+
+      const [analyses, total] = await Promise.all([
+        CvAnalysis.find(filter)
+          .select('jobTitle matchScore createdAt userId')
+          .sort({ createdAt: -1 })
+          .skip(offset)
+          .limit(limit)
+          .lean(),
+        CvAnalysis.countDocuments(filter),
+      ]);
 
       const userIds = [
         ...new Set(
@@ -54,7 +74,7 @@ router.get(
         : [];
       const emailById = Object.fromEntries(users.map((u) => [u._id.toString(), u.email]));
 
-      const result = analyses.map((a) => ({
+      const items = analyses.map((a) => ({
         id: a._id.toString(),
         jobTitle: a.jobTitle,
         matchScore: a.matchScore,
@@ -62,7 +82,13 @@ router.get(
         userEmail: a.userId ? emailById[a.userId.toString()] ?? null : null,
       }));
 
-      res.json(result);
+      res.json({
+        items,
+        total,
+        limit,
+        offset,
+        hasMore: offset + items.length < total,
+      });
     } catch (err) {
       next(err);
     }

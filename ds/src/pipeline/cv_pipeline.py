@@ -14,7 +14,7 @@ _ROLE_KEYWORDS = {
 }
 
 _TITLE_PATTERNS = [
-    # "Software Engineer | Google | 2022–2024"
+    # "Software Engineer | Google | 2022-2024"
     r'^([A-Za-z][A-Za-z\s/\-\.&]{3,50}?)\s*[|·,]\s*(?:[A-Z][a-z]|\d{4})',
     # "Current Role: Senior Data Scientist"
     r'(?:current role|position|title|role)\s*[:\-]\s*([A-Za-z][A-Za-z\s/\-\.]{3,50})',
@@ -34,7 +34,7 @@ def extract_title_from_cv(cv_text: str) -> Optional[str]:
     Returns None if no confident match found.
 
     Step 1: regex patterns for classic CV formats.
-    Step 2: fallback — short lines containing a role keyword.
+    Step 2: fallback - short lines containing a role keyword.
     """
     for line in cv_text.splitlines():
         line = line.strip()

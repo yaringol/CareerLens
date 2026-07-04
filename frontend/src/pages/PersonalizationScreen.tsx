@@ -26,7 +26,7 @@ const RESULT_KEY = 'analysisResult'
 const PREVIOUS_RESULT_KEY = 'previousAnalysisResult'
 const PREFS_KEY = 'personalizationPreferences'
 const MAX_FOCUS_SKILLS = 5
-/** Must match backend SKILL_POOL_SIZE — focus pool is at most 10 (fewer when core overlaps). */
+/** Must match backend SKILL_POOL_SIZE - focus pool is at most 10 (fewer when core overlaps). */
 const SKILL_POOL_SIZE = 10
 
 interface PersonalizationPrefs {
@@ -254,6 +254,7 @@ export default function PersonalizationScreen() {
     return savedPrefs?.selectedSkillIds ?? []
   })
   const [submitting, setSubmitting] = useState(false)
+  const [returningToResults, setReturningToResults] = useState(false)
   const [notImplemented, setNotImplemented] = useState(false)
   const [savedPreference, setSavedPreference] = useState<SavedPersonalization | null>(null)
   const [rememberPreference, setRememberPreference] = useState(false)
@@ -276,7 +277,7 @@ export default function PersonalizationScreen() {
         setRememberPreference(preference !== null)
       })
       .catch(() => {
-        /* no saved preference to offer — not fatal */
+        /* no saved preference to offer - not fatal */
       })
     return () => {
       cancelled = true
@@ -299,7 +300,7 @@ export default function PersonalizationScreen() {
       .then((data) => {
         if (cancelled) return
         const currentPrefs = readPersonalizationPrefs()
-        // Keep the saved pool on return visits — do not merge with a fresh API call (that caused 13+ chips).
+        // Keep the saved pool on return visits - do not merge with a fresh API call (that caused 13+ chips).
         const pool = currentPrefs?.roleDerivedSkills?.length
           ? normalizeSkillPool(currentPrefs.roleDerivedSkills)
           : normalizeSkillPool(data.roleDerivedSkills)
@@ -370,7 +371,7 @@ export default function PersonalizationScreen() {
     showToast('Restored your saved recommendation balance', 'info')
   }
 
-  /** Best-effort — never blocks navigation to the results screen on failure. */
+  /** Best-effort - never blocks navigation to the results screen on failure. */
   async function syncSavedPreference() {
     try {
       if (rememberPreference) {
@@ -498,7 +499,7 @@ export default function PersonalizationScreen() {
             <h1 className="personalize-title">Tailor your recommendations</h1>
             <p className="personalize-detected">
               Detected role: <strong>{detectedTitle}</strong>
-              <span className="personalize-detected-note"> · optional step — skip anytime with standard results</span>
+              <span className="personalize-detected-note"> · optional step, skip anytime with standard results</span>
             </p>
           </div>
 
@@ -506,7 +507,7 @@ export default function PersonalizationScreen() {
           <section className="personalize-section">
             <h2 className="personalize-section-title">Recommendation Balance</h2>
             <p className="personalize-section-sub">
-              How the <strong>model</strong> balances its recommendations — between skills that
+              How the <strong>model</strong> balances its recommendations between skills that
               stay in demand over time (<strong>Stable</strong>), skills rising in recent job
               postings (<strong>Trending</strong>), and how closely they fit your CV and role
               (<strong>Personal Match</strong>).
@@ -574,7 +575,7 @@ export default function PersonalizationScreen() {
             <h2 className="personalize-section-title">Focus Skills</h2>
             <p className="personalize-section-sub">
               Top skills extracted from this job posting (up to 10). Pick{' '}
-              {MAX_FOCUS_SKILLS} to focus on — only the selected ones appear in your results.{' '}
+              {MAX_FOCUS_SKILLS} to focus on. Only the selected ones appear in your results.{' '}
               <span className="focus-count">({selectedCount}/{MAX_FOCUS_SKILLS} selected)</span>
             </p>
 
@@ -594,9 +595,6 @@ export default function PersonalizationScreen() {
                       aria-pressed={checked}
                     >
                       <span className="focus-skill-name">{skill.name}</span>
-                      <span className={`focus-skill-source focus-skill-source--${skill.source}`}>
-                        {skill.source === 'cv' ? 'from CV' : 'from posting'}
-                      </span>
                     </button>
                   )
                 })}
@@ -656,7 +654,7 @@ export default function PersonalizationScreen() {
               onClick={continueWithStandard}
               disabled={submitting}
             >
-              {submitting ? 'Analyzing…' : 'Skip — use standard results'}
+              {submitting ? 'Analyzing…' : 'Skip and use standard results'}
             </button>
           </div>
         )}

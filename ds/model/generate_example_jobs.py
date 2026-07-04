@@ -2,7 +2,7 @@
 Generate synthetic job postings into a fresh Mongo collection (default: JOBS_EXAMPLE),
 with the *exact same document shape* the scraper writes to `jobs.jobs`.
 
-Goal: a realistic hi-tech trend signal —
+Goal: a realistic hi-tech trend signal -
   * "stable" skills (C#, Java, SQL, .NET, C++ ...) keep a flat frequency over time,
   * "trending" skills (machine learning, LLMs, PyTorch, GenAI ...) start near-zero in
     early 2024 and rise sharply toward mid-2026,

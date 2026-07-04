@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, ReactNode } from 'react'
+import { clearUserFlowSession } from '../utils/userFlowSession'
 
 const TOKEN_KEY = 'auth_token'
 
@@ -66,6 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(stored.token)
 
   function storeAuth(jwt: string): void {
+    clearUserFlowSession()
     localStorage.setItem(TOKEN_KEY, jwt)
     setToken(jwt)
     const decoded = decodeUser(jwt)
@@ -95,6 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   function logout(): void {
+    clearUserFlowSession()
     localStorage.removeItem(TOKEN_KEY)
     setToken(null)
     setUser(null)

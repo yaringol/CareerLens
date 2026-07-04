@@ -56,10 +56,10 @@ API: `GET /title/skills` מחזיר `skills[]` עם שני המדדים + `sugge
 
 ## פייפליין
 
-- `extract_skills.py` — כותב `skill_records` אוטומטית
-- `migrate_skill_records.py` — backfill על docs ישנים
-- `train.py` — מחשב stability מ-observed_at
-- `run_daily.sh` — ללא שינוי (extract כבר מעדכן)
+- `extract_skills.py` - כותב `skill_records` אוטומטית
+- `migrate_skill_records.py` - backfill על docs ישנים
+- `train.py` - מחשב stability מ-observed_at
+- `run_daily.sh` - ללא שינוי (extract כבר מעדכן)
 
 ## פקודות
 
@@ -97,7 +97,7 @@ SOURCE_WEIGHTS=jobs:1.0,lang-uk-job-skills:0.3 python train.py
 | שדה | מקור | שימוש |
 |-----|------|--------|
 | `datePosted` | תאריך פרסום המשרה | עקביות/stability (null אם אין) |
-| `scraped_at` | מתי נסקרה | LinkedIn — יש; lang-uk — בדרך כלל null |
+| `scraped_at` | מתי נסקרה | LinkedIn - יש; lang-uk - בדרך כלל null |
 | `extracted_at` | מתי רץ SkillNer | תמיד נשמר כשיש חילוץ |
 | `observed_at` | `datePosted` → `scraped_at` → `extracted_at` | train / recency / stability |
 

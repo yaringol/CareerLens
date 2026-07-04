@@ -17,33 +17,55 @@ interface Analysis {
 
 type AdminTab = 'analyses' | 'model'
 
+const ANALYSES_PAGE_SIZE = 50
+
 export default function AdminPage() {
   const { logout, user } = useAuth()
   const { showToast } = useToast()
   const navigate = useNavigate()
   const [tab, setTab] = useState<AdminTab>('model')
   const [analyses, setAnalyses] = useState<Analysis[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [analysesTotal, setAnalysesTotal] = useState(0)
+  const [analysesHasMore, setAnalysesHasMore] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [analysesLoaded, setAnalysesLoaded] = useState(false)
 
   const [jobTitle, setJobTitle] = useState('')
   const [minScore, setMinScore] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
 
-  async function loadAnalyses() {
-    setIsLoading(true)
+  const buildFilters = useCallback(() => ({
+    jobTitle: jobTitle || undefined,
+    minScore: minScore ? parseFloat(minScore) : undefined,
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
+  }), [jobTitle, minScore, startDate, endDate])
+
+  async function loadAnalyses(options: { append?: boolean; offset?: number } = {}) {
+    const append = options.append ?? false
+    const offset = options.offset ?? 0
+    if (append) {
+      setIsLoadingMore(true)
+    } else {
+      setIsLoading(true)
+    }
     try {
       const data = await fetchAdminAnalyses({
-        jobTitle: jobTitle || undefined,
-        minScore: minScore ? parseFloat(minScore) : undefined,
-        startDate: startDate || undefined,
-        endDate: endDate || undefined,
+        ...buildFilters(),
+        limit: ANALYSES_PAGE_SIZE,
+        offset,
       })
-      setAnalyses(data)
+      setAnalysesTotal(data.total)
+      setAnalysesHasMore(data.hasMore)
+      setAnalyses((prev) => (append ? [...prev, ...data.items] : data.items))
+      setAnalysesLoaded(true)
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Failed to load')
     } finally {
       setIsLoading(false)
+      setIsLoadingMore(false)
     }
   }
 
@@ -64,7 +86,11 @@ export default function AdminPage() {
 
   function handleFilter(e: React.FormEvent) {
     e.preventDefault()
-    loadAnalyses()
+    void loadAnalyses()
+  }
+
+  function loadMoreAnalyses() {
+    void loadAnalyses({ append: true, offset: analyses.length })
   }
 
   function formatDate(iso: string): string {
@@ -75,6 +101,13 @@ export default function AdminPage() {
     if (score >= 7.5) return '#4ade80'
     if (score >= 5) return '#facc15'
     return '#f87171'
+  }
+
+  function openAnalysesTab() {
+    setTab('analyses')
+    if (!analysesLoaded) {
+      void loadAnalyses()
+    }
   }
 
   return (
@@ -116,10 +149,7 @@ export default function AdminPage() {
         <button
           type="button"
           className={`admin-tab ${tab === 'analyses' ? 'admin-tab-active' : ''}`}
-          onClick={() => {
-            setTab('analyses')
-            if (analyses.length === 0) loadAnalyses()
-          }}
+          onClick={openAnalysesTab}
         >
           Analyses
         </button>
@@ -127,13 +157,11 @@ export default function AdminPage() {
 
       <div className="admin-content">
         {tab === 'model' ? (
-          <>
-            <AdminModelStatusPanel
-              onError={handleModelError}
-              onPipelineError={handlePipelineError}
-              onPipelineSuccess={handlePipelineSuccess}
-            />
-          </>
+          <AdminModelStatusPanel
+            onError={handleModelError}
+            onPipelineError={handlePipelineError}
+            onPipelineSuccess={handlePipelineSuccess}
+          />
         ) : (
           <>
             <form className="admin-filters" onSubmit={handleFilter}>
@@ -157,7 +185,7 @@ export default function AdminPage() {
                   step={0.1}
                   value={minScore}
                   onChange={(e) => setMinScore(e.target.value)}
-                  placeholder="0 – 10"
+                  placeholder="0 - 10"
                 />
               </div>
               <div className="filter-field">
@@ -230,7 +258,21 @@ export default function AdminPage() {
                     )}
                   </tbody>
                 </table>
-                <p className="admin-count">{analyses.length} result{analyses.length !== 1 ? 's' : ''}</p>
+                <p className="admin-count">
+                  Showing {analyses.length.toLocaleString()} of {analysesTotal.toLocaleString()} result{analysesTotal !== 1 ? 's' : ''}
+                </p>
+                {analysesHasMore && (
+                  <div className="model-chunk-actions">
+                    <button
+                      type="button"
+                      className="btn-filter"
+                      disabled={isLoadingMore}
+                      onClick={loadMoreAnalyses}
+                    >
+                      {isLoadingMore ? 'Loading…' : `Load ${ANALYSES_PAGE_SIZE} more`}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </>

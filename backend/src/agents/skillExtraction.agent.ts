@@ -2,28 +2,30 @@ import { llmCall } from '../infra/llm/llmCall';
 import { parseJsonSafe } from '../infra/llm/parseJson';
 import { AgentError } from './agentError';
 import { logSkillExtractionAgentPayload } from '../utils/logger';
+import { dedupeSkills } from '../utils/skillDedup';
 
 const AGENT_NAME = 'skillExtraction';
 
 /** Total skills returned from every extraction (full picker pool). */
 export const SKILL_POOL_SIZE = 10;
 
-/** Primary dynamic skills — used by standard analyze (slots 6–10). */
+/** Primary dynamic skills - used by standard analyze (slots 6-10). */
 export const TOP_SKILL_COUNT = 5;
 
-/** User message prefix — keep in sync with `logSkillExtractionAgentPayload` wording in logger. */
+/** User message prefix - keep in sync with `logSkillExtractionAgentPayload` wording in logger. */
 const USER_MESSAGE_PREFIX = 'Job description:\n';
 
 const SYSTEM_PROMPT = `You are a senior technical recruiter who distills job postings into the concrete skills that actually drive hiring decisions.
 
 Return a JSON object with exactly two arrays:
-- "topFive": exactly 5 highest-priority skills — explicit or strongly implied requirements that most drive hiring for this role.
-- "additional": exactly 5 next-most-relevant skills — still posting-grounded, with no overlap or near-duplicates of topFive.
+- "topFive": exactly 5 highest-priority skills - explicit or strongly implied requirements that most drive hiring for this role.
+- "additional": exactly 5 next-most-relevant skills - still posting-grounded, with no overlap or near-duplicates of topFive.
 
 Rules for all 10 skills:
 - Prefer specific, assessable hard skills and technologies (e.g. "Python programming", "Kubernetes", "distributed systems design") over vague terms ("coding", "team player", "communication").
 - Favor skills most central to succeeding in the role; ignore boilerplate, perks, and company description.
 - Use canonical, resume-ready skill names.
+- All 10 entries must be distinct: no repeats, no case-only variants (e.g. do not include both "Node.js" and "node js"), and no near-duplicates that refer to the same technology or concept with different punctuation or wording.
 
 Output discipline:
 - Return ONLY valid JSON: {"topFive":["..."],"additional":["..."]}
@@ -32,7 +34,7 @@ Output discipline:
 export interface SkillExtractionResult {
   /** All 10 posting-derived skills, highest priority first. */
   pool: string[];
-  /** Primary 5 for standard analyze — always pool.slice(0, 5). */
+  /** Primary 5 for standard analyze - always pool.slice(0, 5). */
   topFive: string[];
 }
 
@@ -51,19 +53,11 @@ function parseSkillStrings(items: unknown, field: string): string[] {
 }
 
 function buildPool(topFiveRaw: string[], additionalRaw: string[]): SkillExtractionResult {
-  const seen = new Set<string>();
-  const pool: string[] = [];
-  for (const raw of [...topFiveRaw, ...additionalRaw]) {
-    const key = raw.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    pool.push(raw);
-    if (pool.length >= SKILL_POOL_SIZE) break;
-  }
-  if (pool.length < SKILL_POOL_SIZE) {
+  const pool = dedupeSkills([...topFiveRaw, ...additionalRaw], SKILL_POOL_SIZE);
+  if (pool.length < TOP_SKILL_COUNT) {
     throw new AgentError(
       AGENT_NAME,
-      `Expected ${SKILL_POOL_SIZE} unique skills after merge, got ${pool.length}: ${JSON.stringify(pool)}`
+      `Expected at least ${TOP_SKILL_COUNT} unique skills after deduplication, got ${pool.length}: ${JSON.stringify(pool)}`
     );
   }
   const trimmed = pool.slice(0, SKILL_POOL_SIZE);

@@ -3,7 +3,7 @@ Unit tests for stability.py's compute_stability_features (pure function, no Mong
 training run needed) plus a smoke test of /title/trending-skills' new response fields
 against a mocked server.feature_matrix (same style as test_preferences.py's MOCK_MATRIX,
 but that file's own rank_skills/SkillPreferences/title_match references are pre-existing
-dead code against the current server.py — this file does not build on it).
+dead code against the current server.py - this file does not build on it).
 
 Run:
   python ds/model/test_stability.py
@@ -21,15 +21,15 @@ def check(label, condition, detail=''):
     if condition:
         print(f"PASS {label}")
     else:
-        print(f"FAIL {label}{f' — {detail}' if detail else ''}")
+        print(f"FAIL {label}{f' - {detail}' if detail else ''}")
         failures += 1
 
 
-# ── compute_stability_features — hand-built monthly fixture ───────────────────
+# ── compute_stability_features - hand-built monthly fixture ───────────────────
 # 6 months, title "DevOps Engineer":
-#   "java"       — flat: present in every month at a constant rate -> stability_score near 0
-#   "llm"        — rising: 0 in early months, ramps up sharply -> stability_score near 1
-#   "kubernetes" — present in only 2 of 6 months -> below MIN_RELIABLE_MONTHS, neutral default
+#   "java"       - flat: present in every month at a constant rate -> stability_score near 0
+#   "llm"        - rising: 0 in early months, ramps up sharply -> stability_score near 1
+#   "kubernetes" - present in only 2 of 6 months -> below MIN_RELIABLE_MONTHS, neutral default
 
 MONTHS = ["2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06"]
 TITLE = "DevOps Engineer"
@@ -75,7 +75,7 @@ check(
     f"got {devops['kubernetes']}"
 )
 
-# ── Title with too few total months (< MIN_RELIABLE_MONTHS) — every skill neutral ──
+# ── Title with too few total months (< MIN_RELIABLE_MONTHS) - every skill neutral ──
 
 SPARSE_TITLE = "Kernel Developer"
 sparse_totals = {SPARSE_TITLE: {"2026-05": 10, "2026-06": 12}}  # only 2 months total

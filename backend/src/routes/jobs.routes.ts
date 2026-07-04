@@ -8,7 +8,7 @@ import { ValidationError } from '../errors';
 const router = Router();
 router.use(authenticate);
 
-// GET /jobs — List all supported roles for the dropdown
+// GET /jobs - List all supported roles for the dropdown
 router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const jobs = await getAllJobs();
@@ -18,7 +18,7 @@ router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-// POST /jobs/fetch-description — Fetch job description text from a public posting URL
+// POST /jobs/fetch-description - Fetch job description text from a public posting URL
 router.post('/fetch-description', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { url } = req.body as { url?: string };
@@ -32,7 +32,7 @@ router.post('/fetch-description', async (req: Request, res: Response, next: Next
   }
 });
 
-// POST /jobs/extract — Extract 10 posting skills (topFive + additional) from job description
+// POST /jobs/extract - Extract 10 posting skills (topFive + additional) from job description
 router.post('/extract', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { jobTitle, jobDescription } = req.body as {

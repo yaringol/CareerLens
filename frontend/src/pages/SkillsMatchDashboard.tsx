@@ -201,13 +201,13 @@ const MOCK_DATA: Record<string, MockEntry> = {
     matchScore: 6.8,
     skills: [8, 7, 9, 6, 7, 5, 8, 4, 7, 6].map((score, i) => ({ name: SKILLS_DS[i], score })),
   },
-  // Test: DevOps role — longer skill names, ops terminology
+  // Test: DevOps role - longer skill names, ops terminology
   devops: {
     jobTitle: 'DevOps Engineer',
     matchScore: 3.9,
     skills: [5, 3, 4, 3, 6, 2, 4, 5, 3, 4].map((score, i) => ({ name: SKILLS_DEVOPS[i], score })),
   },
-  // Test: Product Manager role — non-technical skills
+  // Test: Product Manager role - non-technical skills
   'product-manager': {
     jobTitle: 'Product Manager',
     matchScore: 7.2,
@@ -217,7 +217,7 @@ const MOCK_DATA: Record<string, MockEntry> = {
   // ── Text overflow ───────────────────────────────────────────────────
   // Test: very long job title doesn't break the header layout
   'long-title': {
-    jobTitle: 'Senior Full-Stack Software Engineer — Platform & Infrastructure (Remote, EMEA)',
+    jobTitle: 'Senior Full-Stack Software Engineer - Platform & Infrastructure (Remote, EMEA)',
     matchScore: 6.1,
     skills: [7, 5, 8, 6, 5, 7, 6, 5, 4, 6].map((score, i) => ({ name: SKILLS_SE[i], score })),
   },
@@ -240,25 +240,25 @@ const MOCK_DATA: Record<string, MockEntry> = {
   },
 
   // ── More roles ──────────────────────────────────────────────────────
-  // Test: Frontend Developer — UI/CSS skill names, strong profile
+  // Test: Frontend Developer - UI/CSS skill names, strong profile
   'frontend-dev': {
     jobTitle: 'Frontend Developer',
     matchScore: 7.6,
     skills: [9, 8, 7, 8, 6, 7, 8, 6, 7, 8].map((score, i) => ({ name: SKILLS_FE[i], score })),
   },
-  // Test: ML Engineer — research-heavy terminology, mid-level
+  // Test: ML Engineer - research-heavy terminology, mid-level
   'ml-engineer': {
     jobTitle: 'ML Engineer',
     matchScore: 4.7,
     skills: [6, 5, 4, 7, 4, 3, 2, 5, 6, 4].map((score, i) => ({ name: SKILLS_ML[i], score })),
   },
-  // Test: QA Engineer — testing-specific skills, weak profile
+  // Test: QA Engineer - testing-specific skills, weak profile
   'qa-engineer': {
     jobTitle: 'QA Engineer',
     matchScore: 2.3,
     skills: [3, 2, 2, 3, 1, 3, 2, 2, 1, 3].map((score, i) => ({ name: SKILLS_QA[i], score })),
   },
-  // Test: Tech Lead — management + technical mix, strong profile
+  // Test: Tech Lead - management + technical mix, strong profile
   'tech-lead': {
     jobTitle: 'Tech Lead',
     matchScore: 8.1,
@@ -266,31 +266,31 @@ const MOCK_DATA: Record<string, MockEntry> = {
   },
 
   // ── Score patterns ──────────────────────────────────────────────────
-  // Test: staircase descending — 10 down to 1, checks every bar width renders correctly
+  // Test: staircase descending - 10 down to 1, checks every bar width renders correctly
   descending: {
     jobTitle: 'Software Engineer',
     matchScore: 5.5,
     skills: [10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((score, i) => ({ name: SKILLS_SE[i], score })),
   },
-  // Test: staircase ascending — 1 up to 10, reverse of above
+  // Test: staircase ascending - 1 up to 10, reverse of above
   ascending: {
     jobTitle: 'Software Engineer',
     matchScore: 5.5,
     skills: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score, i) => ({ name: SKILLS_SE[i], score })),
   },
-  // Test: all skills exactly 5 — everything moderate, no badge variety
+  // Test: all skills exactly 5 - everything moderate, no badge variety
   'all-moderate': {
     jobTitle: 'Software Engineer',
     matchScore: 5.0,
     skills: [5, 5, 5, 5, 5, 5, 5, 5, 5, 5].map((score, i) => ({ name: SKILLS_SE[i], score })),
   },
-  // Test: core card full (excellent), dynamic card empty (0) — split scenario
+  // Test: core card full (excellent), dynamic card empty (0) - split scenario
   'core-strong-dynamic-zero': {
     jobTitle: 'Software Engineer',
     matchScore: 5.0,
     skills: [10, 9, 10, 9, 10, 0, 0, 0, 0, 0].map((score, i) => ({ name: SKILLS_SE[i], score })),
   },
-  // Test: core card empty (0), dynamic card full — reverse split
+  // Test: core card empty (0), dynamic card full - reverse split
   'core-zero-dynamic-strong': {
     jobTitle: 'Software Engineer',
     matchScore: 5.0,
@@ -298,19 +298,19 @@ const MOCK_DATA: Record<string, MockEntry> = {
   },
 
   // ── Structural edge cases ───────────────────────────────────────────
-  // Test: only 1 skill — core card has 1 row, dynamic card is empty
+  // Test: only 1 skill - core card has 1 row, dynamic card is empty
   'one-skill': {
     jobTitle: 'Software Engineer',
     matchScore: 7.0,
     skills: [{ name: 'Backend Development', score: 7 }],
   },
-  // Test: exactly 5 skills — core card full, dynamic card completely empty
+  // Test: exactly 5 skills - core card full, dynamic card completely empty
   'only-core': {
     jobTitle: 'Software Engineer',
     matchScore: 6.0,
     skills: [8, 7, 6, 5, 4].map((score, i) => ({ name: SKILLS_SE[i], score })),
   },
-  // Test: 3 skills — sparse core card, empty dynamic card
+  // Test: 3 skills - sparse core card, empty dynamic card
   'few-skills': {
     jobTitle: 'Software Engineer',
     matchScore: 4.0,
@@ -318,19 +318,19 @@ const MOCK_DATA: Record<string, MockEntry> = {
   },
 
   // ── Realistic career scenarios ──────────────────────────────────────
-  // Test: career changer — all skills 1-3, realistic mismatch
+  // Test: career changer - all skills 1-3, realistic mismatch
   'career-change': {
     jobTitle: 'Software Engineer',
     matchScore: 1.8,
     skills: [2, 1, 3, 2, 1, 2, 1, 2, 1, 3].map((score, i) => ({ name: SKILLS_SE[i], score })),
   },
-  // Test: almost perfect — one gap skill, tests near-miss visual
+  // Test: almost perfect - one gap skill, tests near-miss visual
   'one-gap': {
     jobTitle: 'Software Engineer',
     matchScore: 8.7,
     skills: [10, 10, 10, 10, 10, 10, 10, 10, 10, 1].map((score, i) => ({ name: SKILLS_SE[i], score })),
   },
-  // Test: exactly 2 skills strong, rest terrible — spiky profile
+  // Test: exactly 2 skills strong, rest terrible - spiky profile
   'spiky': {
     jobTitle: 'Software Engineer',
     matchScore: 2.4,

@@ -441,8 +441,8 @@
   margin-top: 0.5rem;
 }
 
-/* ─── Standalone back button — must come after btn-card-action ─────── */
-/* (same specificity, later wins — ensures width:auto overrides 100%) */
+/* ─── Standalone back button - must come after btn-card-action ─────── */
+/* (same specificity, later wins - ensures width:auto overrides 100%) */
 .btn-back-standalone {
   width: auto;
   padding: 0.5rem 1.25rem;

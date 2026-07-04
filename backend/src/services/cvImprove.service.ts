@@ -163,7 +163,7 @@ function splitParagraphs(cvText: string): Array<{ sectionId: string; text: strin
   return paragraphs.filter((p) => p.text.length > 10);
 }
 
-// Short tokens (2 chars) that Jaccard misses — also check these as exact substrings
+// Short tokens (2 chars) that Jaccard misses - also check these as exact substrings
 function skillTokensIncludingShort(skill: string): Set<string> {
   return new Set(
     skill

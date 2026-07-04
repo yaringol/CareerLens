@@ -1,9 +1,9 @@
-# CareerLens — DS Model Implementation Plan
+# CareerLens - DS Model Implementation Plan
 
 > תוכנית מימוש מלאה למשימות DS.
 > **כל הפיצ'רים, הבדיקות, וה-UI מתבססים אך ורק על הדאטה הקיים:**
 > 8,486 רשומות ב-`linkedin_translated_skills.jsonl` + `alljobs_translated_skills.jsonl`.
-> אין תאריכים, אין סימולציות, אין תכנון לעתיד — רק מה שניתן לחשב עכשיו.
+> אין תאריכים, אין סימולציות, אין תכנון לעתיד - רק מה שניתן לחשב עכשיו.
 
 ---
 
@@ -14,7 +14,7 @@
 | `ds/model/training.ipynb` | KNN על 5 POC titles, מחשב `role_skill_scores[title][skill] += score` |
 | `ds/model/server.py` | מחזיר `top_5 = matched_role[:5]` מרשימה ממוינת |
 | `ds/model/model.joblib` | מכיל: `vectorizer`, `knn_model`, `skills`, `titles`, `variant_titles`, `trained_at` |
-| JSONL files | אין `scraped_at` — אין אפשרות לחשב פיצ'רי זמן |
+| JSONL files | אין `scraped_at` - אין אפשרות לחשב פיצ'רי זמן |
 
 ---
 
@@ -26,13 +26,13 @@
 | `prevalence` | frequency / סה"כ פוסטים לתפקיד | ✅ JSONL |
 | `title_specificity` | IDF: כמה הכישור ייחודי לתפקיד זה לעומת כל שאר התפקידים | ✅ JSONL |
 
-## מה **לא** ניתן לחשב — ויוצא מהתוכנית לחלוטין
+## מה **לא** ניתן לחשב - ויוצא מהתוכנית לחלוטין
 
 | פיצ'ר | למה לא |
 |--------|--------|
-| `recency_score` | דורש `scraped_at` — אין |
-| `growth_trend` | דורש ≥2 נקודות זמן — אין |
-| `stability_score` | דורש חלוקה חודשית — אין |
+| `recency_score` | דורש `scraped_at` - אין |
+| `growth_trend` | דורש ≥2 נקודות זמן - אין |
+| `stability_score` | דורש חלוקה חודשית - אין |
 
 **Preference axes שיוצאים:** `trending`, `growth`, `stability`
 **נשאר preference אחד:** `title_match` (שולט בחשיבות של `title_specificity`)
@@ -45,9 +45,9 @@
 score = 0.7 × prevalence  +  0.3 × title_match × title_specificity
 ```
 
-- `prevalence` = 70% תמיד — עוגן קבוע
-- `title_match` = העדפת המשתמש [0,1], **ברירת מחדל 0.0** (backward compatible — זהה למודל הישן)
-- עם `title_match=0` → ממוין לפי prevalence בלבד — **זהה למצב היום**
+- `prevalence` = 70% תמיד - עוגן קבוע
+- `title_match` = העדפת המשתמש [0,1], **ברירת מחדל 0.0** (backward compatible - זהה למודל הישן)
+- עם `title_match=0` → ממוין לפי prevalence בלבד - **זהה למצב היום**
 - עם `title_match=1` → כישורים ייחודיים לתפקיד מקבלים בוסט משמעותי
 
 ---
@@ -66,11 +66,11 @@ score = 0.7 × prevalence  +  0.3 × title_match × title_specificity
 └── Workstream D: UI Changes
 ```
 
-> DS-1 (backfill scraped_at) הוסר — לא רלוונטי לדאטה הקיים.
+> DS-1 (backfill scraped_at) הוסר - לא רלוונטי לדאטה הקיים.
 
 ---
 
-## Workstream A — Feature Matrix + Personalization
+## Workstream A - Feature Matrix + Personalization
 
 ---
 
@@ -78,16 +78,16 @@ score = 0.7 × prevalence  +  0.3 × title_match × title_specificity
 
 **מטרה:** להחליף `role_skill_scores[title][skill] += score` במבנה שמחשב 3 פיצ'רים.
 
-**שינוי מבנה הנתונים ב-notebook — חלק ה-Train:**
+**שינוי מבנה הנתונים ב-notebook - חלק ה-Train:**
 
 הלולאה הקיימת נשארת ללא שינוי. מוסיפים מעקב נפרד על count (לעומת sum של scores):
 
 ```python
-# קיים — לא משנים:
+# קיים - לא משנים:
 role_skill_scores = {title: defaultdict(float) for title in POC_TITLES}
 record_counts     = defaultdict(int)
 
-# חדש — מוסיפים:
+# חדש - מוסיפים:
 role_skill_counts = {title: defaultdict(int) for title in POC_TITLES}
 
 # בלולאה הקיימת, אחרי:
@@ -97,8 +97,8 @@ role_skill_counts = {title: defaultdict(int) for title in POC_TITLES}
 ```
 
 כלומר:
-- `role_skill_scores[title][skill]` — שמור ומשמש ל-`prevalence` (זהה למודל הישן)
-- `role_skill_counts[title][skill]` — count בינארי חדש, משמש ל-`frequency`
+- `role_skill_scores[title][skill]` - שמור ומשמש ל-`prevalence` (זהה למודל הישן)
+- `role_skill_counts[title][skill]` - count בינארי חדש, משמש ל-`frequency`
 
 **פונקציית חישוב feature_matrix:**
 
@@ -107,14 +107,14 @@ import numpy as np
 from collections import defaultdict
 
 def compute_feature_matrix(
-    role_skill_scores: dict,   # sum of weighted scores — קיים
-    role_skill_counts: dict,   # count of appearances — חדש
+    role_skill_scores: dict,   # sum of weighted scores - קיים
+    role_skill_counts: dict,   # count of appearances - חדש
     record_counts: dict,
 ) -> dict:
     all_titles = list(role_skill_scores.keys())
     n_titles   = len(all_titles)
 
-    # IDF: כמה תפקידים מכילים כל כישור (לפי scores — כל skill שיש לו score > 0)
+    # IDF: כמה תפקידים מכילים כל כישור (לפי scores - כל skill שיש לו score > 0)
     skill_title_count = defaultdict(int)
     for skills in role_skill_scores.values():
         for skill in skills:
@@ -128,7 +128,7 @@ def compute_feature_matrix(
         feature_matrix[title] = {}
         for skill, total_score in role_skill_scores[title].items():
             frequency  = role_skill_counts[title][skill]  # count בינארי
-            prevalence = total_score / n                  # weighted — זהה למודל הישן
+            prevalence = total_score / n                  # weighted - זהה למודל הישן
 
             # IDF-like: log(n_titles / titles_that_have_this_skill)
             idf = np.log(n_titles / skill_title_count[skill]) if skill_title_count[skill] > 0 else 0
@@ -151,7 +151,7 @@ def compute_feature_matrix(
 
 feature_matrix = compute_feature_matrix(role_skill_scores, role_skill_counts, record_counts)
 
-# בדיקת sanity — מדפיס וקטור לדוגמה
+# בדיקת sanity - מדפיס וקטור לדוגמה
 sample_title = 'Software Engineer'
 sample_skill = list(feature_matrix[sample_title].keys())[0]
 print(f"Sample: ({sample_title}, {sample_skill})")
@@ -199,7 +199,7 @@ feature_matrix = artifacts.get('feature_matrix', {})
 def rank_skills(canonical_title: str, title_match: float = 0.0, n: int = 5) -> list[str]:
     """
     score = 0.7 × prevalence + 0.3 × title_match × title_specificity
-    title_match=0.0 (default) → prevalence בלבד — זהה למודל הישן.
+    title_match=0.0 (default) → prevalence בלבד - זהה למודל הישן.
     """
     if canonical_title not in feature_matrix:
         idx = next((i for i, t in enumerate(variant_labels) if t == canonical_title), 0)
@@ -242,19 +242,19 @@ from pydantic import BaseModel, Field
 
 class SkillPreferences(BaseModel):
     title_match: float = Field(default=0.0, ge=0.0, le=1.0)
-    # trending / growth / stability הוסרו — אין דאטה לחשב אותם
-    # default=0.0: backward compatible — זהה למודל הישן
+    # trending / growth / stability הוסרו - אין דאטה לחשב אותם
+    # default=0.0: backward compatible - זהה למודל הישן
 ```
 
-**`ds/model/README.md`** — תחת "Preference API":
+**`ds/model/README.md`** - תחת "Preference API":
 ```markdown
 ## Preference API
 
-### title_match (float, 0–1, default 0.0)
+### title_match (float, 0-1, default 0.0)
 
 Controls how much role-specificity matters vs. general popularity.
 
-- `0.0` → top skills are the most common across all tech roles **(default — backward compatible)**
+- `0.0` → top skills are the most common across all tech roles **(default - backward compatible)**
 - `0.5` → balanced
 - `1.0` → top skills are the most specific to this role
 
@@ -289,7 +289,7 @@ def rank_skills(canonical_title: str, prefs: SkillPreferences | None = None, n: 
 ```
 
 **DOD:**
-- [ ] `rank_skills('DevOps Engineer', SkillPreferences(title_match=1.0))` ≠ `rank_skills('DevOps Engineer', SkillPreferences(title_match=0.0))` — לפחות 1 skill שונה
+- [ ] `rank_skills('DevOps Engineer', SkillPreferences(title_match=1.0))` ≠ `rank_skills('DevOps Engineer', SkillPreferences(title_match=0.0))` - לפחות 1 skill שונה
 - [ ] `rank_skills('DevOps Engineer')` (ברירת מחדל, title_match=0.0) זהה לתוצאת המודל הישן
 
 ---
@@ -310,8 +310,8 @@ def predict_skills(title: str, title_match: float = 0.0):
 ```
 
 **DOD:**
-- [ ] `GET /title/skills?title=DevOps Engineer` (ללא params, title_match=0.0) — תוצאה זהה למודל הישן
-- [ ] `GET /title/skills?title=DevOps Engineer&title_match=1.0` — תוצאה שונה + `matched_canonical` ב-response
+- [ ] `GET /title/skills?title=DevOps Engineer` (ללא params, title_match=0.0) - תוצאה זהה למודל הישן
+- [ ] `GET /title/skills?title=DevOps Engineer&title_match=1.0` - תוצאה שונה + `matched_canonical` ב-response
 - [ ] `GET /title/skills?title=DevOps Engineer&title_match=2.0` → `422`
 
 ---
@@ -322,8 +322,8 @@ def predict_skills(title: str, title_match: float = 0.0):
 
 ```python
 """
-Unit tests עם feature_matrix מדומה — בוחנים שהלוגיקה עובדת.
-Smoke tests עם server אמיתי — בוחנים שה-API מחזיר תגובה תקינה.
+Unit tests עם feature_matrix מדומה - בוחנים שהלוגיקה עובדת.
+Smoke tests עם server אמיתי - בוחנים שה-API מחזיר תגובה תקינה.
 """
 import sys, requests
 import server
@@ -366,7 +366,7 @@ high_match = rank_skills("DevOps Engineer", SkillPreferences(title_match=1.0))
 low_match  = rank_skills("DevOps Engineer", SkillPreferences(title_match=0.0))
 diff = set(high_match) - set(low_match)
 if not diff:
-    print(f"FAIL unit-1: title_match=1.0 vs 0.0 — no difference\n  high={high_match}\n  low={low_match}")
+    print(f"FAIL unit-1: title_match=1.0 vs 0.0 - no difference\n  high={high_match}\n  low={low_match}")
     failures += 1
 else:
     print(f"PASS unit-1: {len(diff)} skills differ: {diff}")
@@ -387,7 +387,7 @@ for label, prefs in [("default", SkillPreferences()), ("max_match", SkillPrefere
     else:
         print(f"PASS unit-3 [{label}]: 'communication' correctly excluded")
 
-# בדיקה 4: prevalence כעוגן — python חייב בtop-5 גם עם title_match=1.0
+# בדיקה 4: prevalence כעוגן - python חייב בtop-5 גם עם title_match=1.0
 if "python" not in high_match:
     print(f"FAIL unit-4: python (prevalence=1.0) missing from top-5 with title_match=1.0: {high_match}")
     failures += 1
@@ -442,13 +442,13 @@ sys.exit(1 if failures else 0)
 
 ---
 
-## Workstream B — Title Coverage Expansion
+## Workstream B - Title Coverage Expansion
 
 ---
 
 ### DS-8 · Define Canonical Title Set (~35 Roles)
 
-**מטרה:** להחליף 5 POC titles ב-30–40 titles מהדאטה הקיים.
+**מטרה:** להחליף 5 POC titles ב-30-40 titles מהדאטה הקיים.
 
 **תא ניתוח ב-notebook:**
 ```python
@@ -481,15 +481,15 @@ with open(r'c:\Git\CareerLens\ds\model\canonical_titles.json', 'w', encoding='ut
 print(f"Saved {len(canonical_data['canonical_titles'])} canonical titles")
 ```
 
-**עדכון `/title/skills` — מחזיר data_confidence:**
+**עדכון `/title/skills` - מחזיר data_confidence:**
 ```python
-# בתחילת server.py — מוסיפים את הפונקציה ואת הטעינה:
+# בתחילת server.py - מוסיפים את הפונקציה ואת הטעינה:
 def confidence_level(n: int) -> str:
     if n >= 100: return 'high'
     if n >= 50:  return 'medium'
     return 'low'
 
-# טעינה עם fallback — אם הקובץ עוד לא נוצר, ה-server לא קורס:
+# טעינה עם fallback - אם הקובץ עוד לא נוצר, ה-server לא קורס:
 _canonical_json = os.path.join(os.path.dirname(__file__), 'canonical_titles.json')
 try:
     with open(_canonical_json, encoding='utf-8') as f:
@@ -524,7 +524,7 @@ def predict_skills(title: str, title_match: float = 0.5):
 
 ---
 
-## Workstream C — Auto Title Extraction
+## Workstream C - Auto Title Extraction
 
 > תלוי ב-DS-3 + DS-8
 
@@ -569,7 +569,7 @@ def extract_title_from_cv(cv_text: str) -> Optional[str]:
                 if _looks_like_title(candidate):
                     return candidate
 
-    # שלב 2: fallback — שורה קצרה עם מילת מפתח
+    # שלב 2: fallback - שורה קצרה עם מילת מפתח
     for line in cv_text.splitlines():
         line = line.strip()
         if 2 <= len(line.split()) <= 5 and _looks_like_title(line):
@@ -580,7 +580,7 @@ def extract_title_from_cv(cv_text: str) -> Optional[str]:
 
 **endpoint ב-`server.py`:**
 ```python
-# בראש server.py — import נכון: server.py נמצא ב-ds/model/, מוסיפים ds/ ל-path:
+# בראש server.py - import נכון: server.py נמצא ב-ds/model/, מוסיפים ds/ ל-path:
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src.pipeline.cv_pipeline import extract_title_from_cv
@@ -610,7 +610,7 @@ def extract_cv_title(body: CvTitleRequest):
 ```
 
 **DOD:**
-- [ ] `"Software Engineer | Google | 2022–2024"` → `"Software Engineer"`
+- [ ] `"Software Engineer | Google | 2022-2024"` → `"Software Engineer"`
 - [ ] `"Current Role: Senior Data Scientist"` → `"Senior Data Scientist"`
 - [ ] שורה עם "backend developer" בלבד → fallback מחזיר `"Backend Developer"`
 - [ ] CV ללא כותרת → `None`
@@ -621,7 +621,7 @@ def extract_cv_title(body: CvTitleRequest):
 
 ### DS-12 · Top-3 Matches
 
-**שינוי ב-`training.ipynb` — שורה אחת:**
+**שינוי ב-`training.ipynb` - שורה אחת:**
 ```python
 knn = NearestNeighbors(n_neighbors=3, metric='cosine')  # היה 1
 ```
@@ -648,7 +648,7 @@ def match_title(title: str):
 
 ---
 
-## Workstream D — UI Changes
+## Workstream D - UI Changes
 
 > תלוי ב-DS-12 + DS-6
 
@@ -669,7 +669,7 @@ PDF uploaded → POST /api/cv/upload → cvText
 **DOD:**
 - [ ] שדה הכותרת מתמלא אוטומטית אחרי העלאת CV
 - [ ] badge "Auto-detected" מוצג
-- [ ] `low_confidence: true` → `"We're not sure we recognize this title — results may be less accurate"`
+- [ ] `low_confidence: true` → `"We're not sure we recognize this title - results may be less accurate"`
 - [ ] "Change" → dropdown עם 3 options + confidence %
 - [ ] CV ללא כותרת → שדה ריק + typing → debounce 300ms → `/title/match`
 - [ ] `canonical_title` (לא raw text) נשלח עם הניתוח
@@ -682,7 +682,7 @@ PDF uploaded → POST /api/cv/upload → cvText
 - `<details>` accordion: `"Customize skill priorities (optional)"`
 - סליידר אחד בלבד: **Most common** ← Balanced → **Role-specific** (default: 0.0 = Most common)
 - הערך עובר כ-`title_match` param ל-`/title/skills`
-- אם `data_confidence === 'low'` → warning קטן מתחת לסליידר: `"Limited data for this role — results may vary"`
+- אם `data_confidence === 'low'` → warning קטן מתחת לסליידר: `"Limited data for this role - results may vary"`
 
 **DOD:**
 - [ ] הסקשן מוסתר כברירת מחדל
@@ -716,7 +716,7 @@ PDF uploaded → POST /api/cv/upload → cvText
 
 ---
 
-### ✅ Q1 — DS-8: אילו titles קיימים בדאטה עם ≥20 רשומות?
+### ✅ Q1 - DS-8: אילו titles קיימים בדאטה עם ≥20 רשומות?
 
 **הקשר:** תא הניתוח ב-notebook (DS-8) מוכן ומחכה להרצה.
 **מה צריך:** להריץ את תא הניתוח בnotebook ולדווח על הפלט.
@@ -724,7 +724,7 @@ PDF uploaded → POST /api/cv/upload → cvText
 
 ---
 
-### ✅ Q2 — UI-1 / UI-2: דרך הגישה לDS model מה-Frontend
+### ✅ Q2 - UI-1 / UI-2: דרך הגישה לDS model מה-Frontend
 
 **הקשר:** ה-Frontend מדבר עם הbackend בלבד (`/api`, port 3000). ה-DS model רץ על port 8000 ולא נגיש ישירות מה-browser.
 
@@ -732,14 +732,14 @@ PDF uploaded → POST /api/cv/upload → cvText
 
 | אפשרות | יתרון | חיסרון |
 |--------|--------|---------|
-| **A — Backend proxy routes** | Frontend לא משתנה, אבטחה טובה | צריך להוסיף routes לbackend (`POST /api/cv/extract-title`, `GET /api/title/match`) |
-| **B — Frontend קורא ל-DS ישירות** | פשוט יותר | צריך CORS בDS model, URL נוסף בclient config |
+| **A - Backend proxy routes** | Frontend לא משתנה, אבטחה טובה | צריך להוסיף routes לbackend (`POST /api/cv/extract-title`, `GET /api/title/match`) |
+| **B - Frontend קורא ל-DS ישירות** | פשוט יותר | צריך CORS בDS model, URL נוסף בclient config |
 
 **חסום:** UI-1 ו-UI-2 לא ממומשים עד לתשובה.
 
 ---
 
-### ✅ Q3 — DS-12: הרצת אימון מחדש
+### ✅ Q3 - DS-12: הרצת אימון מחדש
 
 **הקשר:** שיניתי `n_neighbors=3` בnotebook. כדי שה-server יטען את הmodel החדש צריך:
 1. להריץ את כל תאי Train בnotebook
@@ -756,5 +756,5 @@ PDF uploaded → POST /api/cv/upload → cvText
 
 - `recency_score`, `growth_trend`, `stability_score` לfeature_matrix
 - Preference axes: `trending`, `growth`, `stability` ל-API וl-UI
-- DS-9 — data for new titles
-- DS-14–DS-17 — company context enrichment
+- DS-9 - data for new titles
+- DS-14-DS-17 - company context enrichment
