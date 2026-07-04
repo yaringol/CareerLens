@@ -8,7 +8,7 @@ import {
 import { getSkillsFromText, getTrendingSkills } from '../services/dsModel';
 import { scoreAndPersist } from '../services/scoring.service';
 import { ValidationError, DsModelError } from '../errors';
-import { computeStabilityPreference, selectPersonalizedSkills } from '../services/personalization.service';
+import { computeStabilityPreference } from '../services/personalization.service';
 import type { IJob } from '../models/job.model';
 import { logAnalyzeOk } from '../utils/logger';
 import { isGibberish } from '../utils/gibberishDetector';
@@ -254,7 +254,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       ? coreSkills.slice(0, 5)
       : mergeTenSkills(job.title, coreSkills, [
           ...trending.map((t) => t.skill),
-          ...(await extractDynamicSkills(job.title, descriptionForDynamic)).extractedSkills,
+          ...(await extractDynamicSkills(job.title, descriptionForDynamic)).topFive,
         ]);
 
     const cvOnlyMode = skipGibberish;
@@ -366,21 +366,19 @@ type PersonalizationMode = (typeof PERSONALIZATION_MODES)[number];
 /**
  * POST /api/analyze/personalized
  *
- * Stable / Trending / Personal-Match weighting + focus-skill selection. The 3
- * weights collapse to a single stabilityPreference (0=stable..1=trending, see
- * computeStabilityPreference) which picks 5 of the 10 DS-returned skills whose
- * own stabilityScore best fits that preference (selectPersonalizedSkills),
- * unless the user already picked skills manually (selectedSkillIds). From
- * there the pipeline mirrors POST /api/analyze (mergeTenSkills + the same
- * scoring call) so the two routes stay behaviorally consistent.
+ * Personalized recommendation flow. Weights are validated for the UI contract and
+ * collapsed to stabilityPreference for the response. In posting mode the user's
+ * selected focus skills (from the agent pool) become the five dynamic slots; in
+ * CV-only mode only core skills are scored (5 total).
  */
 router.post('/personalized', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { canonicalTitle, cvText, jobDescription, personalization, excludeCvId } = req.body as {
+    const { canonicalTitle, cvText, personalization, excludeCvId, jobDescription, isPostingMode } = req.body as {
       canonicalTitle?: unknown;
       cvText?: unknown;
       jobDescription?: unknown;
       excludeCvId?: unknown;
+      isPostingMode?: unknown;
       personalization?: {
         mode?: unknown;
         weights?: { stable?: unknown; trending?: unknown; personalMatch?: unknown };
@@ -399,7 +397,7 @@ router.post('/personalized', async (req: Request, res: Response, next: NextFunct
       throw new ValidationError('personalization is required');
     }
 
-    const { mode, weights, selectedSkillIds } = personalization;
+    const { mode, weights, selectedSkillIds, selectedSkillNames } = personalization;
     if (!PERSONALIZATION_MODES.includes(mode as PersonalizationMode)) {
       throw new ValidationError(
         `personalization.mode must be one of: ${PERSONALIZATION_MODES.join(', ')}`
@@ -424,45 +422,56 @@ router.post('/personalized', async (req: Request, res: Response, next: NextFunct
     if (selectedSkillIds.length > 5) {
       throw new ValidationError('You can select up to 5 skills only');
     }
-    const selectedSkillIdStrings = selectedSkillIds.filter(
-      (v): v is string => typeof v === 'string'
-    );
+    if (!Array.isArray(selectedSkillNames)) {
+      throw new ValidationError('personalization.selectedSkillNames must be an array');
+    }
 
     const stabilityPreference = computeStabilityPreference(stable, trending);
 
+    const postingMode = isPostingMode === true || (
+      isPostingMode !== false &&
+      typeof jobDescription === 'string' &&
+      jobDescription.trim().length > 0
+    );
+
+    const focusSkills = selectedSkillNames
+      .filter((item): item is string => typeof item === 'string')
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    if (postingMode) {
+      if (focusSkills.length === 0) {
+        throw new ValidationError('Select at least one focus skill');
+      }
+      if (focusSkills.length > 5) {
+        throw new ValidationError('You can select up to 5 focus skills only');
+      }
+      const jd = typeof jobDescription === 'string' ? jobDescription.trim() : '';
+      if (jd && isGibberish(jd)) {
+        res.status(400).json({
+          code: 'GIBBERISH_DETECTED',
+          error: 'The job description does not look like readable English.',
+        });
+        return;
+      }
+    }
+
     const job = await validateJobTitle(canonicalTitle.trim());
     const id = job._id.toString();
+    const { coreSkills } = await getCoreSkillsById(id);
 
-    const jd = typeof jobDescription === 'string' ? jobDescription.trim() : '';
-    const skipGibberish = !jd;
-    if (!skipGibberish && isGibberish(jd)) {
-      res.status(400).json({
-        code: 'GIBBERISH_DETECTED',
-        error: 'The job description does not look like readable English.',
-      });
-      return;
+    let trendBySkill = new Map<string, string>();
+    try {
+      const candidates = await getTrendingSkills(job.title, 10);
+      trendBySkill = new Map(candidates.map((c) => [c.skill.toLowerCase(), c.trend]));
+    } catch {
+      trendBySkill = new Map();
     }
 
-    const candidates = await getTrendingSkills(job.title, 10);
-    if (candidates.length === 0) {
-      throw new DsModelError(`No trending-skills data available for job title "${job.title}"`, 503);
-    }
-
-    const coreFive = selectPersonalizedSkills(candidates, stabilityPreference, selectedSkillIdStrings);
-    if (coreFive.length !== 5) {
-      throw new DsModelError('Failed to select 5 personalized core skills', 503);
-    }
-
-    const trendBySkill = new Map(candidates.map((c) => [c.skill.toLowerCase(), c.trend]));
-
-    const allSkills = skipGibberish
-      ? coreFive
-      : mergeTenSkills(job.title, coreFive, [
-          ...candidates.map((c) => c.skill),
-          ...(await extractDynamicSkills(job.title, jd)).extractedSkills,
-        ]);
-
-    const cvOnlyMode = skipGibberish;
+    const cvOnlyMode = !postingMode;
+    const allSkills = cvOnlyMode
+      ? coreSkills.slice(0, 5)
+      : mergeTenSkills(job.title, coreSkills, focusSkills);
     const expectedSkillCount = cvOnlyMode ? 5 : 10;
 
     const { analysis, bestSavedCv } = await analyzeWithParallelFavoriteCompare({

@@ -157,6 +157,7 @@ export interface PersonalizationContract {
   canonicalTitle: string
   cvText: string
   jobDescription?: string
+  isPostingMode?: boolean
   excludeCvId?: string
   personalization: {
     mode: RecommendationMode
