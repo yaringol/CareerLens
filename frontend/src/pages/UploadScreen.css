@@ -726,6 +726,67 @@
   border-color: rgba(220, 38, 38, 0.35);
 }
 
+.role-override {
+  margin-top: 0.625rem;
+}
+
+.role-override__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 38px;
+  padding: 0.5rem 0.875rem;
+  border: 1.5px solid rgba(139, 124, 246, 0.45);
+  border-radius: var(--radius-input);
+  background: rgba(139, 124, 246, 0.1);
+  color: var(--color-accent-start);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.role-override__toggle:hover:not(:disabled),
+.role-override__toggle:focus-visible {
+  background: rgba(139, 124, 246, 0.18);
+  border-color: var(--color-accent-start);
+  box-shadow: 0 0 0 3px rgba(139, 124, 246, 0.14);
+  outline: none;
+}
+
+.role-override__toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.role-override__cancel {
+  align-self: flex-start;
+  margin-top: 0.25rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-accent-start);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.role-override__cancel:hover:not(:disabled),
+.role-override__cancel:focus-visible {
+  color: var(--color-primary);
+  outline: none;
+}
+
+.role-override__cancel:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .field-error {
   font-size: 0.8125rem;
   color: var(--color-error);
