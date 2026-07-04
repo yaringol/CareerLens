@@ -250,7 +250,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       ? coreSkills.slice(0, 5)
       : mergeTenSkills(job.title, coreSkills, [
           ...trending.map((t) => t.skill),
-          ...(await extractDynamicSkills(job.title, descriptionForDynamic)).extractedSkills,
+          ...(await extractDynamicSkills(job.title, descriptionForDynamic)).topFive,
         ]);
 
     const cvOnlyMode = skipGibberish;
@@ -362,15 +362,17 @@ type PersonalizationMode = (typeof PERSONALIZATION_MODES)[number];
 /**
  * POST /api/analyze/personalized
  *
- * Personalized recommendation flow. The selected focus skills become the five
- * dynamic skill slots while the first five slots stay the canonical core skills.
+ * Personalized recommendation flow. In posting mode the selected focus skills become
+ * the five dynamic skill slots; in CV-only mode only core skills are scored (5 total).
  */
 router.post('/personalized', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { canonicalTitle, cvText, personalization, excludeCvId } = req.body as {
+    const { canonicalTitle, cvText, personalization, excludeCvId, jobDescription, isPostingMode } = req.body as {
       canonicalTitle?: unknown;
       cvText?: unknown;
       excludeCvId?: unknown;
+      jobDescription?: unknown;
+      isPostingMode?: unknown;
       personalization?: {
         mode?: unknown;
         weights?: { stable?: unknown; trending?: unknown; personalMatch?: unknown };
@@ -419,22 +421,34 @@ router.post('/personalized', async (req: Request, res: Response, next: NextFunct
       throw new ValidationError('personalization.selectedSkillNames must be an array');
     }
 
+    const postingMode = isPostingMode === true || (
+      isPostingMode !== false &&
+      typeof jobDescription === 'string' &&
+      jobDescription.trim().length > 0
+    );
+
     const focusSkills = selectedSkillNames
       .filter((item): item is string => typeof item === 'string')
       .map((item) => item.trim())
       .filter(Boolean);
 
-    if (focusSkills.length === 0) {
-      throw new ValidationError('Select at least one focus skill');
-    }
-    if (focusSkills.length > 5) {
-      throw new ValidationError('You can select up to 5 focus skills only');
+    if (postingMode) {
+      if (focusSkills.length === 0) {
+        throw new ValidationError('Select at least one focus skill');
+      }
+      if (focusSkills.length > 5) {
+        throw new ValidationError('You can select up to 5 focus skills only');
+      }
     }
 
     const job = await validateJobTitle(canonicalTitle.trim());
     const id = job._id.toString();
     const { coreSkills } = await getCoreSkillsById(id);
-    const allSkills = mergeTenSkills(job.title, coreSkills, focusSkills);
+    const cvOnlyMode = !postingMode;
+    const allSkills = cvOnlyMode
+      ? coreSkills.slice(0, 5)
+      : mergeTenSkills(job.title, coreSkills, focusSkills);
+    const expectedSkillCount = cvOnlyMode ? 5 : 10;
 
     const { analysis, bestSavedCv } = await analyzeWithParallelFavoriteCompare({
       userId: req.user!.id,
@@ -442,10 +456,11 @@ router.post('/personalized', async (req: Request, res: Response, next: NextFunct
       jobTitle: job.title,
       cvText: cvText.trim(),
       skills: allSkills,
-      cvOnlyMode: false,
-      expectedSkillCount: 10,
+      cvOnlyMode,
+      expectedSkillCount,
       excludeCvId: typeof excludeCvId === 'string' ? excludeCvId : undefined,
       cvFileName: id,
+      keywordOnly: cvOnlyMode,
     });
 
     logAnalyzeOk(job.title);

@@ -1,6 +1,6 @@
 /**
  * Minimal production-friendly logging.
- * Set DEBUG_TEXT=1 for optional text previews (CV snippets, job description input to extractSkills).
+ * Set DEBUG_TEXT=1 for optional text previews (CV snippets, job description input to extractSkillPool).
  */
 
 const PREFIX = '[CareerLens]';
@@ -70,7 +70,7 @@ export function logSkillExtractionAgentPayload(meta: {
   );
 }
 
-/** Dynamic skill extraction succeeded via OpenAI (job description → 5 skills). */
+/** Dynamic skill extraction succeeded via OpenAI (job description → 10-skill pool). */
 export function logLlmDynamicSkillsOk(jobTitle: string, extractedSkills?: string[]): void {
   const skillsPart =
     extractedSkills && extractedSkills.length > 0

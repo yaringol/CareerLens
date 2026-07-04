@@ -12,11 +12,29 @@ import './SkillsMatchDashboard.css'
 const RESULT_KEY = 'analysisResult'
 const CV_FILENAME_KEY = 'cvFileName'
 const PERSONALIZATION_INPUT_KEY = 'personalizationInput'
+const PREVIOUS_RESULT_KEY = 'previousAnalysisResult'
 
 type StoredAnalysisResult = AnalyzeResponse & {
   cvText?: string
   cvFileName?: string
   bestSavedCv?: CompareSavedResponse['bestSavedCv']
+}
+
+function ensurePersonalizationInput(stored: StoredAnalysisResult): void {
+  if (sessionStorage.getItem(PERSONALIZATION_INPUT_KEY)) return
+  const jobDescription = sessionStorage.getItem('jobDescription') ?? ''
+  if (!stored.cvText?.trim()) return
+  sessionStorage.setItem(
+    PERSONALIZATION_INPUT_KEY,
+    JSON.stringify({
+      canonicalTitle: stored.jobTitle,
+      cvText: stored.cvText,
+      cvFileName: stored.cvFileName ?? sessionStorage.getItem(CV_FILENAME_KEY) ?? '',
+      jobDescription,
+      isPostingMode: Boolean(jobDescription.trim()),
+      excludeCvId: sessionStorage.getItem('excludeCvId') || undefined,
+    }),
+  )
 }
 
 // ─── Stagger context (CounterProvider pattern from reference) ────────
@@ -394,6 +412,19 @@ const SkillsMatchDashboard = () => {
     navigate('/upload')
   }
 
+  function handleBackToPersonalize() {
+    const raw = sessionStorage.getItem(RESULT_KEY)
+    if (!raw || !result) return
+    sessionStorage.setItem(PREVIOUS_RESULT_KEY, raw)
+    try {
+      const stored = JSON.parse(raw) as StoredAnalysisResult
+      ensurePersonalizationInput(stored)
+    } catch {
+      return
+    }
+    navigate('/personalize')
+  }
+
   async function handleViewBetterCv() {
     if (!betterSavedCv || !result) return
 
@@ -451,7 +482,18 @@ const SkillsMatchDashboard = () => {
   const dynamicSkills = result.skills.slice(5, 10)
   const matchPercent  = Math.round((result.matchScore / 10) * 100)
   const analyzedSkillCount = result.cvOnlyMode ? 5 : 10
-  const canCustomize = !result.cvOnlyMode && Boolean(sessionStorage.getItem(PERSONALIZATION_INPUT_KEY))
+  const storedForCustomize = (() => {
+    try {
+      const raw = sessionStorage.getItem(RESULT_KEY)
+      if (!raw) return null
+      return JSON.parse(raw) as StoredAnalysisResult
+    } catch {
+      return null
+    }
+  })()
+  const canCustomize = !result.cvOnlyMode
+    && Boolean(storedForCustomize?.cvText?.trim())
+    && Boolean(sessionStorage.getItem('jobDescription')?.trim())
 
   return (
     <div className="dashboard-screen">
@@ -571,18 +613,16 @@ const SkillsMatchDashboard = () => {
           {/* ── Dynamic skills card ── */}
           {!result.cvOnlyMode && (
             <ScoreCard>
-              <div className="card-eyebrow-row card-eyebrow-row--spaced">
-                <p className="card-eyebrow">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                  Dynamic Skills
-                </p>
+              <div className="card-eyebrow card-eyebrow--actions">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                <span className="card-eyebrow-title">Dynamic Skills</span>
                 {canCustomize && (
                   <button
                     type="button"
-                    className="btn-card-mini"
-                    onClick={() => navigate('/personalize')}
+                    className="btn-card-mini btn-card-mini--inline"
+                    onClick={handleBackToPersonalize}
                   >
-                    Customize
+                    ← personalize
                   </button>
                 )}
               </div>

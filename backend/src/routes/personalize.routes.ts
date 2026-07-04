@@ -1,8 +1,8 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate } from '../middleware/auth.middleware';
 import { ValidationError } from '../errors';
-import { extractTitleFromCv, getSkillsFromText } from '../services/dsModel';
-import { extractDynamicSkills } from '../services/job.service';
+import { extractTitleFromCv, getCoreSkills, getSkillsFromText } from '../services/dsModel';
+import { SKILL_POOL_SIZE, TOP_SKILL_COUNT, extractDynamicSkills } from '../services/job.service';
 import { isGibberish } from '../utils/gibberishDetector';
 import { looksLikeJobUrl } from '../utils/jobUrl';
 import { fetchJobPostingFromUrl } from '../services/jobPostingFetcher.service';
@@ -20,8 +20,7 @@ export interface SkillOption {
   selectedByDefault: boolean;
 }
 
-const ROLE_SKILL_POOL_SIZE = 10;
-const DEFAULT_SELECTED_COUNT = 5;
+const DEFAULT_SELECTED_COUNT = TOP_SKILL_COUNT;
 const MIN_JOB_DESCRIPTION_CHARS = 40;
 
 function skillId(name: string): string {
@@ -31,9 +30,9 @@ function skillId(name: string): string {
 /**
  * Build the focus-skill candidate pool for the Personalization screen.
  *
- * The pool is derived from the same posting-aware dynamic signals used by
- * standard analysis: trending market skills first, then LLM/fallback skills
- * extracted from the job posting. The top DEFAULT_SELECTED_COUNT are pre-selected.
+ * Pool comes from the agent (up to 10 posting-derived skills). Skills that overlap
+ * core role skills are omitted, so the list may be shorter than 10. The first
+ * DEFAULT_SELECTED_COUNT remaining options are pre-selected.
  */
 function tokenSet(s: string): Set<string> {
   return new Set(
@@ -71,7 +70,7 @@ function buildSkillOptions(skills: string[], excludedCoreSkills: string[] = []):
     if (isNearDuplicate(name, excludedCoreSkills)) continue;
     seen.add(key);
     ordered.push(name);
-    if (ordered.length >= ROLE_SKILL_POOL_SIZE) break;
+    if (ordered.length >= SKILL_POOL_SIZE) break;
   }
 
   const total = ordered.length || 1;
@@ -120,8 +119,12 @@ router.post('/options', async (req: Request, res: Response, next: NextFunction):
       jobDescription.trim().length > 0
     );
 
+    const title = canonicalTitle.trim();
     const titlePromise = extractTitleFromCv(cvText).catch(() => null);
     const cvSkillsPromise = getSkillsFromText(cvText, 15).catch(() => [] as string[]);
+    const coreSkillsPromise = postingMode
+      ? getCoreSkills(title).catch(() => [] as string[])
+      : Promise.resolve([] as string[]);
     let focusSkillsPromise: Promise<string[]> = Promise.resolve([]);
 
     if (postingMode) {
@@ -143,20 +146,22 @@ router.post('/options', async (req: Request, res: Response, next: NextFunction):
         return;
       }
 
-      focusSkillsPromise = extractDynamicSkills(canonicalTitle.trim(), description, ROLE_SKILL_POOL_SIZE)
-        .then((result) => buildSkillOptions(result.extractedSkills).map((skill) => skill.name));
+      focusSkillsPromise = extractDynamicSkills(title, description).then(
+        (result) => result.pool
+      );
     }
 
-    const [titleResult, focusSkills, cvSkills] = await Promise.all([
+    const [titleResult, focusSkills, cvSkills, coreSkills] = await Promise.all([
       titlePromise,
       focusSkillsPromise,
       cvSkillsPromise,
+      coreSkillsPromise,
     ]);
 
     const detectedTitle =
-      titleResult?.canonical_title || titleResult?.extracted_title || canonicalTitle.trim();
+      titleResult?.canonical_title || titleResult?.extracted_title || title;
     const extractedCvSkills = cvSkills ?? [];
-    const roleDerivedSkills = buildSkillOptions(focusSkills ?? []);
+    const roleDerivedSkills = buildSkillOptions(focusSkills ?? [], coreSkills ?? []);
 
     res.json({ detectedTitle, extractedCvSkills, roleDerivedSkills });
   } catch (err) {
