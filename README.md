@@ -86,6 +86,15 @@ First run downloads the spaCy `en_core_web_lg` model (~500 MB).
 
 Copy `ds/model/.env.example` to `ds/model/.env` and set `MONGO_URI` (pipeline scripts also read `backend/.env`).
 
+**Git LFS (required for model files):** joblib artifacts are stored in Git LFS. After clone:
+
+```bash
+git lfs install
+git lfs pull --include="ds/model/*.joblib"
+```
+
+`npm install` in `backend/` runs `scripts/check-git-lfs.js` and pulls them automatically when pointers are detected.
+
 ### 4. Frontend
 
 ```bash
