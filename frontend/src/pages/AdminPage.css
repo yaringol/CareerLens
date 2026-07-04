@@ -252,8 +252,19 @@
 }
 
 .td-email {
-  color: rgba(255, 255, 255, 0.5) !important;
-  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.92) !important;
+  font-size: 0.875rem;
+  font-weight: 500;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.td-email--missing {
+  color: rgba(255, 255, 255, 0.35) !important;
+  font-style: italic;
+  font-weight: 400;
 }
 
 .td-date {

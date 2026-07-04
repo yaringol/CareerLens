@@ -453,7 +453,6 @@ const SkillsMatchDashboard = () => {
 
   return (
     <div className="dashboard-screen">
-      {/* App header — logo right, nav left */}
       <div className="dashboard-nav">
         <div className="dashboard-nav-left">
           <button className="btn-nav-pill" onClick={handleGoHome}>
@@ -485,7 +484,6 @@ const SkillsMatchDashboard = () => {
         <AppLogo size="sm" />
       </div>
 
-      {/* Job title */}
       <h1 className="dashboard-title">{result.jobTitle}</h1>
 
       {/* Cards */}

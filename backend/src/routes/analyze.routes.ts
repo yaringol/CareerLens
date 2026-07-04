@@ -333,6 +333,7 @@ router.post('/skillner', async (req: Request, res: Response, next: NextFunction)
     const allSkills = mergeTenSkills(job.title, coreSkills, dynamicSkills);
 
     const analysis = await scoreAndPersist({
+      userId: req.user!.id,
       jobId: id,
       jobTitle: job.title,
       cvText: cvText!.trim(),

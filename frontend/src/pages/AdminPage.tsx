@@ -212,7 +212,12 @@ export default function AdminPage() {
                     ) : (
                       analyses.map((a) => (
                         <tr key={a.id}>
-                          <td className="td-email">{a.userEmail ?? '—'}</td>
+                          <td
+                            className={`td-email${a.userEmail ? '' : ' td-email--missing'}`}
+                            title={a.userEmail ? a.userEmail : 'Recorded before user tracking was enabled'}
+                          >
+                            {a.userEmail ?? 'Unknown user'}
+                          </td>
                           <td>{a.jobTitle}</td>
                           <td>
                             <span className="score-badge" style={{ color: scoreColor(a.matchScore) }}>

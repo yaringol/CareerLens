@@ -6,6 +6,7 @@ interface SkillScore {
 }
 
 export interface ICvAnalysis extends Document {
+  userId?: Types.ObjectId;
   cvFileName: string;
   cvTextExtracted: string;
   jobId: Types.ObjectId;
@@ -26,6 +27,7 @@ const SkillScoreSchema = new Schema<SkillScore>(
 
 const CvAnalysisSchema = new Schema<ICvAnalysis>(
   {
+    userId: { type: Schema.Types.ObjectId, ref: 'User', index: true },
     cvFileName: { type: String, required: true },
     cvTextExtracted: { type: String, required: true },
     jobId: { type: Schema.Types.ObjectId, ref: 'Job', required: true },

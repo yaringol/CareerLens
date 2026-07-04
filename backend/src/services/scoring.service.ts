@@ -118,6 +118,7 @@ function normalizeLlmScoringJson(
 }
 
 export interface ScoreRequest {
+  userId?: string;
   jobId: string;
   jobTitle: string;
   cvText: string;
@@ -216,6 +217,7 @@ export async function scoreAndPersist(req: ScoreRequest): Promise<ICvAnalysis> {
   const validatedSkills = validateSkillArray(req.skills, expectedSkillCount);
 
   const baseInput = {
+    userId: req.userId,
     cvFileName: req.cvFileName ?? req.jobId,
     cvTextExtracted: req.cvText,
     jobId: req.jobId,
