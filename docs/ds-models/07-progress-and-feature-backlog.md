@@ -1,4 +1,4 @@
-# CareerLens DS — Progress Summary
+# CareerLens DS - Progress Summary
 
 > סיכום כל ההתקדמות שנעשתה, מה נשאר, ומה הסקרייפינג צריך לספק כדי לשפר את המודל.
 
@@ -6,9 +6,9 @@
 
 ## מה בוצע
 
-### מודל — Feature Matrix (DS-2 עד DS-6)
+### מודל - Feature Matrix (DS-2 עד DS-6)
 
-**לפני:** המודל חישב `role_skill_scores[title][skill] += score` — מספר אחד לכל (תפקיד, כישור), מיון לפי prevalence בלבד.
+**לפני:** המודל חישב `role_skill_scores[title][skill] += score` - מספר אחד לכל (תפקיד, כישור), מיון לפי prevalence בלבד.
 
 **אחרי:** כל (תפקיד, כישור) מקבל 3 פיצ'רים:
 
@@ -22,7 +22,7 @@
 ```
 score = 0.7 × prevalence + 0.3 × title_match × title_specificity
 ```
-- `title_match = 0.0` (ברירת מחדל) → תוצאה זהה למודל הישן — backward compatible
+- `title_match = 0.0` (ברירת מחדל) → תוצאה זהה למודל הישן - backward compatible
 - `title_match = 1.0` → כישורים ייחודיים לתפקיד עולים
 
 ---
@@ -36,12 +36,12 @@ score = 0.7 × prevalence + 0.3 × title_match × title_specificity
 | רמה | כמות | תנאי |
 |-----|------|------|
 | `high` | 23 titles | ≥100 רשומות |
-| `medium` | 27 titles | 50–99 רשומות |
-| `low` | 9 titles | 20–49 רשומות |
+| `medium` | 27 titles | 50-99 רשומות |
+| `low` | 9 titles | 20-49 רשומות |
 
 **High confidence (23):** Software Engineer (630), SOC Analyst (449), Product Manager (334), Digital Forensics (326), Backend Developer (326), Detection Engineer (321), Incident Response (313), Security Analyst (289), Cyber Security (238), Embedded Engineer (162), Fullstack Engineer (161), Cloud Security (154), Threat Intelligence (145), Data Scientist (142), Distributed Systems Engineer (141), C++ Developer (134), DevOps Engineer (133), Security Operations (131), Frontend Developer (119), QA Automation Engineer (119), Firmware Engineer (107), Security Architect (105), UX Designer (104)
 
-**Low confidence (9 — דורשים סקרייפינג):** Vulnerability Researcher (48), MLOps Engineer (45), Cryptographer (45), Deep Learning Engineer (34), Kernel Developer (32), Reinforcement Learning Researcher (27), Cloud Native Engineer (27), Technical Product Manager (TPM) (26), Java Developer (24)
+**Low confidence (9 - דורשים סקרייפינג):** Vulnerability Researcher (48), MLOps Engineer (45), Cryptographer (45), Deep Learning Engineer (34), Kernel Developer (32), Reinforcement Learning Researcher (27), Cloud Native Engineer (27), Technical Product Manager (TPM) (26), Java Developer (24)
 
 ---
 
@@ -57,18 +57,18 @@ score = 0.7 × prevalence + 0.3 × title_match × title_specificity
 
 ### Backend Proxy (job.service, dsModel, cv.routes, analyze.routes)
 
-- `dsModel.ts` — נוספו `matchTitle()`, `extractTitleFromCv()`
-- `getCoreSkills()` — מקבל עכשיו `titleMatch` param
-- `getCoreSkillsById()` — מעביר `titleMatch` ל-DS model
-- `POST /api/cv/extract-title` — proxy ל-DS `/cv/title`
-- `GET /api/title/match` — proxy ל-DS `/title/match`
-- `POST /api/analyze` + `POST /api/analyze/skillner` — מקבלים `titleMatch` מהbody
+- `dsModel.ts` - נוספו `matchTitle()`, `extractTitleFromCv()`
+- `getCoreSkills()` - מקבל עכשיו `titleMatch` param
+- `getCoreSkillsById()` - מעביר `titleMatch` ל-DS model
+- `POST /api/cv/extract-title` - proxy ל-DS `/cv/title`
+- `GET /api/title/match` - proxy ל-DS `/title/match`
+- `POST /api/analyze` + `POST /api/analyze/skillner` - מקבלים `titleMatch` מהbody
 
 ---
 
 ### Frontend (UI-1 + UI-2)
 
-**UI-1 — Auto Title Detection:**
+**UI-1 - Auto Title Detection:**
 - אחרי העלאת CV → קריאה אוטומטית ל-`/cv/extract-title`
 - `cvText` נשמר ב-state → submit לא מעלה פעמיים
 - badge "Auto-detected" עם כותרת שזוהתה
@@ -77,7 +77,7 @@ score = 0.7 × prevalence + 0.3 × title_match × title_specificity
 - כפתור "Change" → dropdown עם 3 suggestions + confidence%
 - CV ללא כותרת → שדה ידני עם debounce autocomplete
 
-**UI-2 — Preference Slider:**
+**UI-2 - Preference Slider:**
 - `<details>` accordion מוסתר כברירת מחדל
 - סליידר: **Most common ← Balanced → Role-specific**
 - ערך נשלח כ-`titleMatch` עם כל בקשת analyze
@@ -86,11 +86,11 @@ score = 0.7 × prevalence + 0.3 × title_match × title_specificity
 
 ### Testing & Infrastructure
 
-- `ds/model/test_preferences.py` — unit tests עם MOCK_MATRIX + smoke tests
-- `ds/model/train.py` — standalone training script (מחליף את הnotebook לאימון)
+- `ds/model/test_preferences.py` - unit tests עם MOCK_MATRIX + smoke tests
+- `ds/model/train.py` - standalone training script (מחליף את הnotebook לאימון)
 - Training: 59 titles, 269 variant titles, `n_neighbors=3`, feature_matrix בmodel.joblib
-- `ds/model/canonical_titles.json` — record counts + confidence levels לכל title
-- `listJobs()` — הוסר hardcoded check ל-5 jobs
+- `ds/model/canonical_titles.json` - record counts + confidence levels לכל title
+- `listJobs()` - הוסר hardcoded check ל-5 jobs
 
 ---
 
@@ -106,25 +106,25 @@ score = 0.7 × prevalence + 0.3 × title_match × title_specificity
 | `growth_trend` | ≥2 נקודות זמן שונות (עדיף חודשיות) |
 | `stability_score` | ≥3 חודשים שונים כדי לחשב coefficient of variation |
 
-ברגע שיהיו timestamps — **אפשר להפעיל** `trending`, `growth`, `stability` כ-preference axes ב-UI.
+ברגע שיהיו timestamps - **אפשר להפעיל** `trending`, `growth`, `stability` כ-preference axes ב-UI.
 
 ### Titles עם נתונים לא מספיקים
 
-9 titles ברמת `low` (< 50 רשומות) — התוצאות עבורם פחות אמינות. ב-UI מוצג warning.
+9 titles ברמת `low` (< 50 רשומות) - התוצאות עבורם פחות אמינות. ב-UI מוצג warning.
 
 ### POC test suite
 
-`poc_files/npm run run-poc` — לא רץ בגלל שה-backend ו-DB צריכים לרוץ. צריך לאמת שהPOC עדיין עובר אחרי כל השינויים.
+`poc_files/npm run run-poc` - לא רץ בגלל שה-backend ו-DB צריכים לרוץ. צריך לאמת שהPOC עדיין עובר אחרי כל השינויים.
 
 ### `dsModel.interface.ts`
 
-הממשק ב-`backend/src/interfaces/dsModel.interface.ts` מיושן — עדיין מתאר מצב POC ישן. לא משפיע על ריצה אבל כדאי לעדכן.
+הממשק ב-`backend/src/interfaces/dsModel.interface.ts` מיושן - עדיין מתאר מצב POC ישן. לא משפיע על ריצה אבל כדאי לעדכן.
 
 ---
 
 ## מה הסקרייפינג צריך לספק
 
-### 1. שדה `scraped_at` — הכרחי לפיצ'רי זמן
+### 1. שדה `scraped_at` - הכרחי לפיצ'רי זמן
 
 כל רשומה חייבת לכלול:
 ```json
@@ -141,12 +141,12 @@ record["scraped_at"]        = datetime.now(timezone.utc).date().isoformat()
 record["scraped_at_source"] = "real_scrape_time"
 ```
 
-לאחר **≥3 ריצות סקרייפינג עם תאריכים שונים** — `recency_score`, `growth_trend`, `stability_score` הופכים אמינים.
-ה-`train.py` כבר כולל את כל חישובי הזמן — הם פשוט מחכים לדאטה.
+לאחר **≥3 ריצות סקרייפינג עם תאריכים שונים** - `recency_score`, `growth_trend`, `stability_score` הופכים אמינים.
+ה-`train.py` כבר כולל את כל חישובי הזמן - הם פשוט מחכים לדאטה.
 
 ---
 
-### 2. Titles עם נתונים לא מספיקים — דורשים סקרייפינג ממוקד
+### 2. Titles עם נתונים לא מספיקים - דורשים סקרייפינג ממוקד
 
 9 titles ברמת `low` שצריך לחזק:
 
@@ -162,11 +162,11 @@ record["scraped_at_source"] = "real_scrape_time"
 | Technical Product Manager (TPM) | 26 | ≥50 |
 | Java Developer | 24 | ≥50 |
 
-**גישה מומלצת:** סקרייפינג ממוקד — לחפש ישירות לפי שם התפקיד (כמו שנעשה עם שאר הtitles), לאסוף לקובץ `ds/extractor/targeted_skills.jsonl`, ואחר כך להריץ `train.py` מחדש.
+**גישה מומלצת:** סקרייפינג ממוקד - לחפש ישירות לפי שם התפקיד (כמו שנעשה עם שאר הtitles), לאסוף לקובץ `ds/extractor/targeted_skills.jsonl`, ואחר כך להריץ `train.py` מחדש.
 
 ---
 
-### 3. Company Context Enrichment (עתידי — DS-14 עד DS-17)
+### 3. Company Context Enrichment (עתידי - DS-14 עד DS-17)
 
 לאחר שיש תאריכים אמינים, ניתן להוסיף:
 
@@ -182,7 +182,7 @@ record["scraped_at_source"] = "real_scrape_time"
 
 ---
 
-## סיכום — מה מפריד בין "עובד" ל"מצוין"
+## סיכום - מה מפריד בין "עובד" ל"מצוין"
 
 ```
 עכשיו (עובד):
@@ -220,7 +220,7 @@ record["scraped_at_source"] = "real_scrape_time"
 
 ### תיאור
 
-אחרי שהמשתמש בוחר משרה ומדביק תיאור, המערכת **בודקת בשקט** את כל קורות החיים השמורים שלו מול אותה משרה בדיוק. אם אחד מהם מקבל ציון גבוה יותר מהקו"ח שהועלה עכשיו — מוצגת הודעה:
+אחרי שהמשתמש בוחר משרה ומדביק תיאור, המערכת **בודקת בשקט** את כל קורות החיים השמורים שלו מול אותה משרה בדיוק. אם אחד מהם מקבל ציון גבוה יותר מהקו"ח שהועלה עכשיו - מוצגת הודעה:
 
 > "One of your saved CVs scores **X points higher** for this job. Want to see it?"
 
@@ -243,7 +243,7 @@ record["scraped_at_source"] = "real_scrape_time"
 
 ### שינויי Backend
 
-**`CvFile` model** — כבר קיים. אין שינוי.
+**`CvFile` model** - כבר קיים. אין שינוי.
 
 **endpoint חדש:** `POST /api/analyze/compare-saved`
 ```typescript
@@ -251,7 +251,7 @@ record["scraped_at_source"] = "real_scrape_time"
 // Returns: { bestSavedCv: { cvId, fileName, matchScore } | null }
 ```
 - טוען את כל ה-CVs השמורים (`CvFile.find`)
-- מריץ `analyzeCv` על כל אחד (parallel, אך ללא DB write — ephemeral)
+- מריץ `analyzeCv` על כל אחד (parallel, אך ללא DB write - ephemeral)
 - מחזיר רק את הטוב ביותר (אם גבוה מ-`currentMatchScore`)
 
 **הגבלה ל-10:** ב-`POST /api/upload`:
@@ -268,16 +268,16 @@ if (existingCount >= 10) {
 
 - `SkillsMatchDashboard.tsx`: לאחר קבלת תוצאה, שולח request ל-`/analyze/compare-saved` בbackground
 - מציג `CompareBanner` עם ציון השוואתי
-- `CompareBanner` — קומפוננט חדש עם שם ה-CV, ציון, וכפתור "View"
+- `CompareBanner` - קומפוננט חדש עם שם ה-CV, ציון, וכפתור "View"
 
 ### DOD
 
 - [ ] `POST /api/analyze/compare-saved` מחזיר ב-<5 שניות גם עם 9 CVs שמורים
-- [ ] אם אין CV שמור — response `{ bestSavedCv: null }` ללא שגיאה
+- [ ] אם אין CV שמור - response `{ bestSavedCv: null }` ללא שגיאה
 - [ ] banner מוצג רק אם הציון השמור **גבוה יותר** מהנוכחי
 - [ ] העלאת CV ה-11 → הישן ביותר נמחק אוטומטית
 - [ ] `GET /api/cv` מחזיר מקסימום 10 רשומות
-- [ ] banner לא חוסם את מסך התוצאות — מוצג מתחת לציון הראשי
+- [ ] banner לא חוסם את מסך התוצאות - מוצג מתחת לציון הראשי
 
 ### שאלות פתוחות
 
@@ -286,7 +286,7 @@ if (existingCount >= 10) {
 
 ---
 
-## FEAT-2 · הסרת Role Dropdown — גזירה אוטומטית מקו"ח
+## FEAT-2 · הסרת Role Dropdown - גזירה אוטומטית מקו"ח
 
 **עדיפות:** High
 **תלויות:** DS-11, DS-12 (כבר ממומשו)
@@ -304,25 +304,25 @@ if (existingCount >= 10) {
 
 ### שינויי Backend
 
-**`POST /api/analyze`** — מוסיפים מסלול שלישי ללא jobId:
+**`POST /api/analyze`** - מוסיפים מסלול שלישי ללא jobId:
 ```typescript
 // Mode חדש: { cvText, jobDescription, canonicalTitle }
 if (canonicalTitle && cvText && jobDescription) {
-  // getCoreSkills(canonicalTitle, titleMatch) ישירות — ללא DB lookup
+  // getCoreSkills(canonicalTitle, titleMatch) ישירות - ללא DB lookup
   const coreSkills = await getCoreSkills(canonicalTitle, titleMatchValue);
   // ...rest of flow
 }
 ```
 
-**שינוי ב-`listJobs`** — endpoint זה הופך לoptional / deprecated לאט.
+**שינוי ב-`listJobs`** - endpoint זה הופך לoptional / deprecated לאט.
 
-**response** — מחזיר `canonicalTitle` במקום `jobTitle` ממסד הנתונים.
+**response** - מחזיר `canonicalTitle` במקום `jobTitle` ממסד הנתונים.
 
 ### שינויי Frontend
 
 `UploadScreen.tsx`:
 - **מוחקים** את `jobs` state, `jobId` state, `fetchJobs()` call, ו-`<select>` קומפוננט
-- **שומרים** את `detectedTitle` (כבר קיים) — זהו ה"role" שנשלח
+- **שומרים** את `detectedTitle` (כבר קיים) - זהו ה"role" שנשלח
 - אם לא זוהה title → שדה חיפוש פתוח עם autocomplete מ-`/title/match`
 - `analyzeCv()` מקבל `canonicalTitle` במקום `jobId`
 
@@ -337,11 +337,11 @@ if (canonicalTitle && cvText && jobDescription) {
 ### שאלות פתוחות
 
 - ❓ האם למחוק לחלוטין את הjobs collection מה-DB, או להשאיר לאחור-תאימות?
-- ❓ מה מוצג כ"שם המשרה" בדשבורד התוצאות — ה-`canonicalTitle` או תיאור חופשי?
+- ❓ מה מוצג כ"שם המשרה" בדשבורד התוצאות - ה-`canonicalTitle` או תיאור חופשי?
 
 ---
 
-## FEAT-3 · Navigation Bar קבוע — בית + פרופיל
+## FEAT-3 · Navigation Bar קבוע - בית + פרופיל
 
 **עדיפות:** Medium
 **תלויות:** Auth (5.1)
@@ -377,7 +377,7 @@ if (canonicalTitle && cvText && jobDescription) {
 ### שילוב ב-App.tsx
 
 ```tsx
-// App.tsx — מוסיפים <BottomNav /> לכל route שאינו /login
+// App.tsx - מוסיפים <BottomNav /> לכל route שאינו /login
 ```
 
 ### CSS
@@ -385,7 +385,7 @@ if (canonicalTitle && cvText && jobDescription) {
 - `position: fixed; bottom: 0; width: 100%`
 - גובה 56px
 - backdrop-filter blur (כמו ה-glassmorphism שיש כבר בפרויקט)
-- האייקון הפעיל — צבע accent, לא פעיל — muted
+- האייקון הפעיל - צבע accent, לא פעיל - muted
 
 ### DOD
 
@@ -393,7 +393,7 @@ if (canonicalTitle && cvText && jobDescription) {
 - [ ] **לא** מוצג ב-LoginPage
 - [ ] לחיצת Home → navigate('/'), לחיצת Profile → navigate('/account')
 - [ ] האייקון הפעיל לפי route נוכחי
-- [ ] ה-nav לא מסתיר תוכן — גוף הדף מקבל `padding-bottom: 56px`
+- [ ] ה-nav לא מסתיר תוכן - גוף הדף מקבל `padding-bottom: 56px`
 - [ ] נראה טוב על mobile (375px) ועל desktop (1440px)
 
 ---
@@ -406,7 +406,7 @@ if (canonicalTitle && cvText && jobDescription) {
 ### תיאור
 
 אחרי ניתוח, המשתמש יכול לפתוח מסך "Improve your CV" שמציג:
-1. Skills עם ציון נמוך (0–8) — עד 5 בלבד
+1. Skills עם ציון נמוך (0-8) - עד 5 בלבד
 2. Drag interface לדרגת שליטה בכל skill
 3. שיפורים אישיים (שפה, soft skills)
 4. הצעות שינוי שניתן לאשר ולשמור
@@ -415,12 +415,12 @@ if (canonicalTitle && cvText && jobDescription) {
 
 ---
 
-### חלק A — Skill Proficiency Drag
+### חלק A - Skill Proficiency Drag
 
 **Skills המוצגים:** עד 5 skills עם `score < 8` (מהניתוח הנוכחי), מסודרים בעולה לפי ציון.
-Skills עם `score ≥ 8` לא מוצגים — אלא אם המשתמש לוחץ על "Show all skills".
+Skills עם `score ≥ 8` לא מוצגים - אלא אם המשתמש לוחץ על "Show all skills".
 
-**Drag interface — 3 רמות:**
+**Drag interface - 3 רמות:**
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -433,13 +433,13 @@ Skills עם `score ≥ 8` לא מוצגים — אלא אם המשתמש לוח�
 ```
 
 **3 רמות:**
-- `dont_know` — לא יודע כלל
-- `learning` — מכיר בסיסים
-- `proficient` — שולט ברמה גבוהה
+- `dont_know` - לא יודע כלל
+- `learning` - מכיר בסיסים
+- `proficient` - שולט ברמה גבוהה
 
-**"לא יכול לשקר"** — המשמעות: ה-CV Score הנוכחי כבר מראה מה יש בפועל. הsystem לא "מאמין" לרמת שליטה שהמשתמש הצהיר — הוא משתמש בזה רק כדי להתאים את ה-**המלצות הלמידה**, לא לשנות את הציון.
+**"לא יכול לשקר"** - המשמעות: ה-CV Score הנוכחי כבר מראה מה יש בפועל. הsystem לא "מאמין" לרמת שליטה שהמשתמש הצהיר - הוא משתמש בזה רק כדי להתאים את ה-**המלצות הלמידה**, לא לשנות את הציון.
 
-### חלק B — הצעות שינוי
+### חלק B - הצעות שינוי
 
 לכל skill בcoלומן ימין:
 ```
@@ -449,9 +449,9 @@ python: [Don't know]
    [Apply] [Skip]
 ```
 
-ה"הצעות" הן template-based (לא LLM) בשלב ראשון — per skill per proficiency level.
+ה"הצעות" הן template-based (לא LLM) בשלב ראשון - per skill per proficiency level.
 
-### חלק C — שיפורים אישיים (Personal)
+### חלק C - שיפורים אישיים (Personal)
 
 סקשן נפרד מתחת לskills:
 
@@ -494,7 +494,7 @@ Note to self (free text)
 
 **Backend:** `POST /api/improvement-plans` + `GET /api/improvement-plans`
 
-**Frontend — טאב חדש ב-AccountPage:**
+**Frontend - טאב חדש ב-AccountPage:**
 - טאב "Improvement Plans" ברשימה
 - כל plan מציג שם (כותרת JD) + תאריך + כמה skills + progress bar
 - לחיצה → פותח את המסך המלא
@@ -506,7 +506,7 @@ Note to self (free text)
 - [ ] מוצגים עד 5 skills עם `score < 8`, מסודרים עולה
 - [ ] Skills עם `score ≥ 8` מוסתרים, כפתור "Show all" מציג אותם
 - [ ] Drag/slider לכל skill עם 3 רמות ברורות
-- [ ] הצעות שינוי מוצגות לפי (skill × proficiency) — template-based
+- [ ] הצעות שינוי מוצגות לפי (skill × proficiency) - template-based
 - [ ] כפתור "Apply" על כל הצעה → מסמן אותה כ"מאושרת"
 - [ ] חלק "Personal" עם שפה + checkboxes + free text
 - [ ] כפתור "Save Plan" → שומר ב-DB עם שם = כותרת JD
@@ -515,7 +515,7 @@ Note to self (free text)
 
 ### שאלות פתוחות
 
-- ❓ מה מקור ה"הצעות" — template קבוע או LLM בעתיד?
+- ❓ מה מקור ה"הצעות" - template קבוע או LLM בעתיד?
 - ❓ האם הplan מתעדכן כשמריצים ניתוח חדש על אותה משרה, או נשמר כsnapshot?
 
 ---
@@ -534,7 +534,7 @@ Cron (daily) → Scraper → JSONL append → train.py → DS server reload
 
 ### רכיבים
 
-#### 5.1 — הוספת `scraped_at` לסקרייפר
+#### 5.1 - הוספת `scraped_at` לסקרייפר
 
 **שינוי ב-scraping code:**
 ```python
@@ -545,21 +545,21 @@ record["scraped_at_source"] = "real_scrape_time"
 
 כל ריצה **מוסיפה** לקובץ הקיים (append mode), לא מחליפה אותו.
 
-#### 5.2 — Cron Job
+#### 5.2 - Cron Job
 
-**אפשרות A — Linux/Mac (crontab):**
+**אפשרות A - Linux/Mac (crontab):**
 ```bash
 0 3 * * * cd /path/to/CareerLens && python ds/scraping/run_daily.py >> logs/scrape.log 2>&1
 ```
 
-**אפשרות B — Windows Task Scheduler:**
+**אפשרות B - Windows Task Scheduler:**
 ```
 Task: CareerLens Daily Scrape
 Trigger: Daily 03:00
 Action: python ds/scraping/run_daily.py
 ```
 
-#### 5.3 — `run_daily.py`
+#### 5.3 - `run_daily.py`
 
 ```python
 # ds/scraping/run_daily.py
@@ -590,7 +590,7 @@ if __name__ == "__main__":
     log.info("Server reloaded. Pipeline complete.")
 ```
 
-#### 5.4 — `/admin/reload` endpoint ב-DS server
+#### 5.4 - `/admin/reload` endpoint ב-DS server
 
 ```python
 @app.post("/admin/reload")
@@ -614,7 +614,7 @@ def reload_model():
 
 > **אבטחה:** ה-endpoint מוגן בסביבת production עם API key או bind ל-localhost בלבד.
 
-#### 5.5 — Monitoring
+#### 5.5 - Monitoring
 
 קובץ `logs/scrape_YYYY-MM-DD.log` לכל ריצה עם:
 - כמה רשומות נוספו
@@ -630,19 +630,19 @@ def reload_model():
 - [ ] `/admin/reload` טוען מחדש את המודל ללא restart של התהליך
 - [ ] Cron מוגדר (OS-dependent) + הוראות ב-README
 - [ ] log נוצר לכל ריצה עם summary
-- [ ] אם הסקרייפינג נכשל — training לא רץ (subprocess `check=True`)
+- [ ] אם הסקרייפינג נכשל - training לא רץ (subprocess `check=True`)
 - [ ] אחרי 3 ריצות עם תאריכים שונים → `recency_score`, `growth_trend`, `stability_score` מופעלים בmodel
 
 ### שאלות פתוחות
 
 - ❓ אילו אתרים לסקרייפ? (LinkedIn, AllJobs, אחרים?)
 - ❓ כמה משרות לאסוף בכל ריצה יומית?
-- ❓ rate limiting — האם יש delay בין requests?
+- ❓ rate limiting - האם יש delay בין requests?
 - ❓ האם ה-pipeline ירוץ ב-cloud (GitHub Actions? VPS?) או רק locally?
 
 ---
 
-## FEAT-6 · שיפורי מודל + UI — Vibe Selection
+## FEAT-6 · שיפורי מודל + UI - Vibe Selection
 
 **עדיפות:** Medium
 **תלויות:** FEAT-5 (צריך temporal data לחלק מהפיצ'רים)
@@ -655,8 +655,8 @@ def reload_model():
 
 | ווב | מה הוא מדגיש |
 |-----|-------------|
-| Stable | `stability_score` גבוה — skills שנדרשים בצורה עקבית לאורך זמן |
-| Trending | `recency_score` + `growth_trend` גבוהים — skills שעולים לאחרונה |
+| Stable | `stability_score` גבוה - skills שנדרשים בצורה עקבית לאורך זמן |
+| Trending | `recency_score` + `growth_trend` גבוהים - skills שעולים לאחרונה |
 | Balanced | ברירת מחדל (מה שיש היום) |
 
 ### שינוי ב-API (אחרי FEAT-5 יש temporal data)
@@ -676,7 +676,7 @@ VIBE_PRESETS = {
 }
 ```
 
-### UI — Vibe Selector
+### UI - Vibe Selector
 
 מחליף את הסליידר הנוכחי "Most common ↔ Role-specific":
 
@@ -717,24 +717,24 @@ VIBE_PRESETS = {
 
 ---
 
-## טבלת סיכום — כל המשימות
+## טבלת סיכום - כל המשימות
 
 | Task | תיאור | עדיפות | תלויות | ממתין ל |
 |------|--------|--------|--------|---------|
-| FEAT-1 | Compare saved CVs | High | Auth, CV Library | — |
-| FEAT-2 | Remove role dropdown | High | DS-11, DS-12 ✅ | — |
-| FEAT-3 | Bottom navigation | Medium | Auth | — |
-| FEAT-4 | CV Improvement screen | High | FEAT-1 | — |
-| FEAT-5 | Auto daily scraping | High | Scraper code | — |
+| FEAT-1 | Compare saved CVs | High | Auth, CV Library | - |
+| FEAT-2 | Remove role dropdown | High | DS-11, DS-12 ✅ | - |
+| FEAT-3 | Bottom navigation | Medium | Auth | - |
+| FEAT-4 | CV Improvement screen | High | FEAT-1 | - |
+| FEAT-5 | Auto daily scraping | High | Scraper code | - |
 | FEAT-6 | Vibe selector + model | Medium | FEAT-5 | temporal data |
 
 ---
 
-## אבני דרך — תכנון מפורט
+## אבני דרך - תכנון מפורט
 
 ---
 
-### אבן דרך 1 — שיפורי UI: ניווט, חשבון ומסכי ניתוח
+### אבן דרך 1 - שיפורי UI: ניווט, חשבון ומסכי ניתוח
 
 **1.1 ניווט קבוע**
 להוסיף כפתורי Home ו-Profile קבועים בתחתית כל מסך, כדי שהמשתמש יוכל לחזור בקלות למסך הבית או לחשבון מכל מקום באפליקציה.
@@ -754,7 +754,7 @@ VIBE_PRESETS = {
 
 ---
 
-### אבן דרך 2 — Pipeline סקרייפינג אוטומטי יומי
+### אבן דרך 2 - Pipeline סקרייפינג אוטומטי יומי
 
 **2.1 עדכון הסקרייפר**
 להוסיף לכל רשומת משרה שדה `scraped_at` עם תאריך ושעת הסקרייפינג.
@@ -775,13 +775,13 @@ VIBE_PRESETS = {
 
 ---
 
-### אבן דרך 3 — השוואת קורות חיים שמורים ברקע
+### אבן דרך 3 - השוואת קורות חיים שמורים ברקע
 
 **3.1 מגבלת CVs שמורים**
 כל משתמש יכול לשמור עד 10 קורות חיים. בהעלאת CV מספר 11, הישן ביותר נמחק אוטומטית.
 
 **3.2 סימון מועדפים**
-המשתמש יכול לסמן עד 3 קורות חיים בכוכב כמועדפים — אלו הם שיחושבו ברקע בכל ניתוח. אם יש תוצאה טובה יותר, יוצג popup במסך התוצאות.
+המשתמש יכול לסמן עד 3 קורות חיים בכוכב כמועדפים - אלו הם שיחושבו ברקע בכל ניתוח. אם יש תוצאה טובה יותר, יוצג popup במסך התוצאות.
 
 **3.3 השוואה ברקע**
 לאחר ניתוח CV מול משרה, הbackend מריץ במקביל את אותה משרה גם מול עד 3 קורות החיים המועדפים.
@@ -796,9 +796,9 @@ VIBE_PRESETS = {
 
 ---
 
-### אבן דרך 4 — מסך שיפור CV לפי נקודות חלשות
+### אבן דרך 4 - מסך שיפור CV לפי נקודות חלשות
 
-> ⚠️ דורש איפיון מלא — לפי מה נציע את השיפורים? איך הם יישמרו? האם המשתמש יוכל לשנות את מה שהצענו?
+> ⚠️ דורש איפיון מלא - לפי מה נציע את השיפורים? איך הם יישמרו? האם המשתמש יוכל לשנות את מה שהצענו?
 
 **4.2 פתיחת המסך**
 מסך "Improve your CV" נפתח מתוך הדשבורד או מסך התוצאות.
@@ -810,7 +810,7 @@ VIBE_PRESETS = {
 לכל כישור המשתמש בוחר רמת שליטה: Don't know / Learning / Proficient.
 
 **4.5 המלצות לפי רמה**
-המערכת מציגה הצעות שיפור שונות לפי רמת השליטה. למשל — אם המשתמש לא מכיר את הכישור, לא להציג אותו כחוזקה. אם הוא Proficient, להציע ניסוח חזק יותר ל-CV.
+המערכת מציגה הצעות שיפור שונות לפי רמת השליטה. למשל - אם המשתמש לא מכיר את הכישור, לא להציג אותו כחוזקה. אם הוא Proficient, להציע ניסוח חזק יותר ל-CV.
 
 **4.6 שמירה בפרופיל**
 הפלט נשמר בפרופיל תחת Improvement Plans, כולל התפקיד, הכישורים, הרמות שנבחרו וההמלצות.
@@ -819,24 +819,24 @@ VIBE_PRESETS = {
 
 ---
 
-### אבן דרך 5 — שיפור המודל: דאטה, פיצ'רים ו-Vibe
+### אבן דרך 5 - שיפור המודל: דאטה, פיצ'רים ו-Vibe
 
 **5.1 צבירת דאטה**
 לאחר שה-pipeline היומי צובר לפחות 3 חודשי נתונים, ניתן להפעיל את פיצ'רי הזמן בצורה מלאה.
 
 **5.2 פיצ'רי זמן**
 להוסיף למודל:
-- `recency` — כמה הכישור מופיע לאחרונה.
-- `growth` — האם הביקוש לכישור עולה.
-- `stability` — האם הכישור יציב לאורך זמן.
+- `recency` - כמה הכישור מופיע לאחרונה.
+- `growth` - האם הביקוש לכישור עולה.
+- `stability` - האם הכישור יציב לאורך זמן.
 
 **5.3 חיבור בורר Vibe**
 לחבר את הבורר Stable / Balanced / Trending לפיצ'רי הזמן.
 
 **5.4 משמעות המצבים**
-- Stable — יעדיף כישורים יציבים.
-- Balanced — ישלב בין יציבים לטרנדיים.
-- Trending — יעדיף כישורים שהביקוש אליהם עולה.
+- Stable - יעדיף כישורים יציבים.
+- Balanced - ישלב בין יציבים לטרנדיים.
+- Trending - יעדיף כישורים שהביקוש אליהם עולה.
 
 **5.5 סקרייפינג ממוקד**
 לבצע סקרייפינג ממוקד ל-9 titles עם מעט דאטה (כמו Kernel Developer ו-MLOps Engineer), כדי להעלות אותם לרמת דאטה medium לפחות.
@@ -848,13 +848,13 @@ VIBE_PRESETS = {
 
 ---
 
-### אבן דרך 6 — הסרת dropdown והמרה לזיהוי אוטומטי
+### אבן דרך 6 - הסרת dropdown והמרה לזיהוי אוטומטי
 
 **6.1 הסרת בחירת תפקיד ידנית**
 להסיר את הdropdown של בחירת תפקיד, כדי שהמשתמש לא יצטרך לבחור title בעצמו.
 
 **6.2 זיהוי title מה-CV**
-`/cv/title` — endpoint שמזהה את התפקיד המרכזי מתוך קורות החיים (כבר קיים).
+`/cv/title` - endpoint שמזהה את התפקיד המרכזי מתוך קורות החיים (כבר קיים).
 
 **6.3 מיפוי ל-canonical title**
 את ה-title שזוהה ממפים ל-title קיים במודל באמצעות KNN על ה-vector space הקיים.

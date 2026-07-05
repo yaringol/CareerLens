@@ -7,13 +7,14 @@ import {
   logTitleLlmFallbackFailed,
   logTitleExtractionOk,
   logTitleExtractionNone,
+  logTitleExtractionFailed,
 } from '../utils/logger';
 
 const DS_MODEL_URL = process.env.DS_MODEL_URL ?? 'http://localhost:8000';
 const DS_MODEL_TIMEOUT_MS = 5000;
 
 // Below this normalised confidence (0-100) for ALL classifier candidates, the CV
-// is routed to the closed-list LLM fallback — typically roles the classifier has
+// is routed to the closed-list LLM fallback - typically roles the classifier has
 // no training data for (security/hardware/research specialisations). Calibrated
 // on the classifier's holdout; override with TITLE_LLM_FALLBACK_THRESHOLD.
 const TITLE_LLM_FALLBACK_THRESHOLD = Number(process.env.TITLE_LLM_FALLBACK_THRESHOLD ?? '55');
@@ -56,7 +57,7 @@ export interface DetectedRole {
 }
 
 /**
- * Calls /cv/role — the classifier maps free text (CV body or a typed title)
+ * Calls /cv/role - the classifier maps free text (CV body or a typed title)
  * to the nearest supported canonical job titles, ranked by confidence.
  */
 async function classifyRoles(text: string): Promise<DetectedRole[]> {
@@ -101,7 +102,7 @@ async function classifyRoles(text: string): Promise<DetectedRole[]> {
  * when no self-declared title is found, (3) when every remaining candidate is
  * below the calibrated confidence threshold, fall back to a second LLM call
  * constrained to the closed 59-title list. The system always answers from
- * within the closed scope — extraction, classifier, or LLM — and tags which
+ * within the closed scope - extraction, classifier, or LLM - and tags which
  * one produced the result. Steps 1-2 happen in extractTitleFromCv; this
  * function only adds the closed-list LLM rung.
  */
@@ -124,7 +125,7 @@ export async function detectTitleFromCv(text: string, headerText?: string): Prom
     .filter((role) => role.jobTitle);
 
   // The ladder's top candidate is the title-extraction hit when it resolved
-  // confidently (see extractTitleFromCv above) — tag it distinctly from a
+  // confidently (see extractTitleFromCv above) - tag it distinctly from a
   // plain full-body classifier guess.
   if (ladder.source === 'title_extraction' && roles[0]) {
     roles[0] = { ...roles[0], source: 'title_extraction' };
@@ -150,7 +151,7 @@ export async function detectTitleFromCv(text: string, headerText?: string): Prom
       return [fallbackRole, ...roles.filter((r) => r.canonicalTitle !== llmTitle)];
     }
   } catch (err) {
-    // Fallback must never block the flow — low-confidence classifier results
+    // Fallback must never block the flow - low-confidence classifier results
     // still let the user pick manually in the UI.
     logTitleLlmFallbackFailed(String(err));
   }
@@ -158,7 +159,7 @@ export async function detectTitleFromCv(text: string, headerText?: string): Prom
 }
 
 /**
- * Calls /text/skills (SkillNer) — extracts skills from raw job description text.
+ * Calls /text/skills (SkillNer) - extracts skills from raw job description text.
  * Returns top N deduplicated skills, full matches first then ngram by score.
  */
 export async function getSkillsFromText(text: string, topN = 5): Promise<string[]> {
@@ -256,13 +257,13 @@ export interface TrendingSkill {
   // 0..1: 0 = flat/stable over time, 1 = steep/trendy. Slope of monthly occurrence,
   // fit at train time (see ds/model/train.py's compute_stability_features). Defaults
   // to a neutral 0.5 (with timeFeaturesReliable=false) when there isn't enough dated
-  // history yet — never a crash/error.
+  // history yet - never a crash/error.
   stabilityScore: number;
   timeFeaturesReliable: boolean;
 }
 
 /**
- * Calls /title/trending-skills — recency-weighted skills for a role, each tagged with a
+ * Calls /title/trending-skills - recency-weighted skills for a role, each tagged with a
  * rising/stable/falling trend plus a stability score. Intended to run before analyze so
  * the dynamic skill slots favour what is currently in demand.
  */
@@ -304,11 +305,11 @@ export async function getTrendingSkills(title: string, n = 5): Promise<TrendingS
 export interface ExtractTitleResult {
   extracted_title: string | null;
   // Title as originally found, before seniority/employment-type words were
-  // stripped for display (e.g. "Middle/Senior React Developer" — extracted_title
+  // stripped for display (e.g. "Middle/Senior React Developer" - extracted_title
   // would be "React Developer"). Optional: absent on older DS versions.
   raw_title?: string | null;
   // Seniority words detected in raw_title ("Senior", "Junior", "Lead", ...),
-  // empty if none. Not yet surfaced in the UI — available for a future display.
+  // empty if none. Not yet surfaced in the UI - available for a future display.
   seniority?: string[];
   canonical_title: string | null;
   confidence: number;
@@ -324,11 +325,11 @@ const TITLE_EXTRACTION_LOW_CONFIDENCE = TITLE_LLM_FALLBACK_THRESHOLD;
 
 /**
  * headerText, when provided, carries the CV's original first lines (real line
- * breaks, original case/punctuation) — separate from cvText, which has
+ * breaks, original case/punctuation) - separate from cvText, which has
  * already been flattened/lowercased for the other consumers built around it.
  * The LLM extraction below reads whichever is available; headerText is
  * preferred when present since it is unflattened, but the LLM (unlike the
- * regex-based extraction this replaces) does not strictly require it — it can
+ * regex-based extraction this replaces) does not strictly require it - it can
  * still read a title out of flattened/lowercased cvText if that's all it gets.
  *
  * Ladder: (1) ask an LLM for the candidate's self-declared title verbatim
@@ -336,14 +337,18 @@ const TITLE_EXTRACTION_LOW_CONFIDENCE = TITLE_LLM_FALLBACK_THRESHOLD;
  * canonical titles via the existing semantic model (getTitleMatches ->
  * DS's `/title/normalize`); (2) if no self-declared title is found (a valid
  * "NONE" answer, not a failure), fall back to the full-CV-body classifier
- * (classifyRoles -> DS's `/cv/role`). An error from the extraction LLM call
- * itself (network/API failure) is NOT caught here — it propagates so the
- * caller treats "extraction unavailable" as a hard failure rather than
- * silently degrading to the classifier.
+ * (classifyRoles -> DS's `/cv/role`). If the extraction LLM itself fails
+ * (network/API failure), continue to the classifier so role detection still
+ * works while the optional extraction rung is unavailable.
  */
 export async function extractTitleFromCv(cvText: string, headerText?: string): Promise<ExtractTitleResult> {
   const rawText = headerText || cvText;
-  const selfDeclaredTitle = await extractSelfDeclaredTitle(rawText);
+  let selfDeclaredTitle: string | null = null;
+  try {
+    selfDeclaredTitle = await extractSelfDeclaredTitle(rawText);
+  } catch (err) {
+    logTitleExtractionFailed(err instanceof Error ? err.message : String(err));
+  }
 
   if (selfDeclaredTitle) {
     const { suggestions } = await getTitleMatches(selfDeclaredTitle);
@@ -369,7 +374,7 @@ export async function extractTitleFromCv(cvText: string, headerText?: string): P
     logTitleExtractionNone();
   }
 
-  // No self-declared title found (or normalize returned nothing usable) —
+  // No self-declared title found (or normalize returned nothing usable) -
   // fall back to the full-CV-body classifier, same as before.
   const roles = await classifyRoles(cvText);
   const top = roles[0];
@@ -408,7 +413,7 @@ interface TitleNormalizeSuggestion {
  * Manual title search (e.g. "Sr. SWE" typed by the user when auto-detection
  * misses): calls DS's /title/normalize, which runs the short-title semantic
  * nearest-centroid model directly. This must never go through classifyRoles/
- * /cv/role — that classifier is trained on full CV bodies, and its TF-IDF
+ * /cv/role - that classifier is trained on full CV bodies, and its TF-IDF
  * vocabulary/weighting is tuned for thousand-word documents, not a 2-4 word
  * query (the same class of train/serve mismatch as feeding a full CV into a
  * titles-only model, just in the opposite direction).

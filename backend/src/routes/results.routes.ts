@@ -5,7 +5,7 @@ import { authenticate } from '../middleware/auth.middleware';
 const router = Router();
 router.use(authenticate);
 
-// GET /api/results/:id — Fetch stored analysis by ID
+// GET /api/results/:id - Fetch stored analysis by ID
 router.get('/:id', getResult);
 
 export default router;

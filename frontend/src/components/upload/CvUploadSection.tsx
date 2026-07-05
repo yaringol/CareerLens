@@ -21,6 +21,14 @@ import AdminNavLink from '../admin/AdminNavLink'
 import ScanLoader from '../ui/ScanLoader'
 import { isGibberish } from '../../utils/gibberishDetector'
 import { looksLikeJobUrl } from '../../utils/jobUrl'
+import {
+  buildUploadDraftFromSession,
+  readUploadDraft,
+  writeUploadDraft,
+  type CachedRoleDetection,
+  type UploadDraft,
+  type UploadJobInputMode,
+} from '../../utils/uploadDraftCache'
 import '../../pages/UploadScreen.css'
 
 const PERSONALIZATION_INPUT_KEY = 'personalizationInput'
@@ -31,7 +39,7 @@ const CV_EXTRACT_ERROR = 'Could not extract text from this PDF'
 // 60 auto-accepts clear detections and routes real ambiguities to manual choice.
 const AUTO_MATCH_CONFIDENCE_MIN = 60
 
-type JobInputMode = 'posting' | 'cv-only'
+type JobInputMode = UploadJobInputMode
 
 type UploadFieldErrors = {
   jobDescription?: string
@@ -95,6 +103,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
   const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const analysisInFlightRef = useRef(false)
+  const draftRestoredRef = useRef(false)
 
   const [cvFile, setCvFile] = useState<File | null>(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -116,6 +125,84 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
   const [cvsLoading, setCvsLoading] = useState(false)
   const [saveToLibrary, setSaveToLibrary] = useState(true)
   const [favoritingId, setFavoritingId] = useState<string | null>(null)
+
+  function snapshotUploadDraft(
+    overrides: Partial<UploadDraft> = {},
+  ): UploadDraft {
+    return {
+      jobDescription,
+      jobInputMode,
+      cvTab,
+      saveToLibrary,
+      selectedCvId,
+      selectedCvName,
+      cvText: selectedCvText,
+      roleDetection: roleDetection as CachedRoleDetection,
+      manualTitleQuery,
+      showManualOverride,
+      ...overrides,
+    }
+  }
+
+  function persistUploadDraft(overrides: Partial<UploadDraft> = {}): void {
+    writeUploadDraft(snapshotUploadDraft(overrides))
+  }
+
+  useEffect(() => {
+    if (draftRestoredRef.current) return
+    draftRestoredRef.current = true
+
+    const draft = readUploadDraft() ?? buildUploadDraftFromSession()
+    if (!draft) return
+
+    setJobDescription(draft.jobDescription)
+    setJobInputMode(draft.jobInputMode)
+    setCvTab(draft.cvTab)
+    setSaveToLibrary(draft.saveToLibrary)
+    setSelectedCvId(draft.selectedCvId)
+    setSelectedCvName(draft.selectedCvName)
+    setSelectedCvText(draft.cvText)
+    setManualTitleQuery(draft.manualTitleQuery ?? '')
+    setShowManualOverride(draft.showManualOverride ?? false)
+
+    if (draft.roleDetection.status === 'ready' || draft.roleDetection.status === 'uncertain') {
+      setRoleDetection(draft.roleDetection)
+    } else if (draft.cvText?.trim()) {
+      void detectRole(draft.cvText)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- restore once on mount
+  }, [])
+
+  useEffect(() => {
+    if (!draftRestoredRef.current) return
+    const hasContent = Boolean(
+      jobDescription.trim()
+      || selectedCvText
+      || cvFile
+      || selectedCvId
+      || roleDetection.status === 'ready'
+      || roleDetection.status === 'uncertain',
+    )
+    if (!hasContent) return
+
+    const timer = window.setTimeout(() => {
+      persistUploadDraft()
+    }, 400)
+    return () => window.clearTimeout(timer)
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- snapshot via persistUploadDraft
+  }, [
+    jobDescription,
+    jobInputMode,
+    cvTab,
+    saveToLibrary,
+    selectedCvId,
+    selectedCvName,
+    selectedCvText,
+    cvFile,
+    roleDetection,
+    manualTitleQuery,
+    showManualOverride,
+  ])
 
   useEffect(() => {
     if (cvTab !== 'my-cvs') return
@@ -205,10 +292,10 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
   }
 
   // An LLM-fallback pick is a single constrained answer, not a similarity
-  // score — showing "70% match" would misread as a real confidence number.
+  // score - showing "70% match" would misread as a real confidence number.
   function matchLabel(suggestion: TitleMatchSuggestion) {
     return suggestion.source === 'llm_fallback' ? (
-      <span className="badge-ai" title="AI matched this from your CV — no similarity score to show">
+      <span className="badge-ai" title="AI matched this from your CV (no similarity score to show)">
         AI matched
       </span>
     ) : (
@@ -217,7 +304,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
   }
 
   // suggestion always comes from the closed 59-title list (auto-detection
-  // suggestions or /title/normalize search results) — never free text, so the
+  // suggestions or /title/normalize search results) - never free text, so the
   // resulting canonicalTitle is always one the rest of the app can act on.
   function selectSuggestedRole(suggestion: TitleMatchSuggestion) {
     if (roleDetection.status !== 'uncertain' && roleDetection.status !== 'not-found') return
@@ -238,6 +325,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
   async function detectRoleFromFile(file: File) {
     try {
       const { cvText, headerText } = await uploadPdf(file, false)
+      setSelectedCvText(cvText)
       await detectRole(cvText, headerText)
     } catch (err) {
       setRoleDetection({ status: 'error' })
@@ -411,6 +499,12 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
       if (roleDetection.status !== 'ready') return
 
       const { cvText, cvFileName, excludeCvId } = payload
+      persistUploadDraft({
+        cvText,
+        selectedCvName: cvFileName,
+        selectedCvId: excludeCvId || null,
+        roleDetection: roleDetection as CachedRoleDetection,
+      })
       const result = await analyzeCv(
         roleDetection.canonicalTitle,
         cvText,
@@ -426,6 +520,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
       sessionStorage.setItem('cvFileName', cvFileName)
       sessionStorage.setItem('excludeCvId', excludeCvId ?? '')
       sessionStorage.removeItem(PERSONALIZATION_INPUT_KEY)
+      sessionStorage.removeItem('personalizationPreferences')
       navigate('/dashboard', { replace: true })
     } catch (err) {
       handleAnalysisError(err)
@@ -444,6 +539,14 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
       if (roleDetection.status !== 'ready') return
 
       const { cvText, cvFileName, excludeCvId } = payload
+      sessionStorage.removeItem('personalizationPreferences')
+      sessionStorage.removeItem('previousAnalysisResult')
+      persistUploadDraft({
+        cvText,
+        selectedCvName: cvFileName,
+        selectedCvId: excludeCvId || null,
+        roleDetection: roleDetection as CachedRoleDetection,
+      })
       sessionStorage.setItem(
         PERSONALIZATION_INPUT_KEY,
         JSON.stringify({
@@ -656,7 +759,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                         ? `Detected as ${roleDetection.detectedTitle} · `
                         : ''}
                       {roleDetection.source === 'llm_fallback' ? (
-                        <span className="badge-ai" title="AI matched this from your CV — no similarity score to show">
+                        <span className="badge-ai" title="AI matched this from your CV (no similarity score to show)">
                           AI matched
                         </span>
                       ) : (
@@ -810,7 +913,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                       Your Dream Job Posting <span className="field-required" aria-hidden="true">*</span>
                     </span>
                     <span className="field-hint">
-                      Paste the full description or a job link - the backend fetches the posting when you analyze.
+                      Paste the full description or a job link. The backend fetches the posting when you analyze.
                     </span>
                   </label>
                   <textarea
@@ -867,7 +970,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                 </div>
               ) : (
                 <p className="cv-only-mode-hint">
-                  Score your CV against <strong>5 core skills</strong> for the selected role - no job posting needed.
+                  Score your CV against <strong>5 core skills</strong> for the selected role. No job posting needed.
                 </p>
               )}
             </div>

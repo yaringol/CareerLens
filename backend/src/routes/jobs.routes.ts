@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { getAllJobs } from '../dal/job.dal';
-import { extractSkills } from '../agents/skillExtraction.agent';
+import { extractSkillPool } from '../agents/skillExtraction.agent';
 import { authenticate } from '../middleware/auth.middleware';
 import { fetchJobPostingFromUrl } from '../services/jobPostingFetcher.service';
 import { ValidationError } from '../errors';
@@ -8,7 +8,7 @@ import { ValidationError } from '../errors';
 const router = Router();
 router.use(authenticate);
 
-// GET /jobs — List all supported roles for the dropdown
+// GET /jobs - List all supported roles for the dropdown
 router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const jobs = await getAllJobs();
@@ -18,7 +18,7 @@ router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-// POST /jobs/fetch-description — Fetch job description text from a public posting URL
+// POST /jobs/fetch-description - Fetch job description text from a public posting URL
 router.post('/fetch-description', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { url } = req.body as { url?: string };
@@ -32,7 +32,7 @@ router.post('/fetch-description', async (req: Request, res: Response, next: Next
   }
 });
 
-// POST /jobs/extract — Extract 5 dynamic skills from job description provided by client
+// POST /jobs/extract - Extract 10 posting skills (topFive + additional) from job description
 router.post('/extract', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { jobTitle, jobDescription } = req.body as {
@@ -45,8 +45,8 @@ router.post('/extract', async (req: Request, res: Response, next: NextFunction) 
       return;
     }
 
-    const extractedSkills = await extractSkills(jobDescription);
-    res.json({ jobTitle, extractedSkills });
+    const { pool, topFive } = await extractSkillPool(jobDescription);
+    res.json({ jobTitle, pool, topFive });
   } catch (err) {
     next(err);
   }

@@ -61,7 +61,7 @@ async function main() {
         `${title}: professional role requiring strong execution, collaboration, and domain-relevant technical skills.`;
 
       try {
-        const [{ coreSkills }, { extractedSkills: dynamicSkills }] = await Promise.all([
+        const [{ coreSkills }, { topFive: dynamicSkills }] = await Promise.all([
           getCoreSkillsById(id),
           extractDynamicSkills(title, descriptionForDynamic),
         ]);

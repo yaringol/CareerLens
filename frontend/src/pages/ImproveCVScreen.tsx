@@ -111,16 +111,16 @@ const PROFICIENCY_LABELS: Record<Proficiency, string> = {
 const PROFICIENCY_ORDER: Proficiency[] = ['no_knowledge', 'beginner', 'intermediate', 'proficient', 'expert']
 
 // ── Mock data for URL-driven testing (?mock=<key> or ?phase=result) ──
-const MOCK_CV_DEVOPS = `John Smith — DevOps Engineer
+const MOCK_CV_DEVOPS = `John Smith - DevOps Engineer
 john.smith@email.com | linkedin.com/in/johnsmith
 
 EXPERIENCE
-Senior Engineer — Acme Corp (2021–present)
+Senior Engineer - Acme Corp (2021-present)
   Worked on backend systems and deployments in a fast-paced environment.
   Managed AWS infrastructure for production services.
   Collaborated with development teams on release processes.
 
-Junior Engineer — StartupXYZ (2019–2021)
+Junior Engineer - StartupXYZ (2019-2021)
   Built CI pipelines using Jenkins for automated testing.
   Maintained Linux servers and handled on-call incidents.
 
@@ -128,25 +128,25 @@ SKILLS
 AWS, Linux, Jenkins, Python, Bash, Git
 
 EDUCATION
-B.Sc. Computer Science — Tel Aviv University 2019`
+B.Sc. Computer Science - Tel Aviv University 2019`
 
-const MOCK_CV_DS = `Maya Cohen — Data Scientist
+const MOCK_CV_DS = `Maya Cohen - Data Scientist
 maya@email.com | github.com/mayacohen
 
 EXPERIENCE
-Data Scientist — FinTech Ltd (2022–present)
+Data Scientist - FinTech Ltd (2022-present)
   Developed analytical models and dashboards for business stakeholders.
   Worked with large datasets to extract business insights.
   Participated in A/B testing and experimentation design.
 
-Analyst — Analytics Co (2020–2022)
+Analyst - Analytics Co (2020-2022)
   Produced weekly reports and visualizations using Excel and Python basics.
 
 SKILLS
 Python, SQL, Excel, Tableau, Statistics
 
 EDUCATION
-M.Sc. Industrial Engineering — Technion 2020`
+M.Sc. Industrial Engineering - Technion 2020`
 
 const MOCK_JD_DEVOPS = `We are looking for a DevOps Engineer to join our platform team.
 Requirements: Docker, Kubernetes, CI/CD pipelines, MongoDB, Test Automation, AWS, Linux.
@@ -207,17 +207,17 @@ const MOCK_IMPROVE_DATA: Record<string, MockEntry> = {
   },
 }
 
-const MOCK_RESULT_CV = `John Smith — DevOps Engineer
+const MOCK_RESULT_CV = `John Smith - DevOps Engineer
 john.smith@email.com | linkedin.com/in/johnsmith
 
 EXPERIENCE
-Senior Engineer — Acme Corp (2021–present)
+Senior Engineer - Acme Corp (2021-present)
   Worked on backend systems and deployments using Docker to containerize services,
   managing AWS infrastructure for production environments.
   Collaborated with development teams on release processes, building CI/CD pipelines
   with automated testing and Kubernetes-based deployment workflows.
 
-Junior Engineer — StartupXYZ (2019–2021)
+Junior Engineer - StartupXYZ (2019-2021)
   Built CI pipelines using Jenkins for automated testing and test automation frameworks.
   Maintained Linux servers and handled on-call incidents, including MongoDB administration.
 
@@ -225,7 +225,7 @@ SKILLS
 AWS, Linux, Jenkins, Python, Bash, Git, Docker, Kubernetes, MongoDB
 
 EDUCATION
-B.Sc. Computer Science — Tel Aviv University 2019`
+B.Sc. Computer Science - Tel Aviv University 2019`
 
 function ScoreBar({ score }: { score: number }) {
   const pct = (score / 10) * 100
@@ -277,7 +277,7 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
   const requestSeqRef = useRef(0)
 
   // Refs mirror the latest committed state so async callbacks (fetchSuggestion)
-  // never read a stale section/skill snapshot — critical when one tab's save
+  // never read a stale section/skill snapshot - critical when one tab's save
   // must be visible to the next tab that shares the same section.
   const sectionsRef = useRef(sectionsById)
   sectionsRef.current = sectionsById
@@ -378,7 +378,7 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
   const allProficienciesSelected = skills.length > 0 && skills.every((s) => s.proficiency !== null)
 
   const fetchSuggestion = useCallback(async (skillIdx: number, occIdx: number, force = false) => {
-    // Always read the LATEST committed state from refs — not a render-time closure.
+    // Always read the LATEST committed state from refs - not a render-time closure.
     const skill = skillsRef.current[skillIdx]
     if (!skill) return
     const edit = skill.occurrenceEdits[occIdx]
@@ -924,7 +924,7 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
                             </p>
                             {currentSection ? (
                               <div className="improve-panel-content">
-                                {/* Show the latest saved section text — this is what the next rephrase builds on */}
+                                {/* Show the latest saved section text - this is what the next rephrase builds on */}
                                 <p className="improve-old-text improve-old-text--primary">{currentSection.currentText}</p>
                                 {hasSavedChanges && (
                                   <details className="improve-original-toggle">

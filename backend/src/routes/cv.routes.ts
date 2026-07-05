@@ -15,7 +15,7 @@ import {
 const router = Router();
 router.use(authenticate);
 
-// POST /api/cv/title — Detect the most likely role from raw CV text.
+// POST /api/cv/title - Detect the most likely role from raw CV text.
 router.post('/cv/title', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { cvText, headerText } = req.body as { cvText?: unknown; headerText?: unknown };
@@ -37,7 +37,7 @@ router.post('/cv/title', async (req: Request, res: Response, next: NextFunction)
   }
 });
 
-// POST /api/upload — Upload PDF, extract text, optionally save to CVFile library
+// POST /api/upload - Upload PDF, extract text, optionally save to CVFile library
 // Query param: ?save=false to skip saving (just extract text)
 router.post('/upload', uploadMiddleware.single('file'), async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -75,7 +75,7 @@ router.post('/upload', uploadMiddleware.single('file'), async (req: Request, res
   }
 });
 
-// GET /api/cv — List current user's saved CVs (no cvText — too heavy), max 10
+// GET /api/cv - List current user's saved CVs (no cvText - too heavy), max 10
 router.get('/cv', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const files = await CvFile.find({ userId: req.user!.id })
@@ -98,7 +98,7 @@ router.get('/cv', async (req: Request, res: Response, next: NextFunction): Promi
   }
 });
 
-// PATCH /api/cv/:id/favorite — Star or unstar a saved CV (max 3 favorites)
+// PATCH /api/cv/:id/favorite - Star or unstar a saved CV (max 3 favorites)
 router.patch('/cv/:id/favorite', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { favorite } = req.body as { favorite?: unknown };
@@ -112,7 +112,7 @@ router.patch('/cv/:id/favorite', async (req: Request, res: Response, next: NextF
   }
 });
 
-// GET /api/cv/:id — Get single saved CV text by ID
+// GET /api/cv/:id - Get single saved CV text by ID
 router.get('/cv/:id', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const file = await CvFile.findOne({ _id: req.params.id, userId: req.user!.id }).lean();
@@ -131,7 +131,7 @@ router.get('/cv/:id', async (req: Request, res: Response, next: NextFunction): P
   }
 });
 
-// DELETE /api/cv/:id — Delete a saved CV
+// DELETE /api/cv/:id - Delete a saved CV
 router.delete('/cv/:id', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const result = await CvFile.deleteOne({ _id: req.params.id, userId: req.user!.id });
@@ -145,7 +145,7 @@ router.delete('/cv/:id', async (req: Request, res: Response, next: NextFunction)
   }
 });
 
-// POST /api/cv/extract-title — Detect user's current role from CV text
+// POST /api/cv/extract-title - Detect user's current role from CV text
 router.post('/cv/extract-title', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { cvText, headerText } = req.body as { cvText?: string; headerText?: string };

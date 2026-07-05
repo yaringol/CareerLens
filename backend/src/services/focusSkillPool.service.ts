@@ -84,10 +84,14 @@ export async function fetchFocusSkillPool(
   const [trending, dynamic, skillNer] = await Promise.all([
     getTrendingSkills(jobTitle, ROLE_SKILL_POOL_SIZE).catch(() => []),
     extractDynamicSkills(jobTitle, jobDescription)
-      .then((r) => r.extractedSkills)
+      .then((r) => r.pool)
       .catch(() => [] as string[]),
     getSkillsFromText(jobDescription, ROLE_SKILL_POOL_SIZE).catch(() => [] as string[]),
   ]);
-  const candidates = [...trending.map((t) => t.skill), ...dynamic, ...skillNer];
+  const candidates = [
+    ...trending.map((t: { skill: string }) => t.skill),
+    ...dynamic,
+    ...skillNer,
+  ];
   return buildSkillOptions(candidates, excludedCoreSkills);
 }

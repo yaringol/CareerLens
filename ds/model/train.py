@@ -1,5 +1,5 @@
 """
-Standalone training script — equivalent to running the Train section of training.ipynb.
+Standalone training script - equivalent to running the Train section of training.ipynb.
 Produces model.joblib + canonical_titles.json in ds/model/.
 """
 import json
@@ -27,12 +27,12 @@ MODEL_OUT  = os.getenv('MODEL_OUT_DIR', BASE_DIR)
 from mongo_env import get_mongo_uri
 
 MONGO_URI = get_mongo_uri()
-# Collection to train from — set MONGO_COLLECTION=JOBS_EXAMPLE to train on the
+# Collection to train from - set MONGO_COLLECTION=JOBS_EXAMPLE to train on the
 # synthetic trend dataset instead of the live scraped `jobs`. When
 # TRAIN_USE_UNIFIED=1, training instead reads from UNIFIED_SKILLS_COLLECTION
-# (role_skill_observations — one row per (job posting, skill) observation,
+# (role_skill_observations - one row per (job posting, skill) observation,
 # already carrying canonical_title/skill resolved by the ingestion pipeline,
-# schema_version 2 — see accumulate_from_unified below).
+# schema_version 2 - see accumulate_from_unified below).
 MONGO_COLLECTION = os.getenv('MONGO_COLLECTION', 'jobs')
 
 # ── Recency / time-feature tuning ──────────────────────────────────────────────
@@ -47,10 +47,10 @@ NOW               = datetime.now(timezone.utc)
 
 # ── Stability score (slope of monthly occurrence over time) ───────────────────
 # Unlike the single-ratio TREND_WINDOW_DAYS 'trend' label above, this fits a real
-# regression over each posting's own datePosted spread within THIS training run —
+# regression over each posting's own datePosted spread within THIS training run -
 # no dependency on multiple calendar-spaced training runs or a scraper cron. Moved
 # to stability.py (a pure function, no Mongo/side effects at import time) so it can
-# be unit-tested directly — see ds/model/test_stability.py.
+# be unit-tested directly - see ds/model/test_stability.py.
 from stability import (  # noqa: F401  (re-exported for backwards compatibility)
     compute_stability_features,
     MIN_RELIABLE_MONTHS,
@@ -87,7 +87,7 @@ def recency_weight(item):
     return 0.5 ** (age / HALF_LIFE_DAYS)
 
 # ── Canonical title set ───────────────────────────────────────────────────────
-# Moved to taxonomy.py — the shared single source of truth for the 59 canonical
+# Moved to taxonomy.py - the shared single source of truth for the 59 canonical
 # titles (also consumed by the CV->title classifier, train_cv_classifier.py).
 from taxonomy import (  # noqa: F401  (re-exported for backwards compatibility)
     CANONICAL_TITLE_VARIANTS,
@@ -211,7 +211,7 @@ def _empty_accumulators():
         # compute_stability_features): role_skill_month_counts[title][skill][month] =
         # count, role_month_totals[title][month] = postings-with-a-known-date count
         # that month. Independent bookkeeping from the recency/trend accumulators
-        # above — anchored to the posting's own observed date, not scrape recency.
+        # above - anchored to the posting's own observed date, not scrape recency.
         'role_skill_month_counts': {
             t: defaultdict(lambda: defaultdict(int)) for t in CANONICAL_TITLES
         },
@@ -286,7 +286,7 @@ def accumulate_from_collection(collection, source_weight, acc):
                 acc['recent_record_count'][canonical] += 1
             loaded += 1
 
-            # Stability slope bucketing — anchored to when the job was POSTED
+            # Stability slope bucketing - anchored to when the job was POSTED
             # (falls back to scraped/extracted_at via _parse_dt's callers above).
             posted_dt = _parse_dt(item.get('datePosted')) or _parse_dt(item.get('scraped_at'))
             job_id = item.get('_id') or item.get('job_id')
@@ -336,7 +336,7 @@ def accumulate_from_unified(collection, source_label, source_weight, acc):
             if observed_at is not None:
                 acc['skill_observation_dates'][canonical][skill].append(observed_at)
 
-            # Stability slope bucketing — anchored to the observation's own
+            # Stability slope bucketing - anchored to the observation's own
             # posted/observed date, once per (title, job_id, month).
             posted_dt = _parse_dt(observed_at)
             job_id = obs.get('job_id')
@@ -466,7 +466,7 @@ stability_features = compute_stability_features(
     CANONICAL_TITLES, role_skill_month_counts, role_month_totals
 )
 
-# Merge stability fields into the existing feature_matrix — a strict superset,
+# Merge stability fields into the existing feature_matrix - a strict superset,
 # no existing consumer of feature_matrix's shape breaks.
 for title, skills in feature_matrix.items():
     for skill, feats in skills.items():
@@ -537,7 +537,7 @@ if promoted:
     joblib.dump(model_artifacts, latest)
     print(f"Promoted to production: {latest}")
 else:
-    print(f"NOT promoted ({promote_reason}) — keeping existing {latest}")
+    print(f"NOT promoted ({promote_reason}) - keeping existing {latest}")
 
 # ── Save canonical_titles.json ────────────────────────────────────────────────
 
@@ -565,7 +565,7 @@ else:
 # So experiments across data sources (jobs / JOBS_EXAMPLE / lang-uk-job ...) are
 # stored side by side and comparable. Two collections in the same DB:
 #   model_runs          : one doc per training run (source + params + record counts)
-#   role_skill_features : one row per (run, canonical title, skill) — queryable
+#   role_skill_features : one row per (run, canonical title, skill) - queryable
 # Disable with PERSIST_FEATURES=0.
 if os.getenv('PERSIST_FEATURES', '1').lower() not in ('0', 'false', 'no'):
     fdb        = mongo.get_default_database()

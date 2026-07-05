@@ -6,7 +6,7 @@ import { getTitleMatches } from '../services/dsModel';
 const router = Router();
 router.use(authenticate);
 
-// POST /api/title/match — Map a free-text role to model-supported canonical titles.
+// POST /api/title/match - Map a free-text role to model-supported canonical titles.
 router.post('/match', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { title } = req.body as { title?: unknown };

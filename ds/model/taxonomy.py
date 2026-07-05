@@ -1,5 +1,5 @@
 """
-Shared title taxonomy — the single source of truth for the 59 canonical titles.
+Shared title taxonomy - the single source of truth for the 59 canonical titles.
 
 Both models import from here:
   - Model 1 (title->skills, train.py) uses CANONICAL_TITLE_VARIANTS / VARIANT_TO_CANONICAL.
@@ -8,7 +8,7 @@ Both models import from here:
     (master_resumes.jsonl) to project every data source onto the same label space.
 
 OTHER_LABEL is an explicit rejection class ("not an engineering CV") trained from the
-non-engineering lang-uk records. It is never returned to callers — the DS server
+non-engineering lang-uk records. It is never returned to callers - the DS server
 filters it out and low remaining confidence routes the request to the LLM fallback.
 """
 
@@ -108,7 +108,7 @@ CANONICAL_TITLE_VARIANTS = {
         "Firmware Engineer", "Senior Firmware Engineer", "Firmware Developer",
         "Embedded Firmware Engineer",
     ],
-    # ── Medium-confidence titles (50–99 records) ──────────────────────────────
+    # ── Medium-confidence titles (50-99 records) ──────────────────────────────
     "Machine Learning Engineer": [
         "Machine Learning Engineer", "ML Engineer", "Senior ML Engineer",
         "Applied ML Engineer", "ML Software Engineer",
@@ -200,7 +200,7 @@ CANONICAL_TITLE_VARIANTS = {
         "Product Security Engineer", "AppSec Engineer",
         "Application Security Engineer", "Product Security Researcher",
     ],
-    # ── Lower-confidence titles (20–49 records) ───────────────────────────────
+    # ── Lower-confidence titles (20-49 records) ───────────────────────────────
     "Deep Learning Engineer": [
         "Deep Learning Engineer", "DL Engineer", "Deep Learning Researcher",
     ],

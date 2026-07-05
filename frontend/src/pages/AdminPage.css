@@ -213,11 +213,73 @@
   font-size: 0.875rem;
 }
 
+.admin-error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  background: rgba(248, 113, 113, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  color: #fecaca;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+
 .admin-loading {
   text-align: center;
   color: rgba(255, 255, 255, 0.4);
   padding: 3rem;
   font-size: 0.95rem;
+}
+
+@keyframes admin-skeleton-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.7; }
+}
+
+.admin-skeleton {
+  display: block;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  animation: admin-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.admin-skeleton-card {
+  gap: 0.5rem;
+}
+
+.admin-skeleton-label {
+  width: 40%;
+  height: 0.75rem;
+}
+
+.admin-skeleton-value {
+  width: 75%;
+  height: 1.1rem;
+}
+
+.admin-skeleton-meta {
+  width: 55%;
+  height: 0.7rem;
+}
+
+.admin-skeleton-stat {
+  align-items: stretch;
+}
+
+.admin-skeleton-num {
+  width: 60%;
+  height: 1.25rem;
+  margin: 0 auto;
+}
+
+.admin-skeleton-stat-label {
+  width: 80%;
+  height: 0.65rem;
+  margin: 0.35rem auto 0;
 }
 
 .admin-table-wrap {

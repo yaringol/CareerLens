@@ -3,8 +3,8 @@
 // Current implementation: mock in src/services/dsModel.ts (title-keyed hardcoded skills).
 // Production replacement: vector DB lookup via normalizedTitle semantic similarity.
 //
-// TBD: Transport — HTTP REST, gRPC, or SDK import
-// TBD: Retry policy — suggest 2 retries, 10s timeout
+// TBD: Transport - HTTP REST, gRPC, or SDK import
+// TBD: Retry policy - suggest 2 retries, 10s timeout
 // TBD: Full response contract with DS team
 
 export interface ICoreSkillsProvider {

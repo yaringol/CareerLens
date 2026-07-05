@@ -16,7 +16,7 @@ const CvFileSchema = new Schema<ICvFile>(
     fileName: { type: String, required: true },
     cvText: { type: String, required: true },
     // Original (unflattened) first few lines, preserved separately from cvText
-    // for title detection — absent on CVs saved before this field existed.
+    // for title detection - absent on CVs saved before this field existed.
     headerText: { type: String, required: false },
     fileSizeBytes: { type: Number, required: true },
     isFavorite: { type: Boolean, default: false },

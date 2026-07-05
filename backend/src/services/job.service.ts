@@ -2,8 +2,9 @@ import mongoose from 'mongoose';
 import { getAllJobs, getJobById, getJobByTitle } from '../dal/job.dal';
 import { Job, IJob } from '../models/job.model';
 import { getCoreSkills } from './dsModel';
-import { extractSkills } from '../agents/skillExtraction.agent';
+import { extractSkillPool, SKILL_POOL_SIZE, TOP_SKILL_COUNT } from '../agents/skillExtraction.agent';
 import { ValidationError, NotFoundError, DsModelError } from '../errors';
+import { dedupeSkills } from '../utils/skillDedup';
 import {
   logFallbackDynamicSkills,
   logJobDescriptionForExtraction,
@@ -45,7 +46,7 @@ export async function getCoreSkillsById(jobId: string, titleMatch = 0.0): Promis
   return { jobId: String(job._id), jobTitle: job.title, coreSkills };
 }
 
-/** Per-job static fallback when LLM skill extraction fails — avoids identical dynamics for every role. */
+/** Per-job static fallback when LLM skill extraction fails - avoids identical dynamics for every role. */
 const FALLBACK_DYNAMIC_BY_TITLE: Record<string, string[]> = {
   'Software Engineer': [
     'REST and API design',
@@ -92,33 +93,51 @@ const FALLBACK_DYNAMIC_GENERIC = [
   'balancing speed with quality',
 ];
 
+/** Re-export agent constants so callers import from one place if they prefer. */
+export { SKILL_POOL_SIZE, TOP_SKILL_COUNT } from '../agents/skillExtraction.agent';
+
+function padFallbackPool(primary: string[], secondary: string[]): string[] {
+  return dedupeSkills([...primary, ...secondary], SKILL_POOL_SIZE);
+}
+
 export type DynamicSkillsSource = 'llm_job_description' | 'static_fallback_per_job' | 'static_fallback_generic';
+
+export interface DynamicSkillsResult {
+  jobTitle: string;
+  /** Full 10-skill pool (personalize picker, debugging). */
+  pool: string[];
+  /** Primary 5 for standard analyze dynamic slots. */
+  topFive: string[];
+  dynamicSource: DynamicSkillsSource;
+}
 
 export async function extractDynamicSkills(
   jobTitle: string,
   jobDescription: string
-): Promise<{
-  jobTitle: string;
-  extractedSkills: string[];
-  dynamicSource: DynamicSkillsSource;
-}> {
+): Promise<DynamicSkillsResult> {
   try {
     logJobDescriptionForExtraction(jobTitle, jobDescription.length);
-    logDebugText('job description (extractSkills input)', jobDescription, 400);
-    const extractedSkills = await extractSkills(jobDescription);
-    logLlmDynamicSkillsOk(jobTitle, extractedSkills);
-    return { jobTitle, extractedSkills, dynamicSource: 'llm_job_description' };
-  } catch {
+    logDebugText('job description (extractSkillPool input)', jobDescription, 400);
+    const { pool, topFive } = await extractSkillPool(jobDescription);
+    logLlmDynamicSkillsOk(jobTitle, pool);
+    return { jobTitle, pool, topFive, dynamicSource: 'llm_job_description' };
+  } catch (err) {
     const perJob = FALLBACK_DYNAMIC_BY_TITLE[jobTitle];
-    if (perJob && perJob.length === 5) {
-      logFallbackDynamicSkills(jobTitle, 'per_job');
-      return { jobTitle, extractedSkills: [...perJob], dynamicSource: 'static_fallback_per_job' };
+    const pool = padFallbackPool(
+      perJob ? [...perJob] : [],
+      [...FALLBACK_DYNAMIC_GENERIC]
+    );
+    if (pool.length < SKILL_POOL_SIZE) {
+      throw err;
     }
-    logFallbackDynamicSkills(jobTitle, 'generic');
+    const trimmed = pool.slice(0, SKILL_POOL_SIZE);
+    const source: DynamicSkillsSource = perJob ? 'static_fallback_per_job' : 'static_fallback_generic';
+    logFallbackDynamicSkills(jobTitle, perJob ? 'per_job' : 'generic');
     return {
       jobTitle,
-      extractedSkills: [...FALLBACK_DYNAMIC_GENERIC],
-      dynamicSource: 'static_fallback_generic',
+      pool: trimmed,
+      topFive: trimmed.slice(0, TOP_SKILL_COUNT),
+      dynamicSource: source,
     };
   }
 }

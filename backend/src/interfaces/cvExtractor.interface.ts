@@ -2,7 +2,7 @@
 // Wrapped in interface to allow swapping implementations.
 //
 // TBD: Minimum text length threshold (currently: 50 chars)
-// TBD: Maximum text length (currently: 50,000 chars — truncate or reject)
+// TBD: Maximum text length (currently: 50,000 chars - truncate or reject)
 
 export interface ICvTextExtractor {
   /**

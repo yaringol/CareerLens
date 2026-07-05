@@ -11,9 +11,9 @@
 
 | Collection | Count | הערה |
 |------------|------:|------|
-| `raw_postings` / `jobs` | 3,140 | LinkedIn — DoD [x] |
+| `raw_postings` / `jobs` | 3,140 | LinkedIn - DoD [x] |
 | `lang-uk-job` | 106,977 | raw |
-| `lang-uk-job-skills` | ~400+ | A2.8 batch מלא — **רץ ברקע** |
+| `lang-uk-job-skills` | ~400+ | A2.8 batch מלא - **רץ ברקע** |
 | `model_runs` | 3+ | promote: `20260703_172348` |
 
 ### סדר ביצוע
@@ -37,7 +37,7 @@
 
 ### A1 [x] | A2.5 [x] | A2 LinkedIn [x]
 
-### A2.8 lang-uk batch — [~] רץ ברקע
+### A2.8 lang-uk batch - [~] רץ ברקע
 
 ### A3 Admin
 | # | משימה | סטטוס |
@@ -47,7 +47,7 @@
 | A3.3 | AdminPage UI | [ ] |
 | A3.4 | pipeline-trigger | [ ] |
 
-### A4 — [ ] אחרי 0.2
+### A4 - [ ] אחרי 0.2
 
 ---
 
@@ -64,7 +64,7 @@
 
 | תאריך | שלב | מה נעשה |
 |-------|-----|---------|
-| 2026-07-03 | A2.5 | train promoted — 50 titles |
+| 2026-07-03 | A2.5 | train promoted - 50 titles |
 | 2026-07-03 | A2.8 | lang-uk batch מלא התחיל |
 | 2026-07-03 | A3.1 | model-status API |
 | 2026-07-03 | infra | pipeline image build; .env + secrets |

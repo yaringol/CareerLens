@@ -49,7 +49,7 @@ if [ "$train_status" -eq 0 ]; then
   echo "[pipeline] $(date -u +%FT%TZ) restarting DS container: ${DS_CONTAINER}"
   docker restart "${DS_CONTAINER}"
 else
-  echo "[pipeline] $(date -u +%FT%TZ) train not promoted (exit=$train_status) — skipping DS restart"
+  echo "[pipeline] $(date -u +%FT%TZ) train not promoted (exit=$train_status) - skipping DS restart"
 fi
 
 echo "[pipeline] $(date -u +%FT%TZ) done"

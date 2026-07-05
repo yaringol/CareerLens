@@ -5,7 +5,7 @@ __pycache__/
 .venv311/
 .env
 
-# Secrets (see *.example counterparts — placeholders only, no real credentials)
+# Secrets (see *.example counterparts - placeholders only, no real credentials)
 secrets/mongo.env
 
 # Data outputs
@@ -24,11 +24,11 @@ CVs/
 # Frontend
 frontend/node_modules/
 
-# Playwright MCP — generated session logs/snapshots/screenshots
+# Playwright MCP - generated session logs/snapshots/screenshots
 .playwright-mcp/
 qa-*.png
 
-# DS model — keep timestamped snapshots in git; ignore the mutable production copy
+# DS model - keep timestamped snapshots in git; ignore the mutable production copy
 ds/model/model.joblib
 ds/model/logs/
 ds/model/token_dist.json

@@ -23,7 +23,19 @@ import './PersonalizationScreen.css'
 
 const INPUT_KEY = 'personalizationInput'
 const RESULT_KEY = 'analysisResult'
+const PREVIOUS_RESULT_KEY = 'previousAnalysisResult'
+const PREFS_KEY = 'personalizationPreferences'
 const MAX_FOCUS_SKILLS = 5
+/** Must match backend SKILL_POOL_SIZE - focus pool is at most 10 (fewer when core overlaps). */
+const SKILL_POOL_SIZE = 10
+
+interface PersonalizationPrefs {
+  selectedSkillIds?: string[]
+  selectedSkillNames?: string[]
+  roleDerivedSkills?: SkillOption[]
+  mode?: RecommendationMode
+  weights?: PersonalizationWeights
+}
 
 interface PersonalizationInput {
   canonicalTitle: string
@@ -33,6 +45,7 @@ interface PersonalizationInput {
   jobDescription: string
   isPostingMode: boolean
   excludeCvId?: string
+  preferences?: PersonalizationPrefs
 }
 
 type WeightKey = keyof PersonalizationWeights
@@ -86,6 +99,122 @@ function rebalanceWeights(
   return next
 }
 
+function readPersonalizationPrefs(): PersonalizationPrefs | null {
+  try {
+    const inputRaw = sessionStorage.getItem(INPUT_KEY)
+    if (inputRaw) {
+      const parsed = JSON.parse(inputRaw) as PersonalizationInput
+      if (
+        parsed.preferences?.selectedSkillIds?.length
+        || parsed.preferences?.selectedSkillNames?.length
+      ) {
+        return parsed.preferences
+      }
+    }
+  } catch {
+    /* fall through */
+  }
+  try {
+    const raw = sessionStorage.getItem(PREFS_KEY)
+    if (!raw) return null
+    return JSON.parse(raw) as PersonalizationPrefs
+  } catch {
+    return null
+  }
+}
+
+function persistPreferences(prefs: PersonalizationPrefs): void {
+  sessionStorage.setItem(PREFS_KEY, JSON.stringify(prefs))
+  try {
+    const inputRaw = sessionStorage.getItem(INPUT_KEY)
+    if (!inputRaw) return
+    const parsed = JSON.parse(inputRaw) as PersonalizationInput
+    sessionStorage.setItem(INPUT_KEY, JSON.stringify({ ...parsed, preferences: prefs }))
+  } catch {
+    /* noop */
+  }
+}
+
+function readDynamicSkillNamesFromResult(raw: string | null): string[] {
+  if (!raw) return []
+  try {
+    const parsed = JSON.parse(raw) as { skills?: { name: string }[] }
+    return (parsed.skills ?? []).slice(5, 10).map((s) => s.name.toLowerCase())
+  } catch {
+    return []
+  }
+}
+
+/** Names of dynamic skills currently shown on the dashboard (or the saved snapshot). */
+function readSavedDynamicSkillNames(): string[] {
+  const prefs = readPersonalizationPrefs()
+  if (prefs?.selectedSkillNames?.length) {
+    return prefs.selectedSkillNames.map((n) => n.toLowerCase())
+  }
+  const fromCurrent = readDynamicSkillNamesFromResult(sessionStorage.getItem(RESULT_KEY))
+  if (fromCurrent.length > 0) return fromCurrent
+  return readDynamicSkillNamesFromResult(sessionStorage.getItem(PREVIOUS_RESULT_KEY))
+}
+
+function normalizeSkillPool(pool: SkillOption[]): SkillOption[] {
+  return pool.slice(0, SKILL_POOL_SIZE)
+}
+
+function namesToSelectedIds(pool: SkillOption[], names: string[]): string[] {
+  const poolByName = new Map(pool.map((s) => [s.name.toLowerCase(), s]))
+  return names
+    .map((name) => poolByName.get(name.toLowerCase())?.id)
+    .filter((id): id is string => Boolean(id))
+    .slice(0, MAX_FOCUS_SKILLS)
+}
+
+function resolveSelectedIds(pool: SkillOption[], prefs: PersonalizationPrefs | null): string[] {
+  if (prefs?.selectedSkillNames?.length) {
+    const fromNames = namesToSelectedIds(pool, prefs.selectedSkillNames)
+    if (fromNames.length > 0) return fromNames
+  }
+
+  if (prefs?.selectedSkillIds?.length) {
+    const poolById = new Map(pool.map((s) => [s.id, s]))
+    const fromIds = prefs.selectedSkillIds
+      .map((id) => poolById.get(id)?.id)
+      .filter((id): id is string => Boolean(id))
+    if (fromIds.length > 0) return fromIds.slice(0, MAX_FOCUS_SKILLS)
+  }
+
+  const savedNames = readSavedDynamicSkillNames()
+  if (savedNames.length > 0) {
+    const fromNames = namesToSelectedIds(pool, savedNames)
+    if (fromNames.length > 0) return fromNames
+  }
+
+  return pool
+    .filter((s) => s.selectedByDefault)
+    .slice(0, MAX_FOCUS_SKILLS)
+    .map((s) => s.id)
+}
+
+function buildPrefsSnapshot(
+  pool: SkillOption[],
+  selected: string[],
+  mode: RecommendationMode,
+  weights: PersonalizationWeights,
+  prev: PersonalizationPrefs | null = null,
+): PersonalizationPrefs {
+  return {
+    ...prev,
+    roleDerivedSkills: normalizeSkillPool(pool),
+    selectedSkillIds: selected,
+    selectedSkillNames: pool.filter((s) => selected.includes(s.id)).map((s) => s.name),
+    mode,
+    weights,
+  }
+}
+
+function hasPreviousResults(): boolean {
+  return Boolean(sessionStorage.getItem(PREVIOUS_RESULT_KEY))
+}
+
 function readInput(): PersonalizationInput | null {
   try {
     const raw = sessionStorage.getItem(INPUT_KEY)
@@ -102,17 +231,35 @@ export default function PersonalizationScreen() {
   const { reportError } = useError()
 
   const input = useMemo(readInput, [])
+  const savedPrefs = useMemo(readPersonalizationPrefs, [])
 
-  const [options, setOptions] = useState<PersonalizationOptions | null>(null)
-  const [loadingOptions, setLoadingOptions] = useState(true)
-  const [mode, setMode] = useState<RecommendationMode>('balanced')
-  const [weights, setWeights] = useState<PersonalizationWeights>(PRESETS.balanced)
-  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [options, setOptions] = useState<PersonalizationOptions | null>(() => {
+    if (!savedPrefs?.roleDerivedSkills?.length) return null
+    const inp = readInput()
+    return {
+      detectedTitle: inp?.detectedTitle ?? inp?.canonicalTitle ?? '',
+      extractedCvSkills: [],
+      roleDerivedSkills: normalizeSkillPool(savedPrefs.roleDerivedSkills),
+    }
+  })
+  const [loadingOptions, setLoadingOptions] = useState(() => !savedPrefs?.roleDerivedSkills?.length)
+  const [mode, setMode] = useState<RecommendationMode>(savedPrefs?.mode ?? 'balanced')
+  const [weights, setWeights] = useState<PersonalizationWeights>(
+    savedPrefs?.weights ?? PRESETS.balanced
+  )
+  const [selectedIds, setSelectedIds] = useState<string[]>(() => {
+    if (savedPrefs?.roleDerivedSkills?.length) {
+      return resolveSelectedIds(normalizeSkillPool(savedPrefs.roleDerivedSkills), savedPrefs)
+    }
+    return savedPrefs?.selectedSkillIds ?? []
+  })
+  const [returningToResults, setReturningToResults] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [notImplemented, setNotImplemented] = useState(false)
   const [savedPreference, setSavedPreference] = useState<SavedPersonalization | null>(null)
   const [rememberPreference, setRememberPreference] = useState(false)
   const submittedRef = useRef(false)
+  const showBackToResults = useMemo(hasPreviousResults, [])
 
   // No carried input (e.g. direct navigation / refresh) → send back to upload.
   useEffect(() => {
@@ -130,7 +277,7 @@ export default function PersonalizationScreen() {
         setRememberPreference(preference !== null)
       })
       .catch(() => {
-        /* no saved preference to offer — not fatal */
+        /* no saved preference to offer - not fatal */
       })
     return () => {
       cancelled = true
@@ -140,7 +287,10 @@ export default function PersonalizationScreen() {
   useEffect(() => {
     if (!input) return
     let cancelled = false
-    setLoadingOptions(true)
+    const prefs = readPersonalizationPrefs()
+    const hasCachedPool = Boolean(prefs?.roleDerivedSkills?.length)
+    if (!hasCachedPool) setLoadingOptions(true)
+
     getPersonalizationOptions({
       canonicalTitle: input.canonicalTitle,
       cvText: input.cvText,
@@ -149,9 +299,16 @@ export default function PersonalizationScreen() {
     })
       .then((data) => {
         if (cancelled) return
-        setOptions(data)
-        setSelectedIds(
-          data.roleDerivedSkills.filter((s) => s.selectedByDefault).slice(0, MAX_FOCUS_SKILLS).map((s) => s.id)
+        const currentPrefs = readPersonalizationPrefs()
+        // Keep the saved pool on return visits - do not merge with a fresh API call (that caused 13+ chips).
+        const pool = currentPrefs?.roleDerivedSkills?.length
+          ? normalizeSkillPool(currentPrefs.roleDerivedSkills)
+          : normalizeSkillPool(data.roleDerivedSkills)
+        const resolvedIds = resolveSelectedIds(pool, currentPrefs)
+        setOptions({ ...data, roleDerivedSkills: pool })
+        setSelectedIds(resolvedIds)
+        persistPreferences(
+          buildPrefsSnapshot(pool, resolvedIds, currentPrefs?.mode ?? mode, currentPrefs?.weights ?? weights, currentPrefs),
         )
       })
       .catch((err) => {
@@ -168,22 +325,42 @@ export default function PersonalizationScreen() {
 
   function selectPreset(next: RecommendationMode) {
     setMode(next)
-    if (next !== 'custom') setWeights(PRESETS[next])
+    const nextWeights = next !== 'custom' ? PRESETS[next] : weights
+    if (next !== 'custom') setWeights(nextWeights)
+    const pool = options?.roleDerivedSkills ?? []
+    persistPreferences(
+      buildPrefsSnapshot(pool, selectedIds, next, nextWeights, readPersonalizationPrefs()),
+    )
   }
 
   function changeWeight(key: WeightKey, value: number) {
     setMode('custom')
-    setWeights((prev) => rebalanceWeights(prev, key, value))
+    setWeights((prev) => {
+      const next = rebalanceWeights(prev, key, value)
+      const pool = options?.roleDerivedSkills ?? []
+      persistPreferences(
+        buildPrefsSnapshot(pool, selectedIds, 'custom', next, readPersonalizationPrefs()),
+      )
+      return next
+    })
   }
 
   function toggleSkill(skill: SkillOption) {
     setSelectedIds((prev) => {
-      if (prev.includes(skill.id)) return prev.filter((id) => id !== skill.id)
-      if (prev.length >= MAX_FOCUS_SKILLS) {
+      let next: string[]
+      if (prev.includes(skill.id)) {
+        next = prev.filter((id) => id !== skill.id)
+      } else if (prev.length >= MAX_FOCUS_SKILLS) {
         showToast(`You can select up to ${MAX_FOCUS_SKILLS} skills only`, 'info')
         return prev
+      } else {
+        next = [...prev, skill.id]
       }
-      return [...prev, skill.id]
+      const pool = options?.roleDerivedSkills ?? []
+      persistPreferences(
+        buildPrefsSnapshot(pool, next, mode, weights, readPersonalizationPrefs()),
+      )
+      return next
     })
   }
 
@@ -194,7 +371,7 @@ export default function PersonalizationScreen() {
     showToast('Restored your saved recommendation balance', 'info')
   }
 
-  /** Best-effort — never blocks navigation to the results screen on failure. */
+  /** Best-effort - never blocks navigation to the results screen on failure. */
   async function syncSavedPreference() {
     try {
       if (rememberPreference) {
@@ -212,12 +389,20 @@ export default function PersonalizationScreen() {
     submittedRef.current = true
     setSubmitting(true)
     try {
+      const pool = options?.roleDerivedSkills ?? []
+      const selectedSkillNames = pool
+        .filter((skill) => selectedIds.includes(skill.id))
+        .map((skill) => skill.name)
+      persistPreferences(
+        buildPrefsSnapshot(pool, selectedIds, mode, weights, readPersonalizationPrefs()),
+      )
       const result = await analyzePersonalized({
         canonicalTitle: input.canonicalTitle,
         cvText: input.cvText,
         jobDescription: input.jobDescription || undefined,
+        isPostingMode: input.isPostingMode,
         excludeCvId: input.excludeCvId || undefined,
-        personalization: { mode, weights, selectedSkillIds: selectedIds },
+        personalization: { mode, weights, selectedSkillIds: selectedIds, selectedSkillNames },
       })
       await syncSavedPreference()
       sessionStorage.setItem(
@@ -227,6 +412,7 @@ export default function PersonalizationScreen() {
       sessionStorage.setItem('jobDescription', input.isPostingMode ? input.jobDescription : '')
       sessionStorage.setItem('cvFileName', input.cvFileName)
       sessionStorage.setItem('excludeCvId', input.excludeCvId ?? '')
+      sessionStorage.removeItem(PREVIOUS_RESULT_KEY)
       navigate('/dashboard', { replace: true })
     } catch (err) {
       submittedRef.current = false
@@ -259,6 +445,7 @@ export default function PersonalizationScreen() {
       sessionStorage.setItem('jobDescription', input.isPostingMode ? input.jobDescription : '')
       sessionStorage.setItem('cvFileName', input.cvFileName)
       sessionStorage.setItem('excludeCvId', input.excludeCvId ?? '')
+      sessionStorage.removeItem(PREVIOUS_RESULT_KEY)
       navigate('/dashboard', { replace: true })
     } catch (err) {
       submittedRef.current = false
@@ -266,6 +453,14 @@ export default function PersonalizationScreen() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  function handleBackToResults() {
+    const raw = sessionStorage.getItem(PREVIOUS_RESULT_KEY)
+    if (!raw) return
+    setReturningToResults(true)
+    sessionStorage.setItem(RESULT_KEY, raw)
+    navigate('/dashboard', { replace: true })
   }
 
   if (!input) return null
@@ -279,9 +474,20 @@ export default function PersonalizationScreen() {
       <div className="upload-wrapper">
         <div className="upload-app-header upload-app-header--standalone">
           <div className="upload-app-nav">
-            <Link to="/upload" className="btn-nav-pill btn-nav-pill--back">
-              ← Back to upload
-            </Link>
+            {showBackToResults ? (
+              <button
+                type="button"
+                className="btn-nav-pill btn-nav-pill--back"
+                onClick={handleBackToResults}
+                disabled={returningToResults}
+              >
+                ← Back to results
+              </button>
+            ) : (
+              <Link to="/upload" className="btn-nav-pill btn-nav-pill--back">
+                ← Back to upload
+              </Link>
+            )}
             <Link to="/" className="btn-nav-pill">Home</Link>
             <Link to="/account" className="btn-nav-pill">Account</Link>
           </div>
@@ -293,7 +499,7 @@ export default function PersonalizationScreen() {
             <h1 className="personalize-title">Tailor your recommendations</h1>
             <p className="personalize-detected">
               Detected role: <strong>{detectedTitle}</strong>
-              <span className="personalize-detected-note"> · optional step — skip anytime with standard results</span>
+              <span className="personalize-detected-note"> · optional step, skip anytime with standard results</span>
             </p>
           </div>
 
@@ -301,7 +507,7 @@ export default function PersonalizationScreen() {
           <section className="personalize-section">
             <h2 className="personalize-section-title">Recommendation Balance</h2>
             <p className="personalize-section-sub">
-              How the <strong>model</strong> balances its recommendations — between skills that
+              How the <strong>model</strong> balances its recommendations between skills that
               stay in demand over time (<strong>Stable</strong>), skills rising in recent job
               postings (<strong>Trending</strong>), and how closely they fit your CV and role
               (<strong>Personal Match</strong>).
@@ -368,8 +574,8 @@ export default function PersonalizationScreen() {
           <section className="personalize-section">
             <h2 className="personalize-section-title">Focus Skills</h2>
             <p className="personalize-section-sub">
-              Top dynamic skills extracted from this job posting. Pick up to{' '}
-              {MAX_FOCUS_SKILLS} to focus on — only the selected ones move to your results.{' '}
+              Top skills extracted from this job posting (up to 10). Pick{' '}
+              {MAX_FOCUS_SKILLS} to focus on. Only the selected ones appear in your results.{' '}
               <span className="focus-count">({selectedCount}/{MAX_FOCUS_SKILLS} selected)</span>
             </p>
 
@@ -389,9 +595,6 @@ export default function PersonalizationScreen() {
                       aria-pressed={checked}
                     >
                       <span className="focus-skill-name">{skill.name}</span>
-                      <span className={`focus-skill-source focus-skill-source--${skill.source}`}>
-                        {skill.source === 'cv' ? 'from CV' : 'from posting'}
-                      </span>
                     </button>
                   )
                 })}
@@ -451,7 +654,7 @@ export default function PersonalizationScreen() {
               onClick={continueWithStandard}
               disabled={submitting}
             >
-              {submitting ? 'Analyzing…' : 'Skip — use standard results'}
+              {submitting ? 'Analyzing…' : 'Skip and use standard results'}
             </button>
           </div>
         )}
