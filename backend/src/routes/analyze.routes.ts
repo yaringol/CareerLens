@@ -295,6 +295,80 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 /**
+ * POST /api/analyze/rescore
+ *
+ * Re-score an improved CV against the same skill list from a prior analysis.
+ * No SkillNer or dynamic skill extraction — scoring only.
+ *
+ * Body: { jobTitle, cvText, skills: string[], cvOnlyMode?: boolean, excludeCvId?: string }
+ */
+router.post('/rescore', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { jobTitle, cvText, skills, cvOnlyMode, excludeCvId } = req.body as {
+      jobTitle?: string;
+      cvText?: string;
+      skills?: unknown;
+      cvOnlyMode?: boolean;
+      excludeCvId?: string;
+    };
+
+    if (!jobTitle?.trim()) {
+      throw new ValidationError('jobTitle is required');
+    }
+    if (typeof cvText !== 'string' || cvText.trim().length < 10) {
+      throw new ValidationError('cvText is required (min 10 chars)');
+    }
+    if (!Array.isArray(skills) || skills.length === 0) {
+      throw new ValidationError('skills must be a non-empty array');
+    }
+
+    const skillNames = skills
+      .filter((item): item is string => typeof item === 'string')
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    if (skillNames.length !== 5 && skillNames.length !== 10) {
+      throw new ValidationError(
+        'skills must contain exactly 5 or 10 skill names from the prior analysis'
+      );
+    }
+
+    const job = await validateJobTitle(jobTitle.trim());
+    const id = job._id.toString();
+    const postingMode = cvOnlyMode !== true && skillNames.length === 10;
+    const resolvedCvOnlyMode = !postingMode;
+    const expectedSkillCount = skillNames.length;
+
+    const { analysis, bestSavedCv } = await analyzeWithParallelFavoriteCompare({
+      userId: req.user!.id,
+      jobId: id,
+      jobTitle: job.title,
+      cvText: cvText.trim(),
+      skills: skillNames,
+      cvOnlyMode: resolvedCvOnlyMode,
+      expectedSkillCount,
+      excludeCvId: typeof excludeCvId === 'string' ? excludeCvId : undefined,
+      cvFileName: id,
+      keywordOnly: resolvedCvOnlyMode,
+    });
+
+    logAnalyzeOk(job.title);
+
+    res.json({
+      jobTitle: analysis.jobTitle,
+      skills: analysis.scores.map((s) => ({ name: s.skill, score: s.score })),
+      matchScore: analysis.matchScore,
+      id: analysis._id.toString(),
+      cvOnlyMode: analysis.cvOnlyMode ?? false,
+      isEstimated: analysis.isEstimated ?? false,
+      bestSavedCv,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
  * POST /api/analyze/skillner
  *
  * Same as POST /api/analyze but uses SkillNer (DS model /text/skills)
