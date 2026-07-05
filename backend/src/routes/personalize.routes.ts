@@ -1,86 +1,19 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate } from '../middleware/auth.middleware';
 import { ValidationError } from '../errors';
-import { extractTitleFromCv, getCoreSkills, getSkillsFromText, getTrendingSkills } from '../services/dsModel';
-import { extractDynamicSkills } from '../services/job.service';
+import { extractTitleFromCv, getCoreSkills, getSkillsFromText } from '../services/dsModel';
 import { isGibberish } from '../utils/gibberishDetector';
 import { looksLikeJobUrl } from '../utils/jobUrl';
 import { fetchJobPostingFromUrl } from '../services/jobPostingFetcher.service';
-import { skillId } from '../services/personalization.service';
+import { buildSkillOptions, fetchFocusSkillPool, DEFAULT_SELECTED_COUNT } from '../services/focusSkillPool.service';
 import { User } from '../models/user.model';
 
 const router = Router();
 router.use(authenticate);
 
-export type SkillSource = 'cv' | 'role' | 'market';
+export type { SkillSource, SkillOption } from '../services/focusSkillPool.service';
 
-export interface SkillOption {
-  id: string;
-  name: string;
-  source: SkillSource;
-  score: number;
-  selectedByDefault: boolean;
-}
-
-const ROLE_SKILL_POOL_SIZE = 10;
-const DEFAULT_SELECTED_COUNT = 5;
 const MIN_JOB_DESCRIPTION_CHARS = 40;
-
-/**
- * Build the focus-skill candidate pool for the Personalization screen.
- *
- * The pool is derived from the same posting-aware dynamic signals used by
- * standard analysis: trending market skills first, then LLM/fallback skills
- * extracted from the job posting. The top DEFAULT_SELECTED_COUNT are pre-selected.
- */
-function tokenSet(s: string): Set<string> {
-  return new Set(
-    s
-      .toLowerCase()
-      .split(/[^a-z0-9]+/)
-      .filter((t) => t.length > 2)
-  );
-}
-
-function jaccardSimilarity(a: Set<string>, b: Set<string>): number {
-  if (a.size === 0 && b.size === 0) return 1;
-  if (a.size === 0 || b.size === 0) return 0;
-  let inter = 0;
-  for (const x of a) {
-    if (b.has(x)) inter++;
-  }
-  const union = a.size + b.size - inter;
-  return union ? inter / union : 0;
-}
-
-function isNearDuplicate(skill: string, existing: string[]): boolean {
-  const tokens = tokenSet(skill);
-  if (tokens.size === 0) return true;
-  return existing.some((item) => jaccardSimilarity(tokens, tokenSet(item)) >= 0.5);
-}
-
-function buildSkillOptions(skills: string[], excludedCoreSkills: string[] = []): SkillOption[] {
-  const seen = new Set<string>();
-  const ordered: string[] = [];
-  for (const raw of skills) {
-    const name = raw.trim();
-    const key = name.toLowerCase();
-    if (!name || seen.has(key)) continue;
-    if (isNearDuplicate(name, excludedCoreSkills)) continue;
-    seen.add(key);
-    ordered.push(name);
-    if (ordered.length >= ROLE_SKILL_POOL_SIZE) break;
-  }
-
-  const total = ordered.length || 1;
-  return ordered.map((name, i) => ({
-    id: skillId(name) || `skill-${i}`,
-    name,
-    source: 'market' as SkillSource,
-    score: Number((1 - i / total).toFixed(2)),
-    selectedByDefault: i < DEFAULT_SELECTED_COUNT,
-  }));
-}
 
 async function resolveJobDescriptionInput(raw: string): Promise<string> {
   const trimmed = raw.trim();
@@ -141,21 +74,10 @@ router.post('/options', async (req: Request, res: Response, next: NextFunction):
         return;
       }
 
-      focusSkillsPromise = Promise.all([
-        getCoreSkills(canonicalTitle.trim(), 0.0, DEFAULT_SELECTED_COUNT).catch(() => []),
-        getTrendingSkills(canonicalTitle.trim(), ROLE_SKILL_POOL_SIZE).catch(() => []),
-        extractDynamicSkills(canonicalTitle.trim(), description)
-          .then((result) => result.extractedSkills)
-          .catch(() => [] as string[]),
-        getSkillsFromText(description, ROLE_SKILL_POOL_SIZE).catch(() => [] as string[]),
-      ]).then(([core, trending, dynamic, skillNer]) => {
-        const candidates = [
-          ...trending.map((item) => item.skill),
-          ...dynamic,
-          ...skillNer,
-        ];
-        return buildSkillOptions(candidates, core ?? []).map((skill) => skill.name);
-      });
+      focusSkillsPromise = getCoreSkills(canonicalTitle.trim(), 0.0, DEFAULT_SELECTED_COUNT)
+        .catch(() => null)
+        .then((core) => fetchFocusSkillPool(canonicalTitle.trim(), description, core ?? []))
+        .then((pool) => pool.map((skill) => skill.name));
     }
 
     const [titleResult, focusSkills, cvSkills] = await Promise.all([

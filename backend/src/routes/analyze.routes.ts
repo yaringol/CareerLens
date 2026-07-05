@@ -8,7 +8,8 @@ import {
 import { getSkillsFromText, getTrendingSkills } from '../services/dsModel';
 import { scoreAndPersist } from '../services/scoring.service';
 import { ValidationError, DsModelError } from '../errors';
-import { computeStabilityPreference, selectPersonalizedSkills } from '../services/personalization.service';
+import { computeStabilityPreference, selectPersonalizedSkills, selectDynamicSkills } from '../services/personalization.service';
+import { fetchFocusSkillPool } from '../services/focusSkillPool.service';
 import type { IJob } from '../models/job.model';
 import { logAnalyzeOk } from '../utils/logger';
 import { isGibberish } from '../utils/gibberishDetector';
@@ -366,13 +367,19 @@ type PersonalizationMode = (typeof PERSONALIZATION_MODES)[number];
 /**
  * POST /api/analyze/personalized
  *
- * Stable / Trending / Personal-Match weighting + focus-skill selection. The 3
- * weights collapse to a single stabilityPreference (0=stable..1=trending, see
- * computeStabilityPreference) which picks 5 of the 10 DS-returned skills whose
- * own stabilityScore best fits that preference (selectPersonalizedSkills),
- * unless the user already picked skills manually (selectedSkillIds). From
- * there the pipeline mirrors POST /api/analyze (mergeTenSkills + the same
- * scoring call) so the two routes stay behaviorally consistent.
+ * Two independent sources, two independent filters, merged into the final 10:
+ * - CORE (5): the DS model's 10 trending skills for the role, filtered ONLY by the
+ *   stable/trending weights collapsed into a single stabilityPreference (0=stable..
+ *   1=trending, see computeStabilityPreference) via selectPersonalizedSkills.
+ * - DYNAMIC (5): the LLM/job-posting-derived focus-skill pool (same one shown on the
+ *   Personalization screen's Focus Skills panel, see fetchFocusSkillPool), filtered
+ *   ONLY by the user's selectedSkillIds via selectDynamicSkills.
+ * Mixing selectedSkillIds into core selection (as an earlier version of this route
+ * did) starves the dynamic side of the user's actual picks and makes the visible
+ * skill list look identical regardless of personalization — keep the two filters
+ * on their own sources. From there the pipeline mirrors POST /api/analyze
+ * (mergeTenSkills + the same scoring call) so the two routes stay behaviorally
+ * consistent.
  */
 router.post('/personalized', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -443,24 +450,28 @@ router.post('/personalized', async (req: Request, res: Response, next: NextFunct
       return;
     }
 
+    // CORE (5): DS trending candidates, filtered ONLY by the stability-preference score.
     const candidates = await getTrendingSkills(job.title, 10);
     if (candidates.length === 0) {
       throw new DsModelError(`No trending-skills data available for job title "${job.title}"`, 503);
     }
 
-    const coreFive = selectPersonalizedSkills(candidates, stabilityPreference, selectedSkillIdStrings);
+    const coreFive = selectPersonalizedSkills(candidates, stabilityPreference);
     if (coreFive.length !== 5) {
       throw new DsModelError('Failed to select 5 personalized core skills', 503);
     }
 
     const trendBySkill = new Map(candidates.map((c) => [c.skill.toLowerCase(), c.trend]));
 
+    // DYNAMIC (5): separate source (LLM/job-posting-derived focus-skill pool, same one
+    // shown on the Personalization screen), filtered ONLY by the user's selectedSkillIds.
     const allSkills = skipGibberish
       ? coreFive
-      : mergeTenSkills(job.title, coreFive, [
-          ...candidates.map((c) => c.skill),
-          ...(await extractDynamicSkills(job.title, jd)).extractedSkills,
-        ]);
+      : mergeTenSkills(
+          job.title,
+          coreFive,
+          selectDynamicSkills(await fetchFocusSkillPool(job.title, jd, coreFive), selectedSkillIdStrings)
+        );
 
     const cvOnlyMode = skipGibberish;
     const expectedSkillCount = cvOnlyMode ? 5 : 10;
