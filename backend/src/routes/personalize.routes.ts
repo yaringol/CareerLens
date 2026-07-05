@@ -2,51 +2,18 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate } from '../middleware/auth.middleware';
 import { ValidationError } from '../errors';
 import { extractTitleFromCv, getCoreSkills, getSkillsFromText } from '../services/dsModel';
-import { SKILL_POOL_SIZE, TOP_SKILL_COUNT, extractDynamicSkills } from '../services/job.service';
 import { isGibberish } from '../utils/gibberishDetector';
 import { looksLikeJobUrl } from '../utils/jobUrl';
 import { fetchJobPostingFromUrl } from '../services/jobPostingFetcher.service';
-import { skillId } from '../services/personalization.service';
+import { buildSkillOptions, fetchFocusSkillPool, DEFAULT_SELECTED_COUNT } from '../services/focusSkillPool.service';
 import { User } from '../models/user.model';
-import { dedupeSkills, isNearDuplicateOfAny } from '../utils/skillDedup';
 
 const router = Router();
 router.use(authenticate);
 
-export type SkillSource = 'cv' | 'role' | 'market';
+export type { SkillSource, SkillOption } from '../services/focusSkillPool.service';
 
-export interface SkillOption {
-  id: string;
-  name: string;
-  source: SkillSource;
-  score: number;
-  selectedByDefault: boolean;
-}
-
-const DEFAULT_SELECTED_COUNT = TOP_SKILL_COUNT;
 const MIN_JOB_DESCRIPTION_CHARS = 40;
-
-/**
- * Build the focus-skill candidate pool for the Personalization screen.
- *
- * Pool comes from the agent (up to 10 posting-derived skills). Skills that overlap
- * core role skills are omitted, so the list may be shorter than 10. The first
- * DEFAULT_SELECTED_COUNT remaining options are pre-selected.
- */
-function buildSkillOptions(skills: string[], excludedCoreSkills: string[] = []): SkillOption[] {
-  const deduped = dedupeSkills(skills, SKILL_POOL_SIZE).filter(
-    (name) => !isNearDuplicateOfAny(name, excludedCoreSkills)
-  );
-
-  const total = deduped.length || 1;
-  return deduped.map((name, i) => ({
-    id: skillId(name) || `skill-${i}`,
-    name,
-    source: 'market' as SkillSource,
-    score: Number((1 - i / total).toFixed(2)),
-    selectedByDefault: i < DEFAULT_SELECTED_COUNT,
-  }));
-}
 
 async function resolveJobDescriptionInput(raw: string): Promise<string> {
   const trimmed = raw.trim();
@@ -84,12 +51,8 @@ router.post('/options', async (req: Request, res: Response, next: NextFunction):
       jobDescription.trim().length > 0
     );
 
-    const title = canonicalTitle.trim();
     const titlePromise = extractTitleFromCv(cvText).catch(() => null);
     const cvSkillsPromise = getSkillsFromText(cvText, 15).catch(() => [] as string[]);
-    const coreSkillsPromise = postingMode
-      ? getCoreSkills(title).catch(() => [] as string[])
-      : Promise.resolve([] as string[]);
     let focusSkillsPromise: Promise<string[]> = Promise.resolve([]);
 
     if (postingMode) {
@@ -111,22 +74,22 @@ router.post('/options', async (req: Request, res: Response, next: NextFunction):
         return;
       }
 
-      focusSkillsPromise = extractDynamicSkills(title, description).then(
-        (result) => result.pool
-      );
+      focusSkillsPromise = getCoreSkills(canonicalTitle.trim(), 0.0, DEFAULT_SELECTED_COUNT)
+        .catch(() => null)
+        .then((core) => fetchFocusSkillPool(canonicalTitle.trim(), description, core ?? []))
+        .then((pool) => pool.map((skill) => skill.name));
     }
 
-    const [titleResult, focusSkills, cvSkills, coreSkills] = await Promise.all([
+    const [titleResult, focusSkills, cvSkills] = await Promise.all([
       titlePromise,
       focusSkillsPromise,
       cvSkillsPromise,
-      coreSkillsPromise,
     ]);
 
     const detectedTitle =
-      titleResult?.canonical_title || titleResult?.extracted_title || title;
+      titleResult?.canonical_title || titleResult?.extracted_title || canonicalTitle.trim();
     const extractedCvSkills = cvSkills ?? [];
-    const roleDerivedSkills = buildSkillOptions(focusSkills ?? [], coreSkills ?? []);
+    const roleDerivedSkills = buildSkillOptions(focusSkills ?? []);
 
     res.json({ detectedTitle, extractedCvSkills, roleDerivedSkills });
   } catch (err) {

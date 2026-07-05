@@ -497,12 +497,19 @@ export async function getSuggestion(
 export async function reanalyzeCv(
   jobTitle: string,
   cvText: string,
-  jobDescription: string
+  skills: string[],
+  options: { cvOnlyMode?: boolean; excludeCvId?: string } = {}
 ): Promise<AnalyzeResponse> {
-  const res = await fetch(`${base()}/analyze/skillner`, {
+  const res = await fetch(`${base()}/analyze/rescore`, {
     method: 'POST',
     headers: { ...jsonHeaders, ...authHeaders() },
-    body: JSON.stringify({ jobTitle, cvText, jobDescription }),
+    body: JSON.stringify({
+      jobTitle,
+      cvText,
+      skills,
+      cvOnlyMode: options.cvOnlyMode ?? false,
+      excludeCvId: options.excludeCvId,
+    }),
   })
   await handleUnauthorized(res)
   if (!res.ok) {

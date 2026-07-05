@@ -6,6 +6,7 @@ import {
   mergeCv,
   reanalyzeCv,
   saveImprovementSession,
+  type AnalyzeResponse,
   type CvSection,
   type Proficiency,
   type SkillContext,
@@ -241,10 +242,14 @@ function ScoreBar({ score }: { score: number }) {
 
 interface ReanalyzeResult {
   jobTitle: string
-  skills: Array<{ name: string; score: number }>
+  skills: Array<{ name: string; score: number; trend?: 'rising' | 'stable' | 'falling' }>
   matchScore: number
   id: string
   cvText: string
+  cvFileName?: string
+  cvOnlyMode?: boolean
+  isEstimated?: boolean
+  bestSavedCv?: AnalyzeResponse['bestSavedCv']
 }
 
 interface ImproveCVScreenProps {
@@ -632,16 +637,52 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
   }, [mergedCvText])
 
   const handleReanalyze = useCallback(async () => {
-    const jd = sessionStorage.getItem(JD_KEY) ?? ''
-    if (!jd) { alert('Job description not found. Please re-analyze from the home screen.'); return }
     if (!jobTitle) { alert('Job title not found.'); return }
+
+    const raw = sessionStorage.getItem(RESULT_KEY)
+    if (!raw) { alert('Analysis result not found. Please analyze from the home screen.'); return }
+
+    let prior: ReanalyzeResult
+    try {
+      prior = JSON.parse(raw) as ReanalyzeResult
+    } catch {
+      alert('Analysis result not found. Please analyze from the home screen.')
+      return
+    }
+
+    const skillNames = prior.skills?.map((s) => s.name).filter(Boolean) ?? []
+    if (skillNames.length === 0) {
+      alert('No skills found from prior analysis.')
+      return
+    }
+
+    const trendByName = new Map(
+      prior.skills
+        .filter((s) => s.trend)
+        .map((s) => [s.name.toLowerCase(), s.trend!]),
+    )
+    const excludeCvId = sessionStorage.getItem('excludeCvId') ?? undefined
+    const cvFileName = prior.cvFileName ?? sessionStorage.getItem(CV_FILENAME_KEY) ?? undefined
 
     setIsReanalyzing(true)
     try {
-      const result = await reanalyzeCv(jobTitle, mergedCvText, jd)
-      const newResult: ReanalyzeResult = { ...result, cvText: mergedCvText }
+      const result = await reanalyzeCv(jobTitle, mergedCvText, skillNames, {
+        cvOnlyMode: prior.cvOnlyMode === true,
+        excludeCvId: excludeCvId || undefined,
+      })
+      const newResult: ReanalyzeResult = {
+        ...result,
+        cvText: mergedCvText,
+        cvFileName,
+        cvOnlyMode: result.cvOnlyMode ?? prior.cvOnlyMode,
+        isEstimated: result.isEstimated ?? prior.isEstimated,
+        bestSavedCv: result.bestSavedCv ?? null,
+        skills: result.skills.map((s) => ({
+          ...s,
+          trend: s.trend ?? trendByName.get(s.name.toLowerCase()),
+        })),
+      }
       sessionStorage.setItem(RESULT_KEY, JSON.stringify(newResult))
-      sessionStorage.setItem('jobDescription', jd)
       if (onReanalyze) {
         onReanalyze(newResult)   // passes result to dashboard → updates state + closes modal
       } else if (onClose) {

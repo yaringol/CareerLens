@@ -4,7 +4,7 @@
  *
  * Run from backend/: npm run test-personalization
  */
-import { computeStabilityPreference, selectPersonalizedSkills } from '../services/personalization.service';
+import { computeStabilityPreference, selectPersonalizedSkills, selectDynamicSkills } from '../services/personalization.service';
 import type { TrendingSkill } from '../services/dsModel';
 
 let failures = 0;
@@ -57,7 +57,7 @@ const CANDIDATES: TrendingSkill[] = [
   makeSkill('langchain', 0.97, 0.35),
 ];
 
-const stableLeaning = selectPersonalizedSkills(CANDIDATES, 0.2, []);
+const stableLeaning = selectPersonalizedSkills(CANDIDATES, 0.2);
 check(
   'stable-leaning preference (0.2) picks the 5 lowest-stability skills',
   stableLeaning.length === 5 &&
@@ -65,7 +65,7 @@ check(
   `got ${JSON.stringify(stableLeaning)}`
 );
 
-const trendingLeaning = selectPersonalizedSkills(CANDIDATES, 0.8, []);
+const trendingLeaning = selectPersonalizedSkills(CANDIDATES, 0.8);
 check(
   'trending-leaning preference (0.8) picks the 5 highest-stability skills',
   trendingLeaning.length === 5 &&
@@ -73,23 +73,44 @@ check(
   `got ${JSON.stringify(trendingLeaning)}`
 );
 
-const balanced = selectPersonalizedSkills(CANDIDATES, 0.5, []);
+const balanced = selectPersonalizedSkills(CANDIDATES, 0.5);
 check('balanced preference (0.5) still returns exactly 5 skills', balanced.length === 5);
 
-const withOverride = selectPersonalizedSkills(CANDIDATES, 0.2, ['pytorch', 'llm']);
+// ── selectDynamicSkills — the Focus Skills filter, now separate from core ───────
+
+const DYNAMIC_POOL = [
+  { id: 'java', name: 'java', selectedByDefault: true },
+  { id: 'sql', name: 'sql', selectedByDefault: true },
+  { id: 'docker', name: 'docker', selectedByDefault: true },
+  { id: 'kubernetes', name: 'kubernetes', selectedByDefault: true },
+  { id: 'react', name: 'react', selectedByDefault: true },
+  { id: 'pandas', name: 'pandas', selectedByDefault: false },
+  { id: 'pytorch', name: 'pytorch', selectedByDefault: false },
+];
+
+const noSelection = selectDynamicSkills(DYNAMIC_POOL, []);
 check(
-  'explicit selectedSkillIds always win their slots',
-  withOverride.includes('pytorch') && withOverride.includes('llm') && withOverride.length === 5,
-  `got ${JSON.stringify(withOverride)}`
+  'no explicit selection -> falls back to the pool\'s own default-selected order',
+  JSON.stringify(noSelection) === JSON.stringify(['java', 'sql', 'docker', 'kubernetes', 'react']),
+  `got ${JSON.stringify(noSelection)}`
 );
 
-const fullOverride = selectPersonalizedSkills(CANDIDATES, 0.2, [
-  'java', 'sql', 'docker', 'kubernetes', 'react',
+const explicitFocus = selectDynamicSkills(DYNAMIC_POOL, ['pytorch', 'pandas']);
+check(
+  'explicit selectedSkillIds win their slots first, remaining filled from defaults',
+  explicitFocus[0] === 'pytorch' &&
+    explicitFocus[1] === 'pandas' &&
+    explicitFocus.length === 5,
+  `got ${JSON.stringify(explicitFocus)}`
+);
+
+const fullExplicitFocus = selectDynamicSkills(DYNAMIC_POOL, [
+  'kubernetes', 'react', 'pandas', 'pytorch', 'java',
 ]);
 check(
-  '5 explicit selectedSkillIds are returned as-is, ignoring preference',
-  fullOverride.length === 5 &&
-    ['java', 'sql', 'docker', 'kubernetes', 'react'].every((s) => fullOverride.includes(s))
+  '5 explicit selectedSkillIds are returned as-is, ignoring default order',
+  fullExplicitFocus.length === 5 &&
+    ['kubernetes', 'react', 'pandas', 'pytorch', 'java'].every((s) => fullExplicitFocus.includes(s))
 );
 
 console.log(failures ? `\n${failures} test(s) FAILED.` : '\nAll tests passed.');
