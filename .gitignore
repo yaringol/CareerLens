@@ -28,8 +28,10 @@ frontend/node_modules/
 .playwright-mcp/
 qa-*.png
 
-# DS model - keep timestamped snapshots in git; ignore the mutable production copy
-ds/model/model.joblib
+# DS model - the production artifacts are tracked (via LFS) so a clone can run the
+# server; the dated training snapshots are local backups only
+ds/model/*_20*.joblib
+ds/model/NEW.ipynb
 ds/model/logs/
 ds/model/token_dist.json
 ds/model/tsne_map.html
