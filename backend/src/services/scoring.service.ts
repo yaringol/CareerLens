@@ -165,8 +165,15 @@ async function buildScoringRawOutput(
       }
       return { rawAgentOutput: json, isEstimated: false };
     } catch {
+      // The LLM answered but not in a shape we can normalize (fenced JSON,
+      // prose preamble, wrong structure). Passing the raw string downstream
+      // made parseAndSaveAnalysis throw and the whole analyze request 500 -
+      // treat it like any other LLM failure and fall back to keyword scoring.
       logLlmScoringRawUnnormalized(jobTitle);
-      return { rawAgentOutput: raw, isEstimated: false };
+      return {
+        rawAgentOutput: buildKeywordFallbackJson(validatedSkills, cvText),
+        isEstimated: true,
+      };
     }
   } catch {
     logFallbackScoring();
