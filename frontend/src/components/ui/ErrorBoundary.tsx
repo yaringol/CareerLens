@@ -10,6 +10,10 @@ class ErrorBoundary extends Component<Props, State> {
     return { error }
   }
 
+  componentDidCatch(error: Error, info: { componentStack?: string | null }) {
+    console.error('Unhandled render error:', error, info.componentStack)
+  }
+
   render() {
     if (this.state.error) return (
       <div style={{
@@ -28,7 +32,9 @@ class ErrorBoundary extends Component<Props, State> {
           Something went wrong
         </p>
         <p style={{ color: 'var(--color-secondary)', fontSize: '0.875rem', maxWidth: 360, textAlign: 'center' }}>
-          {this.state.error.message}
+          {/* The raw error goes to the console, not the screen - internal
+              messages read as broken product to a user (or a judge). */}
+          An unexpected error occurred. Reloading usually fixes it.
         </p>
         <button
           onClick={() => window.location.reload()}
