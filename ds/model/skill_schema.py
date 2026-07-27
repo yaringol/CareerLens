@@ -181,11 +181,28 @@ def compute_stability_score(observation_dates: list[datetime]) -> dict[str, Any]
     }
 
 
-def compute_role_counts(feature_matrix: dict[str, dict[str, Any]]) -> dict[str, int]:
-    """For each skill, the number of roles whose feature map contains it."""
+def compute_role_counts(
+    feature_matrix: dict[str, dict[str, Any]],
+    min_prevalence: float = 0.0,
+) -> dict[str, int]:
+    """For each skill, the number of roles whose feature map contains it.
+
+    min_prevalence: only count a role when the skill's prevalence there reaches
+    the floor. On dense corpora (thousands of postings per role) nearly every
+    skill appears at least once in every role, so presence alone cannot separate
+    boilerplate ('english') from genuinely shared stack skills - a prevalence
+    floor restores that distinction. 0.0 preserves the legacy presence-only
+    behavior.
+    """
     counts: dict[str, int] = {}
     for skills in feature_matrix.values():
-        for skill in skills:
+        for skill, features in skills.items():
+            if min_prevalence > 0.0:
+                try:
+                    if float(features.get('prevalence', 0.0)) < min_prevalence:
+                        continue
+                except (TypeError, ValueError):
+                    continue
             counts[skill] = counts.get(skill, 0) + 1
     return counts
 

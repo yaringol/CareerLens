@@ -48,7 +48,12 @@ from skill_schema import select_display_skills, compute_role_counts
 # almost every role (e.g. "backend" in 52/59) are generic posting language, not
 # role signals, and are excluded from ranking by select_display_skills.
 UBIQUITY_CAP = int(os.getenv('SKILL_UBIQUITY_CAP', '48'))
-skill_role_counts = compute_role_counts(feature_matrix)
+# On dense corpora presence-only counts saturate (every skill somewhere in every
+# role); a prevalence floor keeps the ubiquity signal meaningful. 0.0 = legacy.
+ROLE_COUNT_MIN_PREVALENCE = float(os.getenv('ROLE_COUNT_MIN_PREVALENCE', '0.0'))
+skill_role_counts = compute_role_counts(
+    feature_matrix, min_prevalence=ROLE_COUNT_MIN_PREVALENCE,
+)
 
 
 def recalibrate_trend_labels(matrix: dict) -> dict:
