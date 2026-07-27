@@ -50,6 +50,51 @@ from skill_schema import select_display_skills, compute_role_counts
 UBIQUITY_CAP = int(os.getenv('SKILL_UBIQUITY_CAP', '48'))
 skill_role_counts = compute_role_counts(feature_matrix)
 
+
+def recalibrate_trend_labels(matrix: dict) -> dict:
+    """Re-label skill trends from the stored prevalence ratios, in memory.
+
+    train.py labels trends with fixed ratio thresholds (rise >= 1.25,
+    fall <= 0.80). On the served corpus the entire recent/overall ratio
+    range sits inside (0.84, 1.23), so every one of the 60k skills was
+    labeled 'stable' and /title/trending-skills could never answer. The
+    artifact already stores both prevalences, so the labels can be
+    recomputed at load time against the distribution that actually
+    exists: rising = top quintile of ratios (and at least +5% movement),
+    falling = bottom quintile (and at least -5%). The .joblib on disk is
+    never modified.
+    """
+    ratios = []
+    for skills in matrix.values():
+        for f in skills.values():
+            p, rp = f.get('prevalence') or 0, f.get('recent_prevalence')
+            if p > 0 and rp is not None and rp > 0:
+                ratios.append(rp / p)
+    if len(ratios) < 100:
+        return {'relabeled': False, 'reason': f'only {len(ratios)} usable ratios'}
+
+    ratios.sort()
+    rise_cut = max(ratios[int(len(ratios) * 0.80)], 1.05)
+    fall_cut = min(ratios[int(len(ratios) * 0.20)], 0.95)
+
+    counts = {'rising': 0, 'stable': 0, 'falling': 0}
+    for skills in matrix.values():
+        for f in skills.values():
+            p, rp = f.get('prevalence') or 0, f.get('recent_prevalence')
+            if p > 0 and rp is not None and rp > 0:
+                ratio = rp / p
+                label = 'rising' if ratio >= rise_cut else 'falling' if ratio <= fall_cut else 'stable'
+            else:
+                label = 'stable'
+            f['trend'] = label
+            counts[label] += 1
+    return {'relabeled': True, 'rise_cut': round(rise_cut, 4),
+            'fall_cut': round(fall_cut, 4), 'counts': counts}
+
+
+TREND_RECALIBRATION = recalibrate_trend_labels(feature_matrix)
+print(f"[server] trend recalibration: {TREND_RECALIBRATION}")
+
 SKILL_TOP_POOL = int(os.getenv('SKILL_TOP_POOL', '10'))
 SKILL_TOP_DISPLAY = int(os.getenv('SKILL_TOP_DISPLAY', '5'))
 
