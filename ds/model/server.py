@@ -42,7 +42,13 @@ model_trained_at = artifacts.get('trained_at')
 cv_to_title_model = joblib.load(f'{os.path.dirname(__file__)}/text_to_job_title_classifier.joblib')
 
 from taxonomy import OTHER_LABEL
-from skill_schema import select_display_skills
+from skill_schema import select_display_skills, compute_role_counts
+
+# Ubiquity map: how many of the 59 roles carry each skill. Skills present in
+# almost every role (e.g. "backend" in 52/59) are generic posting language, not
+# role signals, and are excluded from ranking by select_display_skills.
+UBIQUITY_CAP = int(os.getenv('SKILL_UBIQUITY_CAP', '48'))
+skill_role_counts = compute_role_counts(feature_matrix)
 
 SKILL_TOP_POOL = int(os.getenv('SKILL_TOP_POOL', '10'))
 SKILL_TOP_DISPLAY = int(os.getenv('SKILL_TOP_DISPLAY', '5'))
@@ -348,6 +354,8 @@ def predict_skills(title: str, top_n: int = 5):
         pool_size=SKILL_TOP_POOL,
         display_count=n,
         fallback=skills_data[idx],
+        role_counts=skill_role_counts,
+        ubiquity_cap=UBIQUITY_CAP,
     )
 
     return {
@@ -566,7 +574,11 @@ def trending_skills(title: str, n: int = 5):
 
     feats = feature_matrix.get(matched_canonical, {})
     if feats:
-        ranked = sorted(feats.items(), key=lambda kv: -kv[1].get('prevalence', 0.0))[:n]
+        pool_items = [
+            (s, f) for s, f in feats.items()
+            if skill_role_counts.get(s, 0) <= UBIQUITY_CAP
+        ] or list(feats.items())
+        ranked = sorted(pool_items, key=lambda kv: -kv[1].get('prevalence', 0.0))[:n]
         skills = [
             {
                 "skill":                   s,
