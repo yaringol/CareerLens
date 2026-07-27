@@ -12,6 +12,7 @@ import {
   type SkillContext,
 } from '../services/api'
 import AppLogo from '../components/ui/AppLogo'
+import { useError } from '../context/ErrorContext'
 import AdminNavLink from '../components/admin/AdminNavLink'
 import './ImproveCVScreen.css'
 
@@ -259,6 +260,7 @@ interface ImproveCVScreenProps {
 
 export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScreenProps = {}) {
   const navigate = useNavigate()
+  const { reportError } = useError()
   const [searchParams] = useSearchParams()
 
   const [phase, setPhase] = useState<Phase>('proficiency')
@@ -642,22 +644,22 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
   }, [mergedCvText])
 
   const handleReanalyze = useCallback(async () => {
-    if (!jobTitle) { alert('Job title not found.'); return }
+    if (!jobTitle) { reportError(new Error('Job title not found - please analyze a CV first.')); return }
 
     const raw = sessionStorage.getItem(RESULT_KEY)
-    if (!raw) { alert('Analysis result not found. Please analyze from the home screen.'); return }
+    if (!raw) { reportError(new Error('Analysis result not found. Please analyze from the home screen.')); return }
 
     let prior: ReanalyzeResult
     try {
       prior = JSON.parse(raw) as ReanalyzeResult
     } catch {
-      alert('Analysis result not found. Please analyze from the home screen.')
+      reportError(new Error('Analysis result not found. Please analyze from the home screen.'))
       return
     }
 
     const skillNames = prior.skills?.map((s) => s.name).filter(Boolean) ?? []
     if (skillNames.length === 0) {
-      alert('No skills found from prior analysis.')
+      reportError(new Error('No skills found from prior analysis.'))
       return
     }
 
@@ -697,7 +699,7 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
         navigate('/dashboard')
       }
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Re-analysis failed')
+      reportError(err instanceof Error ? err : new Error('Re-analysis failed'))
     } finally {
       setIsReanalyzing(false)
     }
