@@ -311,10 +311,13 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
     const raw = sessionStorage.getItem(RESULT_KEY)
     if (!raw) { navigate('/', { replace: true }); return }
 
-    let result: { jobTitle: string; skills: Array<{ name: string; score: number }>; matchScore: number; id: string; cvText?: string }
+    let result: { jobTitle: string; skills: Array<{ name: string; score: number }>; matchScore: number; id: string; cvText?: string; rawText?: string }
     try { result = JSON.parse(raw) } catch { navigate('/', { replace: true }); return }
 
-    const cvText = result.cvText ?? ''
+    // Prefer the original extracted text (casing/punctuation/line breaks) for
+    // sectioning, display and export; older saved analyses only carry the
+    // normalized text and fall back to it.
+    const cvText = result.rawText ?? result.cvText ?? ''
     if (!cvText || !Array.isArray(result.skills) || result.skills.length === 0) {
       navigate('/', { replace: true }); return
     }

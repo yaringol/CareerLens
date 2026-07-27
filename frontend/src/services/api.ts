@@ -102,6 +102,8 @@ export interface UploadPdfResponse {
   cvId: string
   cvText: string
   headerText?: string
+  /** Original extracted text (casing/punctuation/line breaks intact) - feeds improve/export. */
+  rawText?: string
   fileName: string
 }
 
@@ -278,7 +280,7 @@ export async function getMyCVs(): Promise<SavedCv[]> {
   return rows.map((row) => ({ ...row, isFavorite: row.isFavorite ?? false }))
 }
 
-export async function getCvText(cvId: string): Promise<{ cvId: string; cvText: string; headerText?: string; fileName: string }> {
+export async function getCvText(cvId: string): Promise<{ cvId: string; cvText: string; headerText?: string; rawText?: string; fileName: string }> {
   const res = await apiFetch(`${base()}/cv/${cvId}`, {
     headers: { ...authHeaders() },
   })

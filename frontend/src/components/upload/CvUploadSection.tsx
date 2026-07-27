@@ -121,6 +121,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
   const [savedCVs, setSavedCVs] = useState<SavedCv[]>([])
   const [selectedCvId, setSelectedCvId] = useState<string | null>(null)
   const [selectedCvText, setSelectedCvText] = useState<string | null>(null)
+  const [selectedCvRawText, setSelectedCvRawText] = useState<string | null>(null)
   const [selectedCvName, setSelectedCvName] = useState<string | null>(null)
   const [cvsLoading, setCvsLoading] = useState(false)
   const [saveToLibrary, setSaveToLibrary] = useState(true)
@@ -137,6 +138,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
       selectedCvId,
       selectedCvName,
       cvText: selectedCvText,
+      rawText: selectedCvRawText,
       roleDetection: roleDetection as CachedRoleDetection,
       manualTitleQuery,
       showManualOverride,
@@ -162,6 +164,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
     setSelectedCvId(draft.selectedCvId)
     setSelectedCvName(draft.selectedCvName)
     setSelectedCvText(draft.cvText)
+    setSelectedCvRawText(draft.rawText ?? null)
     setManualTitleQuery(draft.manualTitleQuery ?? '')
     setShowManualOverride(draft.showManualOverride ?? false)
 
@@ -324,8 +327,9 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
 
   async function detectRoleFromFile(file: File) {
     try {
-      const { cvText, headerText } = await uploadPdf(file, false)
+      const { cvText, headerText, rawText } = await uploadPdf(file, false)
       setSelectedCvText(cvText)
+      setSelectedCvRawText(rawText ?? null)
       await detectRole(cvText, headerText)
     } catch (err) {
       setRoleDetection({ status: 'error' })
@@ -374,9 +378,10 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
 
   async function handleSelectSavedCv(cv: SavedCv) {
     try {
-      const { cvText, headerText } = await getCvText(cv.cvId)
+      const { cvText, headerText, rawText } = await getCvText(cv.cvId)
       setSelectedCvId(cv.cvId)
       setSelectedCvText(cvText)
+      setSelectedCvRawText(rawText ?? null)
       setSelectedCvName(cv.fileName)
       setCvFile(null)
       resetRoleDetection()
@@ -448,23 +453,27 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
 
   async function resolveCvPayload(): Promise<{
     cvText: string
+    rawText: string | null
     cvFileName: string
     excludeCvId: string
   }> {
     let cvText: string
+    let rawText: string | null
     let excludeCvId = selectedCvId ?? ''
     if (cvFile) {
       const upload = await uploadPdf(cvFile, saveToLibrary)
       cvText = upload.cvText
+      rawText = upload.rawText ?? null
       if (saveToLibrary && upload.cvId) {
         excludeCvId = upload.cvId
       }
       if (saveToLibrary) getMyCVs().then(setSavedCVs).catch(() => { /* silent */ })
     } else {
       cvText = selectedCvText!
+      rawText = selectedCvRawText
     }
     const cvFileName = cvFile ? cvFile.name : (selectedCvName ?? 'cv.pdf')
-    return { cvText, cvFileName, excludeCvId }
+    return { cvText, rawText, cvFileName, excludeCvId }
   }
 
   function handleAnalysisError(err: unknown) {
@@ -498,7 +507,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
       const payload = await resolveCvPayload()
       if (roleDetection.status !== 'ready') return
 
-      const { cvText, cvFileName, excludeCvId } = payload
+      const { cvText, rawText, cvFileName, excludeCvId } = payload
       persistUploadDraft({
         cvText,
         selectedCvName: cvFileName,
@@ -514,7 +523,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
       )
       sessionStorage.setItem(
         RESULT_KEY,
-        JSON.stringify({ ...result, cvText, cvFileName }),
+        JSON.stringify({ ...result, cvText, rawText: rawText ?? cvText, cvFileName }),
       )
       sessionStorage.setItem('jobDescription', isPostingMode ? trimmedJobDescription : '')
       sessionStorage.setItem('cvFileName', cvFileName)
@@ -538,7 +547,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
       const payload = await resolveCvPayload()
       if (roleDetection.status !== 'ready') return
 
-      const { cvText, cvFileName, excludeCvId } = payload
+      const { cvText, rawText, cvFileName, excludeCvId } = payload
       sessionStorage.removeItem('personalizationPreferences')
       sessionStorage.removeItem('previousAnalysisResult')
       persistUploadDraft({
@@ -553,6 +562,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
           canonicalTitle: roleDetection.canonicalTitle,
           detectedTitle: roleDetection.detectedTitle,
           cvText,
+          rawText: rawText ?? cvText,
           cvFileName,
           jobDescription: isPostingMode ? trimmedJobDescription : '',
           isPostingMode,

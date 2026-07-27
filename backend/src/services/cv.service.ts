@@ -37,7 +37,7 @@ function extractHeaderText(raw: string, maxLines = HEADER_TEXT_MAX_LINES): strin
 export async function processUpload(
   buffer: Buffer,
   originalName: string
-): Promise<{ cvText: string; headerText: string }> {
+): Promise<{ cvText: string; headerText: string; rawText: string }> {
   let raw: string;
   let parser: PDFParse | undefined;
   try {
@@ -63,5 +63,9 @@ export async function processUpload(
   }
   logUploadOk(originalName, cvText.length);
   const headerText = extractHeaderText(raw);
-  return { cvText, headerText };
+  // rawText keeps the original casing, punctuation and line breaks. Scoring and
+  // keyword matching stay on the normalized cvText they were built around; the
+  // improve/export flow needs the real document (normalization flattens it into
+  // one lowercase run-on paragraph, which is unusable as an exported CV).
+  return { cvText, headerText, rawText: raw };
 }

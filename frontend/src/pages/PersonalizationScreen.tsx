@@ -41,6 +41,7 @@ interface PersonalizationInput {
   canonicalTitle: string
   detectedTitle?: string
   cvText: string
+  rawText?: string
   cvFileName: string
   jobDescription: string
   isPostingMode: boolean
@@ -407,7 +408,7 @@ export default function PersonalizationScreen() {
       await syncSavedPreference()
       sessionStorage.setItem(
         RESULT_KEY,
-        JSON.stringify({ ...result, cvText: input.cvText, cvFileName: input.cvFileName })
+        JSON.stringify({ ...result, cvText: input.cvText, rawText: input.rawText ?? input.cvText, cvFileName: input.cvFileName })
       )
       sessionStorage.setItem('jobDescription', input.isPostingMode ? input.jobDescription : '')
       sessionStorage.setItem('cvFileName', input.cvFileName)
@@ -440,7 +441,7 @@ export default function PersonalizationScreen() {
       )
       sessionStorage.setItem(
         RESULT_KEY,
-        JSON.stringify({ ...result, cvText: input.cvText, cvFileName: input.cvFileName })
+        JSON.stringify({ ...result, cvText: input.cvText, rawText: input.rawText ?? input.cvText, cvFileName: input.cvFileName })
       )
       sessionStorage.setItem('jobDescription', input.isPostingMode ? input.jobDescription : '')
       sessionStorage.setItem('cvFileName', input.cvFileName)
