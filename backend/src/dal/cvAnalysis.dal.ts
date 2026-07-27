@@ -3,7 +3,7 @@ import { CvAnalysis, ICvAnalysis } from '../models/cvAnalysis.model';
 
 // Shape the scoring agent is expected to return
 export interface AgentScoringResponse {
-  skills: Array<{ skill: string; score: number }>;
+  skills: Array<{ skill: string; score: number; evidence?: string; missing?: string }>;
   explanation?: string;
 }
 
@@ -74,11 +74,13 @@ export function computeMatchScoreFromRaw(rawAgentOutput: string, expectedSkillCo
 export function parseSkillScoresFromRaw(
   rawAgentOutput: string,
   expectedSkillCount: number
-): Array<{ skill: string; score: number }> {
+): Array<{ skill: string; score: number; evidence?: string; missing?: string }> {
   const agentResponse = parseAgentResponse(rawAgentOutput, expectedSkillCount);
-  return agentResponse.skills.map(({ skill, score }) => ({
+  return agentResponse.skills.map(({ skill, score, evidence, missing }) => ({
     skill,
     score: clamp(score),
+    evidence,
+    missing,
   }));
 }
 
@@ -87,9 +89,11 @@ export async function parseAndSaveAnalysis(input: SaveAnalysisInput): Promise<IC
   const expectedSkillCount = input.expectedSkillCount ?? 10;
   const agentResponse = parseAgentResponse(input.rawAgentOutput, expectedSkillCount);
 
-  const scores = agentResponse.skills.map(({ skill, score }) => ({
+  const scores = agentResponse.skills.map(({ skill, score, evidence, missing }) => ({
     skill,
     score: clamp(score),
+    ...(typeof evidence === 'string' && evidence ? { evidence } : {}),
+    ...(typeof missing === 'string' && missing ? { missing } : {}),
   }));
 
   const matchScore = calcMatchScore(scores.map((s) => s.score));

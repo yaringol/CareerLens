@@ -281,6 +281,8 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         name: s.skill,
         score: s.score,
         trend: trendBySkill.get(s.skill.toLowerCase()) ?? 'stable',
+        evidence: s.evidence,
+        missing: s.missing,
       })),
       matchScore: analysis.matchScore,
       id: analysis._id.toString(),
@@ -354,7 +356,12 @@ router.post('/rescore', async (req: Request, res: Response, next: NextFunction) 
 
     res.json({
       jobTitle: analysis.jobTitle,
-      skills: analysis.scores.map((s) => ({ name: s.skill, score: s.score })),
+      skills: analysis.scores.map((s) => ({
+        name: s.skill,
+        score: s.score,
+        evidence: s.evidence,
+        missing: s.missing,
+      })),
       matchScore: analysis.matchScore,
       id: analysis._id.toString(),
       cvOnlyMode: analysis.cvOnlyMode ?? false,
@@ -422,7 +429,12 @@ router.post('/skillner', async (req: Request, res: Response, next: NextFunction)
 
     res.json({
       jobTitle: analysis.jobTitle,
-      skills: analysis.scores.map((s) => ({ name: s.skill, score: s.score })),
+      skills: analysis.scores.map((s) => ({
+        name: s.skill,
+        score: s.score,
+        evidence: s.evidence,
+        missing: s.missing,
+      })),
       matchScore: analysis.matchScore,
       id: analysis._id.toString(),
       extractor: 'skillner',
@@ -572,6 +584,8 @@ router.post('/personalized', async (req: Request, res: Response, next: NextFunct
         name: s.skill,
         score: s.score,
         trend: trendBySkill.get(s.skill.toLowerCase()) ?? 'stable',
+        evidence: s.evidence,
+        missing: s.missing,
       })),
       matchScore: analysis.matchScore,
       id: analysis._id.toString(),

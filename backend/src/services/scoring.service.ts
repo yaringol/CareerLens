@@ -46,9 +46,13 @@ export function scoreCvKeywordOnly(cvText: string, skills: string[]): number {
 
 /** Keyword-overlap fallback used when LLM is unavailable or returns uniform scores. */
 function buildKeywordFallbackJson(skills: string[], cvText: string): string {
+  // Empty evidence/missing keep the shape consistent; the UI hides the
+  // deep-dive panel rather than showing fabricated analysis text.
   const scored = skills.map((skill) => ({
     skill,
     score: overlapScoreForSkill(skill, cvText),
+    evidence: '',
+    missing: '',
   }));
   return JSON.stringify({ skills: scored });
 }
@@ -61,17 +65,37 @@ function detectUniformScores(scores: number[]): boolean {
  * Map LLM JSON to our skills in order; fill gaps with overlap scores.
  * If the model returns the same score for every skill, use keyword scores instead.
  */
+function parseScoringJson(raw: string): { skills?: unknown } {
+  try {
+    return JSON.parse(raw) as { skills?: unknown };
+  } catch {
+    // Models occasionally wrap the JSON in a fence or a prose preamble;
+    // salvage the embedded object before giving up on the whole response.
+    const embedded = raw.match(/[{[][\s\S]*[}\]]/);
+    if (embedded) {
+      return JSON.parse(embedded[0]) as { skills?: unknown };
+    }
+    throw new Error('LLM scoring response is not valid JSON');
+  }
+}
+
+interface PoolEntry {
+  score: number;
+  evidence: string;
+  missing: string;
+}
+
 function normalizeLlmScoringJson(
   raw: string,
   expectedSkills: string[],
   cvText: string
 ): { json: string; uniformReplacedWithKeywords: boolean } {
-  const parsed = JSON.parse(raw) as { skills?: unknown };
+  const parsed = parseScoringJson(raw);
   if (!Array.isArray(parsed.skills)) {
     throw new Error('Invalid LLM scoring shape');
   }
 
-  const pool = new Map<string, number>();
+  const pool = new Map<string, PoolEntry>();
   for (const row of parsed.skills) {
     if (
       row &&
@@ -81,27 +105,31 @@ function normalizeLlmScoringJson(
       typeof (row as { skill: unknown }).skill === 'string' &&
       typeof (row as { score: unknown }).score === 'number'
     ) {
-      const s = (row as { skill: string; score: number }).skill.trim().toLowerCase();
-      pool.set(s, (row as { score: number }).score);
+      const entry = row as { skill: string; score: number; evidence?: unknown; missing?: unknown };
+      pool.set(entry.skill.trim().toLowerCase(), {
+        score: entry.score,
+        evidence: typeof entry.evidence === 'string' ? entry.evidence.trim() : '',
+        missing: typeof entry.missing === 'string' ? entry.missing.trim() : '',
+      });
     }
   }
 
   const aligned = expectedSkills.map((skill) => {
     const k = skill.trim().toLowerCase();
-    let score = pool.get(k);
-    if (score === undefined) {
-      for (const [name, s] of pool) {
+    let entry = pool.get(k);
+    if (entry === undefined) {
+      for (const [name, e] of pool) {
         if (name.includes(k) || k.includes(name)) {
-          score = s;
+          entry = e;
           break;
         }
       }
     }
-    if (score === undefined) {
-      score = overlapScoreForSkill(skill, cvText);
+    if (entry === undefined) {
+      entry = { score: overlapScoreForSkill(skill, cvText), evidence: '', missing: '' };
     }
-    const clamped = Math.min(SCORE_MAX, Math.max(SCORE_MIN, Math.round(score)));
-    return { skill, score: clamped };
+    const clamped = Math.min(SCORE_MAX, Math.max(SCORE_MIN, Math.round(entry.score)));
+    return { skill, score: clamped, evidence: entry.evidence, missing: entry.missing };
   });
 
   const values = aligned.map((a) => a.score);
@@ -133,7 +161,7 @@ export interface ScoreRequest {
 export interface ScoreMatchResult {
   matchScore: number;
   isEstimated: boolean;
-  skills: Array<{ name: string; score: number }>;
+  skills: Array<{ name: string; score: number; evidence?: string; missing?: string }>;
   rawAgentOutput: string;
 }
 
@@ -205,10 +233,9 @@ export async function scoreCvMatchOnly(req: ScoreRequest): Promise<ScoreMatchRes
   return {
     matchScore: computeMatchScoreFromRaw(rawAgentOutput, expectedSkillCount),
     isEstimated,
-    skills: parseSkillScoresFromRaw(rawAgentOutput, expectedSkillCount).map(({ skill, score }) => ({
-      name: skill,
-      score,
-    })),
+    skills: parseSkillScoresFromRaw(rawAgentOutput, expectedSkillCount).map(
+      ({ skill, score, evidence, missing }) => ({ name: skill, score, evidence, missing })
+    ),
     rawAgentOutput,
   };
 }
