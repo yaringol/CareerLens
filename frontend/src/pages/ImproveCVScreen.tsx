@@ -277,6 +277,9 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
   const [copied, setCopied] = useState(false)
   const [isPreparing, setIsPreparing] = useState(true)
   const requestSeqRef = useRef(0)
+  // Tab to open when entering the improvement phase; set by the dashboard's
+  // "Improve this skill" hint, consumed once by handleContinue.
+  const focusTabRef = useRef(0)
 
   // Refs mirror the latest committed state so async callbacks (fetchSuggestion)
   // never read a stale section/skill snapshot - critical when one tab's save
@@ -339,7 +342,7 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
     const focusTab = (list: Array<{ skill: string }>) => {
       if (!focusSkill) return
       const idx = list.findIndex((s) => s.skill.toLowerCase() === focusSkill.toLowerCase())
-      if (idx >= 0) setActiveTab(idx)
+      if (idx >= 0) focusTabRef.current = idx
     }
 
     setIsPreparing(true)
@@ -458,7 +461,8 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
 
   const handleContinue = useCallback(() => {
     setPhase('improvement')
-    setActiveTab(0)
+    setActiveTab(focusTabRef.current)
+    focusTabRef.current = 0
   }, [])
 
   const handleOccurrenceTabChange = useCallback((skillIdx: number, occIdx: number) => {
