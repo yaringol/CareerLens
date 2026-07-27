@@ -55,6 +55,20 @@ export async function processUpload(
     throw new ValidationError('No extractable text from PDF');
   }
   logDebugText('CV raw (pre-normalize)', raw);
+  // English-only by design (see the project specification): normalization strips
+  // every non-Latin character, so a Hebrew/other-script CV would silently survive
+  // on its few Latin fragments (emails, tech names) and be scored as if it were
+  // English. Reject it here, on the raw text, with an actionable message.
+  const letters = raw.match(/\p{L}/gu) ?? [];
+  if (letters.length >= 40) {
+    const latin = raw.match(/[A-Za-z]/g) ?? [];
+    if (latin.length / letters.length < 0.7) {
+      logUploadWarn(`non-English CV rejected (${latin.length}/${letters.length} Latin letters)`);
+      throw new ValidationError(
+        'CareerLens analyzes English CVs only. Please upload an English version of your CV.'
+      );
+    }
+  }
   const cvText = normalizeCvText(raw);
   logDebugText('CV normalized', cvText);
   if (cvText.length < 50) {
