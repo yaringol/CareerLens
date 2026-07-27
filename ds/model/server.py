@@ -141,6 +141,16 @@ def confidence_level(n: int) -> str:
     if n >= 50:  return 'medium'
     return 'low'
 
+
+# Below this many postings, aggregation degrades into n-gram fragments
+# ("planning execution") rather than skills - the caller must know the
+# list is not trustworthy instead of receiving fabricated-looking output.
+LIMITED_DATA_MIN_RECORDS = int(os.getenv('SKILL_MIN_RECORDS', '25'))
+
+
+def limited_data(records_count: int) -> bool:
+    return records_count < LIMITED_DATA_MIN_RECORDS
+
 class NpEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.integer):
@@ -405,6 +415,7 @@ def predict_skills(title: str, top_n: int = 5):
 
     return {
         "matched_canonical": matched_canonical,
+        "limited_data": limited_data(rc),
         "data_confidence": confidence_level(rc),
         "records_count": rc,
         "suggested_skills": [r['skill'] for r in ranked],
@@ -647,6 +658,7 @@ def trending_skills(title: str, n: int = 5):
 
     return {
         "matched_canonical": matched_canonical,
+        "limited_data":      limited_data(rc),
         "data_confidence":   confidence_level(rc),
         "records_count":     rc,
         "skills":            skills,
