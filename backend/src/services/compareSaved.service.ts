@@ -255,14 +255,23 @@ export async function enforceSavedCvLimit(userId: Types.ObjectId): Promise<void>
   const count = await CvFile.countDocuments({ userId });
   if (count < MAX_SAVED_CVS) return;
 
+  // Starred CVs are the user's chosen comparison baselines - evicting one
+  // silently would both lose data and quietly disable the saved-CV comparison.
+  // Only unstarred files are eligible; if the library is all favorites, refuse
+  // the upload with an actionable error instead of deleting a starred CV.
   const overflow = count - MAX_SAVED_CVS + 1;
-  const oldest = await CvFile.find({ userId })
+  const oldest = await CvFile.find({ userId, isFavorite: { $ne: true } })
     .sort({ uploadedAt: 1 })
     .limit(overflow)
     .select('_id')
     .lean();
 
-  if (oldest.length === 0) return;
+  if (oldest.length < overflow) {
+    throw new ValidationError(
+      `Your CV library is full (${MAX_SAVED_CVS}) and the remaining files are starred. ` +
+      'Unstar or delete a CV, or upload without saving.'
+    );
+  }
 
   await CvFile.deleteMany({ _id: { $in: oldest.map((cv) => cv._id) } });
 }
