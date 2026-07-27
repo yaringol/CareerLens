@@ -211,7 +211,11 @@ def select_display_skills(
             'recent_prevalence': round(float(f.get('recent_prevalence', 0.0)), 4),
             'stability_score': round(float(f.get('stability_score', DEFAULT_STABILITY)), 4),
             'trend': f.get('trend', 'stable'),
-            'time_coverage_reliable': bool(f.get('time_coverage_reliable', False)),
+            # trained artifacts store this under 'time_features_reliable' (stability.py);
+            # 'time_coverage_reliable' is kept as a legacy fallback for older joblibs.
+            'time_coverage_reliable': bool(
+                f.get('time_features_reliable', f.get('time_coverage_reliable', False))
+            ),
         }
         for skill, f in selected
     ]
