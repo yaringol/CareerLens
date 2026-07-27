@@ -169,6 +169,8 @@ export interface PersonalizationOptions {
   detectedTitle: string
   extractedCvSkills: string[]
   roleDerivedSkills: SkillOption[]
+  /** DS model has too few postings for this role to trust its skill list. */
+  roleDataLimited?: boolean
 }
 
 export type RecommendationMode = 'stable' | 'balanced' | 'trending' | 'custom'

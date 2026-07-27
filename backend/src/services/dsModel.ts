@@ -267,6 +267,20 @@ export interface TrendingSkill {
  * rising/stable/falling trend plus a stability score. Intended to run before analyze so
  * the dynamic skill slots favour what is currently in demand.
  */
+/** True when the DS model marks this role's skill data as too thin to trust
+ *  (fewer postings than its minimum-records floor). Fails open to false. */
+export async function isRoleDataLimited(title: string): Promise<boolean> {
+  try {
+    const response = await axios.get<{ limited_data?: unknown }>(
+      `${DS_MODEL_URL}/title/skills`,
+      { params: { title, top_n: 1 }, timeout: DS_MODEL_TIMEOUT_MS }
+    );
+    return response.data.limited_data === true;
+  } catch {
+    return false;
+  }
+}
+
 export async function getTrendingSkills(title: string, n = 5): Promise<TrendingSkill[]> {
   try {
     const response = await axios.get<{

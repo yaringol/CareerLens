@@ -501,6 +501,11 @@ export default function PersonalizationScreen() {
             <p className="personalize-detected">
               Detected role: <strong>{detectedTitle}</strong>
               <span className="personalize-detected-note"> · optional step, skip anytime with standard results</span>
+              {options?.roleDataLimited && (
+                <span className="personalize-detected-note">
+                  {' '}· limited market data for this role - skill recommendations may be less reliable
+                </span>
+              )}
             </p>
           </div>
 
