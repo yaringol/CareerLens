@@ -143,9 +143,19 @@ export interface TitleMatchSuggestion {
   source?: 'title_extraction' | 'classifier' | 'llm_fallback'
 }
 
+export interface SkillScoreDetail {
+  name: string
+  score: number
+  trend?: 'rising' | 'stable' | 'falling'
+  /** What the CV shows for this skill; absent on old analyses and keyword fallback. */
+  evidence?: string
+  /** What is missing for a higher score. */
+  missing?: string
+}
+
 export interface AnalyzeResponse {
   jobTitle: string
-  skills: Array<{ name: string; score: number; trend?: 'rising' | 'stable' | 'falling' }>
+  skills: SkillScoreDetail[]
   matchScore: number
   id: string
   cvOnlyMode?: boolean

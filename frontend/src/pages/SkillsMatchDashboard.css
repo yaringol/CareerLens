@@ -561,6 +561,138 @@
 .skill-fill--weak     { background: linear-gradient(90deg, hsl(0,84%,70%),   hsl(0,84%,55%));   }
 .skill-fill--none     { background: var(--color-border); }
 
+/* ─── Skill deep-dive (gap analysis panel) ─────────────────────────── */
+.skill-row--clickable .skill-row-header { cursor: pointer; }
+.skill-row--clickable .skill-row-header:hover .skill-row-name { color: var(--color-accent-start); }
+
+.skill-row-chevron {
+  color: var(--color-secondary);
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+.skill-row-chevron--open { transform: rotate(180deg); }
+
+.skill-deepdive {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  animation: fade-in 0.25s ease-out both;
+}
+
+.skill-deepdive-block {
+  padding: 0.5rem 0.625rem;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.skill-deepdive-block--strengths {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.22);
+}
+.skill-deepdive-block--missing {
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.skill-deepdive-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.skill-deepdive-block--strengths .skill-deepdive-label { color: #059669; }
+.skill-deepdive-block--missing   .skill-deepdive-label { color: #dc2626; }
+
+.skill-deepdive-text {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--color-primary);
+  white-space: normal;
+}
+
+.skill-deepdive-improve {
+  align-self: flex-start;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-family: inherit;
+  color: var(--color-accent-start);
+  background: rgba(139, 116, 246, 0.1);
+  border: 1px solid rgba(139, 116, 246, 0.35);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
+}
+.skill-deepdive-improve:hover {
+  background: rgba(139, 116, 246, 0.16);
+  border-color: rgba(139, 116, 246, 0.55);
+  transform: translateY(-1px);
+}
+
+/* ─── Gap analysis table ───────────────────────────────────────────── */
+.score-card--gap {
+  max-width: 940px;
+  flex-basis: 100%;
+}
+
+.gap-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.gap-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.gap-table th {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-secondary);
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.gap-table td {
+  padding: 0.5625rem 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-secondary);
+  line-height: 1.45;
+  vertical-align: top;
+}
+.gap-table tr:last-child td { border-bottom: none; }
+
+.gap-table-skill {
+  font-weight: 600;
+  color: var(--color-primary);
+  white-space: nowrap;
+}
+
+.gap-table-score {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--color-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.gap-table-required { white-space: nowrap; }
+
+.gap-table-cv--absent { color: #dc2626; font-weight: 600; }
+
+.gap-table-gap { color: #b45309; }
+
 /* ─── Skill badges ─────────────────────────────────────────────────── */
 .skill-badge {
   display: inline-flex;

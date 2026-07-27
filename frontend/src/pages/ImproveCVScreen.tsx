@@ -332,6 +332,16 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
     const sorted = [...result.skills].sort((a, b) => a.score - b.score)
     const weakest = sorted.slice(0, 5).map((s) => ({ skill: s.name, score: s.score }))
 
+    // "Improve this skill" on the dashboard leaves a one-shot hint; when the
+    // clicked skill is among the 5 weakest, open its tab first.
+    const focusSkill = sessionStorage.getItem('improveFocusSkill')
+    sessionStorage.removeItem('improveFocusSkill')
+    const focusTab = (list: Array<{ skill: string }>) => {
+      if (!focusSkill) return
+      const idx = list.findIndex((s) => s.skill.toLowerCase() === focusSkill.toLowerCase())
+      if (idx >= 0) setActiveTab(idx)
+    }
+
     setIsPreparing(true)
     prepareImprovement(cvText, weakest)
       .then((prepared) => {
@@ -349,6 +359,7 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
             skipped: false,
           }))
         )
+        focusTab(prepared.skills)
       })
       .catch(() => {
         const sections = fallbackSections(cvText)
@@ -368,6 +379,7 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
             skipped: false,
           }))
         )
+        focusTab(weakest)
       })
       .finally(() => setIsPreparing(false))
   }, [navigate])
