@@ -43,3 +43,6 @@ ds/model/skill_db_relax_*.json
 !docs/TESTING.md
 !docs/ds-models/*.md
 *node_modules*
+
+# local model backups (created before each promote)
+ds/model/model.joblib.bak-*
