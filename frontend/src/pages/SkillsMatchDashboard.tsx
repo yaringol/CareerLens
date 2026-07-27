@@ -370,11 +370,15 @@ const SkillsMatchDashboard = () => {
 
   useEffect(() => {
     if (leavingRef.current) return
-    const mock = params.get('mock')
-    if (mock && MOCK_DATA[mock]) {
-      setResult(MOCK_DATA[mock] as AnalyzeResponse)
-      setDisplayedCvFileName(null)
-      return
+    // Dev-only QA hook: ?mock=<key> loads a canned result. Statically disabled
+    // (and MOCK_DATA tree-shaken away) in the production build.
+    if (import.meta.env.DEV) {
+      const mock = params.get('mock')
+      if (mock && MOCK_DATA[mock]) {
+        setResult(MOCK_DATA[mock] as AnalyzeResponse)
+        setDisplayedCvFileName(null)
+        return
+      }
     }
     const raw = sessionStorage.getItem(RESULT_KEY)
     if (!raw) {

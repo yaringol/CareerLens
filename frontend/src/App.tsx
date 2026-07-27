@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { ToastProvider } from './contexts/ToastContext'
@@ -12,9 +12,16 @@ import AccountPage from './pages/AccountPage'
 import ImproveCVScreen from './pages/ImproveCVScreen'
 import UploadPage from './pages/UploadPage'
 import PersonalizationScreen from './pages/PersonalizationScreen'
-import PersonalizationMock from './pages/PersonalizationMock'
-import MockUploadScreen from './pages/MockUploadScreen'
-import MockHub from './pages/MockHub'
+// QA mock screens: dev-only. import.meta.env.DEV is statically false in the
+// production build, so these lazy chunks are never emitted and the routes below
+// are never registered - /mock and friends fall through to the catch-all.
+const PersonalizationMock = import.meta.env.DEV
+  ? lazy(() => import('./pages/PersonalizationMock'))
+  : null
+const MockUploadScreen = import.meta.env.DEV
+  ? lazy(() => import('./pages/MockUploadScreen'))
+  : null
+const MockHub = import.meta.env.DEV ? lazy(() => import('./pages/MockHub')) : null
 import ErrorBoundary from './components/ui/ErrorBoundary'
 import ErrorToast from './components/ui/ErrorToast'
 import SplashScreen from './components/ui/SplashScreen'
@@ -62,30 +69,42 @@ function App() {
                         </RequireAuth>
                       }
                     />
-                    <Route
-                      path="/personalize-mock"
-                      element={
-                        <RequireAuth>
-                          <PersonalizationMock />
-                        </RequireAuth>
-                      }
-                    />
-                    <Route
-                      path="/upload-mock"
-                      element={
-                        <RequireAuth>
-                          <MockUploadScreen />
-                        </RequireAuth>
-                      }
-                    />
-                    <Route
-                      path="/mock"
-                      element={
-                        <RequireAuth>
-                          <MockHub />
-                        </RequireAuth>
-                      }
-                    />
+                    {PersonalizationMock && (
+                      <Route
+                        path="/personalize-mock"
+                        element={
+                          <RequireAuth>
+                            <Suspense fallback={null}>
+                              <PersonalizationMock />
+                            </Suspense>
+                          </RequireAuth>
+                        }
+                      />
+                    )}
+                    {MockUploadScreen && (
+                      <Route
+                        path="/upload-mock"
+                        element={
+                          <RequireAuth>
+                            <Suspense fallback={null}>
+                              <MockUploadScreen />
+                            </Suspense>
+                          </RequireAuth>
+                        }
+                      />
+                    )}
+                    {MockHub && (
+                      <Route
+                        path="/mock"
+                        element={
+                          <RequireAuth>
+                            <Suspense fallback={null}>
+                              <MockHub />
+                            </Suspense>
+                          </RequireAuth>
+                        }
+                      />
+                    )}
                     <Route
                       path="/dashboard"
                       element={

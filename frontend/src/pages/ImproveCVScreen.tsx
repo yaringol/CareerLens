@@ -286,24 +286,26 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
 
   // Load from sessionStorage and call /prepare on mount
   useEffect(() => {
-    // ── Mock mode: ?phase=result → skip straight to result screen ──
-    const mockPhase = searchParams.get('phase')
-    if (mockPhase === 'result') {
-      setJobTitle('DevOps Engineer (mock)')
-      setOriginalCvText(MOCK_CV_DEVOPS)
-      setMergedCvText(MOCK_RESULT_CV)
-      setPhase('result')
-      setIsPreparing(false)
-      return
-    }
+    // Dev-only QA hooks (?phase=result, ?mock=<key>): statically disabled and
+    // tree-shaken out of the production build.
+    if (import.meta.env.DEV) {
+      const mockPhase = searchParams.get('phase')
+      if (mockPhase === 'result') {
+        setJobTitle('DevOps Engineer (mock)')
+        setOriginalCvText(MOCK_CV_DEVOPS)
+        setMergedCvText(MOCK_RESULT_CV)
+        setPhase('result')
+        setIsPreparing(false)
+        return
+      }
 
-    // ── Mock mode: ?mock=<key> → inject fake analysis data ──
-    const mockKey = searchParams.get('mock')
-    if (mockKey && MOCK_IMPROVE_DATA[mockKey]) {
-      const m = MOCK_IMPROVE_DATA[mockKey]
-      sessionStorage.setItem(RESULT_KEY, JSON.stringify({ jobTitle: m.jobTitle, skills: m.skills, matchScore: m.matchScore, id: m.id, cvText: m.cvText }))
-      sessionStorage.setItem(JD_KEY, m.jd)
-      sessionStorage.setItem(CV_FILENAME_KEY, `mock_${mockKey}.pdf`)
+      const mockKey = searchParams.get('mock')
+      if (mockKey && MOCK_IMPROVE_DATA[mockKey]) {
+        const m = MOCK_IMPROVE_DATA[mockKey]
+        sessionStorage.setItem(RESULT_KEY, JSON.stringify({ jobTitle: m.jobTitle, skills: m.skills, matchScore: m.matchScore, id: m.id, cvText: m.cvText }))
+        sessionStorage.setItem(JD_KEY, m.jd)
+        sessionStorage.setItem(CV_FILENAME_KEY, `mock_${mockKey}.pdf`)
+      }
     }
 
     const raw = sessionStorage.getItem(RESULT_KEY)
