@@ -271,7 +271,6 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       expectedSkillCount,
       excludeCvId: typeof excludeCvId === 'string' ? excludeCvId : undefined,
       cvFileName: id,
-      keywordOnly: cvOnlyMode,
     });
 
     logAnalyzeOk(job.title);
@@ -349,7 +348,6 @@ router.post('/rescore', async (req: Request, res: Response, next: NextFunction) 
       expectedSkillCount,
       excludeCvId: typeof excludeCvId === 'string' ? excludeCvId : undefined,
       cvFileName: id,
-      keywordOnly: resolvedCvOnlyMode,
     });
 
     logAnalyzeOk(job.title);
@@ -514,7 +512,11 @@ router.post('/personalized', async (req: Request, res: Response, next: NextFunct
     const job = await validateJobTitle(canonicalTitle.trim());
     const id = job._id.toString();
 
-    const jd = typeof jobDescription === 'string' ? jobDescription.trim() : '';
+    // A pasted job link must be fetched before it is treated as description
+    // text (the other analyze paths already do this via the same resolver).
+    const jd = await resolveJobDescriptionInput(
+      typeof jobDescription === 'string' ? jobDescription.trim() : ''
+    );
     const skipGibberish = !jd;
     if (!skipGibberish && isGibberish(jd)) {
       res.status(400).json({
@@ -560,7 +562,6 @@ router.post('/personalized', async (req: Request, res: Response, next: NextFunct
       expectedSkillCount,
       excludeCvId: typeof excludeCvId === 'string' ? excludeCvId : undefined,
       cvFileName: id,
-      keywordOnly: cvOnlyMode,
     });
 
     logAnalyzeOk(job.title);
