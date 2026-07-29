@@ -29,6 +29,7 @@ from skillNer.general_params import SKILL_DB
 from skillNer.skill_extractor_class import SkillExtractor
 from spacy.matcher import PhraseMatcher
 from skill_schema import build_skill_records
+from skillner_utils import annotate_with_fallback
 from mongo_env import get_mongo_uri
 
 MONGO_URI = get_mongo_uri()
@@ -45,16 +46,9 @@ def build_skill_extractor() -> SkillExtractor:
 
 
 def extract_skills_from_text(skill_extractor: SkillExtractor, text: str) -> dict[str, list]:
-    try:
-        annotations = skill_extractor.annotate(text)
-        results = annotations.get("results", {})
-        return {
-            "full_matches": results.get("full_matches", []),
-            "ngram_matches": results.get("ngram_scored", []),
-        }
-    except Exception as exc:
-        print(f"  SkillNer failed ({exc.__class__.__name__}): skipping skills for this doc")
-        return {"full_matches": [], "ngram_matches": []}
+    # annotate_with_fallback retries in line-aligned chunks when SkillNer's
+    # matcher crashes on the whole document (library bug on some real texts).
+    return annotate_with_fallback(skill_extractor, text)
 
 
 def pending_query() -> dict[str, Any]:

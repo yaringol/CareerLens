@@ -43,6 +43,7 @@ cv_to_title_model = joblib.load(f'{os.path.dirname(__file__)}/text_to_job_title_
 
 from taxonomy import OTHER_LABEL
 from skill_schema import select_display_skills, compute_role_counts
+from skillner_utils import annotate_with_fallback
 
 # Ubiquity map: how many of the 59 roles carry each skill. Skills present in
 # almost every role (e.g. "backend" in 52/59) are generic posting language, not
@@ -390,13 +391,12 @@ def best_title_candidate(candidates: list):
 @app.get("/text/skills")
 def predict_skills_from_text(text: str):
     try:
-        annotations = skill_extractor.annotate(text)
-        full_matches = annotations['results']['full_matches']
-        ngram_matches = annotations['results']['ngram_scored']
-        
-        skills = { "full_matches": full_matches, "ngram_matches": ngram_matches }
+        # Chunked fallback: SkillNer's matcher can crash on specific real-world
+        # texts (hit by an authentic CV in M18 eval); annotating in line-aligned
+        # chunks recovers the skills instead of silently returning nothing.
+        skills = annotate_with_fallback(skill_extractor, text)
         return json.loads(json.dumps(skills, ensure_ascii=False, cls=NpEncoder))
-    except:
+    except Exception:
         return {}
 
 @app.get("/title/skills")
