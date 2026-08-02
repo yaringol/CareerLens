@@ -241,6 +241,39 @@ def apply_agreement_signal(resp: dict, cv_text: str) -> dict:
         resp['candidates'] = capped
     return resp
 
+def apply_agreement_signal_to_roles(candidates: list, cv_text: str) -> list:
+    """/cv/role variant of apply_agreement_signal - same policy, list shape.
+
+    /cv/role is the rung the PRODUCT actually calls (the backend's ladder in
+    dsModel.ts runs LLM header extraction -> /title/normalize, then falls back
+    here for headerless CVs; it never calls POST /cv/title). This is exactly
+    the signal's active zone - the classifier-only path where agreement
+    measured 87% vs ~50% on disagreement. The signal fields are attached to
+    every candidate item so the list response shape stays backward compatible.
+    """
+    top = candidates[0] if candidates else None
+    signal = agreement_check(top.get('canonical_title') if top else None, cv_text)
+    if signal is None or top is None:
+        return candidates
+    base_conf = float(top.get('confidence') or 0.0)
+    if signal['agreement'] == 'agree':
+        boosted = round(max(base_conf, AGREEMENT_BOOST_CONFIDENCE), 2)
+        candidates = [{**top, 'confidence': boosted}] + candidates[1:]
+    elif signal['agreement'] in ('disagree', 'rejects') and base_conf < DISAGREEMENT_OVERRIDE_MAX:
+        candidates = [{**c,
+                       'raw_confidence': c.get('raw_confidence', c.get('confidence')),
+                       'confidence': round(min(float(c.get('confidence') or 0.0),
+                                               DISAGREEMENT_CONFIDENCE_CAP), 2)}
+                      for c in candidates]
+        if signal['skills_model_title'] and all(
+                c.get('canonical_title') != signal['skills_model_title'] for c in candidates):
+            candidates.append({'job_title': signal['skills_model_title'],
+                               'canonical_title': signal['skills_model_title'],
+                               'confidence': round(min(signal['skills_model_confidence'],
+                                                       DISAGREEMENT_CONFIDENCE_CAP), 2),
+                               'raw_confidence': signal['skills_model_confidence']})
+    return [{**c, **signal} for c in candidates]
+
 def _title_similarities(candidate: str):
     vec = title_encoder.encode([candidate], normalize_embeddings=True)
     return (vec @ title_centroids.T)[0]
@@ -596,7 +629,7 @@ def classify_cv_role(text: str) -> list:
 
 @app.get("/cv/role")
 def match_role_to_cv(text: str):
-    return classify_cv_role(text)
+    return apply_agreement_signal_to_roles(classify_cv_role(text), text)
 
 def _sanitize_text(value: Optional[str]) -> Optional[str]:
     """
