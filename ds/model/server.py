@@ -41,7 +41,7 @@ model_trained_at = artifacts.get('trained_at')
 # non-engineering CVs that is never returned to callers.
 cv_to_title_model = joblib.load(f'{os.path.dirname(__file__)}/text_to_job_title_classifier.joblib')
 
-from taxonomy import OTHER_LABEL
+from taxonomy import OTHER_LABEL, CANONICAL_TITLES
 from skill_schema import select_display_skills, compute_role_counts
 from skillner_utils import annotate_with_fallback
 
@@ -121,6 +121,125 @@ title_labels = title_normalizer['labels']
 # showed accuracy dropping into the 60-80% range with too little data to trust
 # further - treat the extracted phrase as unresolved rather than guess.
 TITLE_NORMALIZER_ACCEPT_SIM = 0.55
+
+# ── Agreement signal (M19): skills->title router as a second opinion ───────────
+# Measured on the authentic-CV set: when the text path and the skills path agree
+# the joint accuracy is ~87%, on disagreement ~50% - so agreement boosts
+# confidence past the LLM-fallback threshold and disagreement (or an __other__
+# rejection) caps it below, routing the CV to the existing closed-list LLM rung.
+# A declared-title hit above DISAGREEMENT_OVERRIDE_MAX is never overridden: the
+# router only covers 24 of 59 roles and must not out-vote a confident header.
+AGREEMENT_SIGNAL_ENABLED = os.getenv('AGREEMENT_SIGNAL_ENABLED', '0').lower() in ('1', 'true', 'yes')
+AGREEMENT_BOOST_CONFIDENCE = float(os.getenv('AGREEMENT_BOOST_CONFIDENCE', '87'))
+DISAGREEMENT_OVERRIDE_MAX = float(os.getenv('DISAGREEMENT_OVERRIDE_MAX', '85'))
+DISAGREEMENT_CONFIDENCE_CAP = float(os.getenv('DISAGREEMENT_CONFIDENCE_CAP', '50'))
+SKILLS_ROUTER_PATH = os.getenv(
+    'SKILLS_ROUTER_PATH', f'{os.path.dirname(__file__)}/skills_to_24_plus_other.joblib'
+)
+skills_router = None
+if AGREEMENT_SIGNAL_ENABLED:
+    try:
+        skills_router = joblib.load(SKILLS_ROUTER_PATH)
+        print(f"[server] agreement signal ON: router "
+              f"{skills_router.get('trained_at')} "
+              f"({len(skills_router['label_encoder'].classes_)} classes)")
+    except Exception as exc:  # missing/corrupt artifact must never block startup
+        print(f"[server] agreement signal DISABLED (router load failed: {exc})")
+        skills_router = None
+else:
+    print("[server] agreement signal off (AGREEMENT_SIGNAL_ENABLED != 1)")
+
+# The router was trained on skills with canonical-title names removed (leakage
+# guard); serving must filter identically or the feature distribution drifts.
+_LEAK_SKILLS = {t.lower() for t in CANONICAL_TITLES} | {t.lower() + 's' for t in CANONICAL_TITLES}
+
+
+def agreement_check(base_canonical, cv_text: str):
+    """Second opinion from the skills router. Returns None when the signal is
+    off/unavailable (callers treat None as fully neutral)."""
+    if skills_router is None or not cv_text:
+        return None
+    try:
+        raw = annotate_with_fallback(skill_extractor, cv_text[:20000])
+        skills = set()
+        for m in raw.get('full_matches', []):
+            v = (m.get('doc_node_value') or '').lower().strip()
+            if len(v) >= 3 and v not in _LEAK_SKILLS:
+                skills.add(v)
+        for m in raw.get('ngram_matches', []):
+            v = (m.get('doc_node_value') or '').lower().strip()
+            if len(v) >= 3 and float(m.get('score', 0)) >= 0.9 and v not in _LEAK_SKILLS:
+                skills.add(v)
+        if len(skills) < 3:
+            return {'agreement': 'no_skills', 'skills_model_title': None,
+                    'skills_model_confidence': 0.0}
+        le = skills_router['label_encoder']
+        proba = skills_router['model'].predict_proba(
+            skills_router['vectorizer'].transform([skills]))[0]
+        idx = int(proba.argmax())
+        pred, conf = str(le.classes_[idx]), float(proba[idx])
+        covered = {str(c) for c in le.classes_} - {OTHER_LABEL}
+        # Soft agreement: the ladder's answer counting anywhere in the router's
+        # top-3 counts as concurrence - adjacent role families (Data Scientist /
+        # ML Engineer, Cyber Security / Penetration Tester) collapse into each
+        # other in skill space, and a top-1-only rule punishes exactly those
+        # legitimate neighbors. Same top-3 semantics as the UI candidate list.
+        top3 = {str(le.classes_[i]) for i in proba.argsort()[::-1][:3]}
+        if pred == OTHER_LABEL:
+            status = 'rejects'
+        elif base_canonical not in covered:
+            status = 'not_covered'
+        elif base_canonical in top3:
+            status = 'agree'
+        else:
+            status = 'disagree'
+        return {'agreement': status,
+                'skills_model_title': None if pred == OTHER_LABEL else pred,
+                'skills_model_confidence': round(conf * 100, 2)}
+    except Exception as exc:
+        print(f"  agreement check failed ({exc.__class__.__name__}) - neutral")
+        return None
+
+
+def apply_agreement_signal(resp: dict, cv_text: str) -> dict:
+    """Fold the second opinion into a /cv/title response.
+
+    agree            -> lift confidence to >= AGREEMENT_BOOST_CONFIDENCE (skips
+                        the LLM rung the backend triggers below 55)
+    disagree/rejects -> when the base answer isn't a confident declared title
+                        (< DISAGREEMENT_OVERRIDE_MAX), cap every candidate below
+                        the LLM threshold so the existing fallback fires; the
+                        router's own pick joins the candidate list for the UI
+    not_covered / no_skills / signal-off -> untouched
+    """
+    signal = agreement_check(resp.get('canonical_title'), cv_text)
+    if signal is None:
+        return resp
+    resp.update(signal)
+    base_conf = float(resp.get('confidence') or 0.0)
+    if signal['agreement'] == 'agree':
+        boosted = round(max(base_conf, AGREEMENT_BOOST_CONFIDENCE), 2)
+        resp['confidence'] = boosted
+        resp['low_confidence'] = boosted < CLASSIFIER_FALLBACK_LOW_CONFIDENCE
+        if resp.get('candidates'):
+            resp['candidates'][0] = {**resp['candidates'][0], 'confidence': boosted}
+    elif signal['agreement'] in ('disagree', 'rejects') and base_conf < DISAGREEMENT_OVERRIDE_MAX:
+        resp['low_confidence'] = True
+        resp['confidence'] = round(min(base_conf, DISAGREEMENT_CONFIDENCE_CAP), 2)
+        capped = []
+        for cand in resp.get('candidates') or []:
+            capped.append({**cand,
+                           'raw_confidence': cand.get('raw_confidence', cand.get('confidence')),
+                           'confidence': round(min(float(cand.get('confidence') or 0.0),
+                                                   DISAGREEMENT_CONFIDENCE_CAP), 2)})
+        if signal['skills_model_title'] and all(
+                c.get('canonical_title') != signal['skills_model_title'] for c in capped):
+            capped.append({'job_title': signal['skills_model_title'],
+                           'canonical_title': signal['skills_model_title'],
+                           'confidence': round(min(signal['skills_model_confidence'],
+                                                   DISAGREEMENT_CONFIDENCE_CAP), 2)})
+        resp['candidates'] = capped
+    return resp
 
 def _title_similarities(candidate: str):
     vec = title_encoder.encode([candidate], normalize_embeddings=True)
@@ -550,7 +669,7 @@ def extract_and_normalize_title(payload: CvTitleRequest):
                 "confidence": confidence,
                 "raw_confidence": confidence,
             }] + alternatives
-            return {
+            return apply_agreement_signal({
                 "extracted_title": clean_extracted,
                 "raw_title": raw_extracted,
                 "seniority": seniority,
@@ -559,10 +678,10 @@ def extract_and_normalize_title(payload: CvTitleRequest):
                 "low_confidence": False,
                 "source": "title_extraction",
                 "candidates": response_candidates[:3],
-            }
+            }, cv_text)
 
     top = classifier_candidates[0] if classifier_candidates else None
-    return {
+    return apply_agreement_signal({
         "extracted_title": clean_extracted,
         "raw_title": raw_extracted,
         "seniority": seniority,
@@ -571,7 +690,7 @@ def extract_and_normalize_title(payload: CvTitleRequest):
         "low_confidence": (top["confidence"] if top else 0.0) < CLASSIFIER_FALLBACK_LOW_CONFIDENCE,
         "source": "cv_classifier",
         "candidates": classifier_candidates,
-    }
+    }, cv_text)
 
 @app.get("/title/normalize")
 def normalize_title(title: str):

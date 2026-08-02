@@ -99,8 +99,9 @@ export function logLlmScoringRawUnnormalized(jobTitle: string): void {
 }
 
 /** Background compare: started scoring starred CVs in parallel with main analyze. */
-export function logTitleLlmFallbackUsed(title: string): void {
-  console.log(`${PREFIX} CV title: classifier below threshold - LLM fallback picked ${JSON.stringify(title)}`);
+export function logTitleLlmFallbackUsed(title: string, agreement?: string): void {
+  const trigger = agreement ? ` (agreement signal: ${agreement})` : '';
+  console.log(`${PREFIX} CV title: classifier below threshold - LLM fallback picked ${JSON.stringify(title)}${trigger}`);
 }
 
 export function logTitleLlmFallbackFailed(message: string): void {

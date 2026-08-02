@@ -140,7 +140,7 @@ export async function detectTitleFromCv(text: string, headerText?: string): Prom
   try {
     const llmTitle = await classifyTitleWithLlm(text);
     if (llmTitle) {
-      logTitleLlmFallbackUsed(llmTitle);
+      logTitleLlmFallbackUsed(llmTitle, ladder.agreement);
       const fallbackRole: DetectedRole = {
         jobTitle: llmTitle,
         canonicalTitle: llmTitle,
@@ -330,6 +330,13 @@ export interface ExtractTitleResult {
   low_confidence: boolean;
   source: 'title_extraction' | 'cv_classifier';
   candidates: CVTitleDetectionResponse[];
+  // M19 agreement signal (optional - absent when AGREEMENT_SIGNAL_ENABLED is off
+  // on the DS side): whether the skills->title router concurred with the ladder's
+  // answer. 'disagree'/'rejects' arrive with confidences already capped below the
+  // LLM threshold, so no routing logic is needed here - logged for analysis only.
+  agreement?: 'agree' | 'disagree' | 'rejects' | 'not_covered' | 'no_skills';
+  skills_model_title?: string | null;
+  skills_model_confidence?: number;
 }
 
 // Below this normalised confidence (0-100), an extraction/classifier result is
