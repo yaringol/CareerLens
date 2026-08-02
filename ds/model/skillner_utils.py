@@ -15,6 +15,16 @@ from typing import Any
 CHUNK_TARGET_CHARS = 600
 
 
+def identity(x):
+    """Pass-through analyzer for CountVectorizer over pre-tokenized skill sets.
+
+    Lives in a module (not a notebook cell) so artifacts pickled with it can be
+    unpickled by any process that imports skillner_utils - notebooks that define
+    their own `identity` produce joblib files only the notebook can reload.
+    """
+    return x
+
+
 def _empty() -> dict[str, list]:
     return {"full_matches": [], "ngram_matches": []}
 
