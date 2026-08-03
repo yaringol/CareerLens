@@ -1,0 +1,474 @@
+{
+  "pairs": [
+    {
+      "pair_id": "001",
+      "band": "matched",
+      "cv_file": "backend-senior-strong_Daniel-Peretz.pdf",
+      "cv_true_title": "Backend Developer",
+      "cv_scenario": "clear-cut",
+      "jd_id": "001ace28-e40b-5f63-8d00-8cfe08d7f441",
+      "jd_og_title": "Backend Developer",
+      "jd_posting_title": "Elixir / Phoenix developer for meaningful product",
+      "jd_company": "Innoteka",
+      "jd_description": "**Company / Mission** Most retailers don’t know what to do with returned and unsold items, they lack technologies and efficient systems. Eventually a huge amount of goods is sent to the landfill. Our solution allows to take unsold and returned goods from retailers’ warehouses, process and analyze each item and choose the right market and channel to remarket it, thus reducing waste and making quality overstock and returned items available to new consumers. **Technology** - Backend systems currently use Elixir and Phoenix, as well as Postgres, Redis and RabbitMQ (AMQP) for integrations with in-warehouse systems and 3rd party warehouse vendors, and are currently hosted on Heroku. - On-site/in-warehouse system responsible for supporting warehouse operations, capable of working even without internet. Here Elixir’s Nerves project is used to package the server and stationary workstations into burnable firmware running on Raspberry Pi 4s. In-warehouse server consists of a Regular Phoenix app packaged into Nerves firmware. - Just FYI: Frontend apps are being built with Ember.js (Octane). Auth0 is used for authentication, authorization, user management. UI clients are hosted on Amazon S3. **Team** - Currently 4 people in Berlin - Very soon: You, in Ukraine:) - Then: 3-4 more developers also in Ukraine **About you** - You have been building software for at least 3 years, incl. with Elixir and Phoenix - You write code for human comprehension first, then for machines to execute fast - If you’re stuck, you have no fear of asking questions - You have good verbal and written communication skills in English - You have some idea about the Elixir Nerves project, and are eager to experiment with it - You understand the DevOps principles (Ideally you have read the DevOps Handbook or something similar) **Model** - Dedicated product team (some call it outstaffing) - work like one team with the CTO in Berlin - No walls, no project managers in between - Travel to Berlin from time to time **Offer** - Very competitive salary (can be paid to Payoneer if you want) - Flexible hours; No bureaucracy; Freedom to do your work right - Remote OK! - If you're in Lviv or want to move here - we have modern office in city center - 20 days per year paid vacation, paid sick leaves"
+    },
+    {
+      "pair_id": "002",
+      "band": "adjacent",
+      "cv_file": "backend-senior-strong_Daniel-Peretz.pdf",
+      "cv_true_title": "Backend Developer",
+      "cv_scenario": "clear-cut",
+      "jd_id": "0587e14a-4125-5719-996e-645110dd5f01",
+      "jd_og_title": "Data Engineer",
+      "jd_posting_title": "Data Engineer",
+      "jd_company": "Bunch Consulting",
+      "jd_description": "We’re looking for Kafka/Confluent specialists for our customer in retail. The project is about renewing existing fulfillment/resupply solutions and registering sales data to SAP. Also, providing new Data Products for other projects to use. We are looking for both middle and senior-level specialists. **Bunch Consulting** is an international outsourcing IT company focused on software development and business digital transformation consulting. Headquarter is located in Warsaw, Poland, and the main office is based in Kyiv, Ukraine. **Requirements**: - Hands-on development experience with Kafka, Confluent Kafka Connect, and Kafka Streams. - Experience and interest of Kafka Developer - producers, consumers, streams, preferred connectors knowledge, preferred KSQL knowledge, schema registry, and confluent experience /knowledge preferred. - Experience with Confluent Kafka API lifecycle development and management. - Experience in CI/CD Deployment procedures and DevOps. - An understanding as well as further curiosity about ensuring that unit, system, integration, stress, and user acceptance testing are in alignment with architecture. - Fluent English. - Desire to develop and challenge himself while working on a project. Outstanding communication skills **We offer you**: - Continuous growth and development as a professional in terms of Seniority and Tech Leadership in a fast-growing company. - The decent salary level and revisions depend on your growth in the company and your desires. - Comfortable working conditions on a remote basis. - A motivated team. - Improvement of your spoken English. - To be surrounded by people who love what they do and be in the continuous development of new technologies. **Working conditions**: Full time. Remote. **Project duration**: 6-12 months, with further prolongation."
+    },
+    {
+      "pair_id": "003",
+      "band": "mismatched",
+      "cv_file": "backend-senior-strong_Daniel-Peretz.pdf",
+      "cv_true_title": "Backend Developer",
+      "cv_scenario": "clear-cut",
+      "jd_id": "05402a01-db74-578f-9b3d-ecde36f40ead",
+      "jd_og_title": "UX Designer",
+      "jd_posting_title": "Middle Digital Designer",
+      "jd_company": "SlashDevsUkraine",
+      "jd_description": "**We’re looking for an product / interaction designer who can:** ●Work as part of a multidisciplinary team including service designers, content designers, user researchers and software engineers to meet user needs ●Design intuitive, inclusive and accessible services for government, third and private sector organisations ●Communicate clearly and help clients to put user needs at the centre of their services ●Champion user-centred design by working in the open and frequently sharing the thinking and evidence behind your work ●Contribute to our interaction design. **Qualifications*** ✅We’d like to hear from you if you have any of these skills or experiences: * ◉**Have experience 3+ year ** in designing products, services or a design related degree ◉Are experienced at sketching and prototyping in different fidelities ◉Are experienced in explaining your designs in a way that other people understand ◉Can work in the open and collaborate well with others ◉Are skilled at designing intuitive, accessible, responsive user interfaces ◉Can interpret user research and analytics to inform your design decisions ◉Creative, organised and but importantly, calm under pressure. ◉Digital background or a demonstrable passion for digital design, any experience with HTML, JavaScript, CSS and CMS platforms would be highly valuable. Knowledge of Adobe Creative Suite /XD/ Illustrator/ Photoshop/ Acrobat/ and Figma essential. ◉Attention to detail and accuracy are essential. ◉Flexible approach to work and able to deal with changing priorities at short notice. ◉Excellent communication and interpersonal skills, with demonstrable experience of managing stakeholders. ◉Self-motivated with the ability to work both independently and as part of a team. ◉Experience of working in fast paced and deadline driven creative teams in an agency or client side. ◉Experience producing assets and design for all required digital assets. **Think this is for you? Get in touch for a confidential chat about how you can become part of the team.**"
+    },
+    {
+      "pair_id": "004",
+      "band": "matched",
+      "cv_file": "frontend-mid-strong_Noa-Shapiro.pdf",
+      "cv_true_title": "Frontend Developer",
+      "cv_scenario": "clear-cut",
+      "jd_id": "03fc0bdd-1c6e-5adf-b5fe-30cd11b3ccf2",
+      "jd_og_title": "Frontend Developer",
+      "jd_posting_title": "Front-End developer",
+      "jd_company": "Simplify",
+      "jd_description": "**About us** We’re a creative team of marketers, designers, developers and copywriters, who are focused on solving business problems by making simple, but effective websites & mobile apps. Our job is to eliminate barriers, misunderstanding and unawareness between a product and a consumer. We make their ways to each other simple. Simplify. Your way to Greatness. This is a great opportunity to work with our friendly team on many interesting projects and be involved in architecture design and development as well and other challenging and interesting tasks. **Requirements:** ● 2+ years development experience ● HTML - high level, knowledge of semantic markup, skills for working with any template maker ● CSS - knowledge of flexbox, grid layout will be a plus, foundation/bootstrap, SCSS, LESS, BEM ● Experience to work with Vue.js, Nuxt ● ES6, JQuery ● Experience to work with Gulp or Webpack or others **We Offer:** ● Interesting tasks ● Professional growth ● Flexible working hour ● Corporate events and meetings ● Friendly team and nice environment"
+    },
+    {
+      "pair_id": "005",
+      "band": "adjacent",
+      "cv_file": "frontend-mid-strong_Noa-Shapiro.pdf",
+      "cv_true_title": "Frontend Developer",
+      "cv_scenario": "clear-cut",
+      "jd_id": "03c0ccce-6db1-50d6-bb0e-e3c39fbcf7ca",
+      "jd_og_title": "Software Engineer",
+      "jd_posting_title": "3С Gameplay Programmer",
+      "jd_company": "Fractured Byte",
+      "jd_description": "**Fractured Byte** is a game development studio whose experience involves work on titles such as **Borderlands: The Legendary Collection and Tony Hawk’s Pro Skater 1+2** for Nintendo Switch. We are a team of experienced professionals, focused on video game development for PC and consoles. **Responsibilities:** - Developing game systems for controls, cameras, and animations. - Working closely with lead game designer, to develop a 3C melee combat prototype. - Integration and implementation of tools and techniques to get a high-quality gameplay experience. **Requirements:** - Experience with 3C - 2+ years. - Experience with UE - 1+ years. - Familiar with impact systems creation. - Strong C++ skills. - Good knowledge of OOP, Vector Algebra, Serialization. - Experience in creating and supporting 3C systems in UE4 for PC / Consoles. - Familiar with common algorithms, data structures, and patterns. **A strong candidate has:** - Knowledge of Networking / Multiplayer, VCS. - Good verbal English. **We offer:** - Unlimited Vacations in our company. Our goal is to release great games. - And when we need to rest — we do rest! - Full financial and legal support for private entrepreneurs. We will pay your taxes :) - Freedom of choice: you can work from home/office or wherever you want! - Caring management team."
+    },
+    {
+      "pair_id": "006",
+      "band": "mismatched",
+      "cv_file": "frontend-mid-strong_Noa-Shapiro.pdf",
+      "cv_true_title": "Frontend Developer",
+      "cv_scenario": "clear-cut",
+      "jd_id": "1fcc3873-ce18-5a0a-96c8-bb9505df52e6",
+      "jd_og_title": "Cyber Security",
+      "jd_posting_title": "DevSecOps Engineer",
+      "jd_company": "INCOAlliance",
+      "jd_description": "We are seeking a skilled and experienced DevSecOps Engineer. As a DevSecOps Engineer, you will play a crucial role in the project, which involves building a platform aimed at protecting thousands of customers from cyberattacks and data loss. This is an exciting opportunity to be part of a dynamic and innovative team working on cutting-edge cloud-based solutions. Requirements: 5-7 years of experience as a Cloud or DevOps Engineer. Good understanding of at least two cloud platforms (Azure/AWS/GCP/OCI). Hands-on experience in designing, implementing, and operating different cloud-based application infrastructure. Proficiency in Infrastructure Automation using at least two IaC tools (Terraform, ARM Templates, Cloudformation, Bicep, etc.) Scripting experience in at least one language (Powershell, Bash, Python, etc.) Nice to have: Cloud Security Understanding. Understanding of CIS Policies and security/compliance framework. Logica Language. Responsibilities: Build automation scripts or Cloud formation templates to create positive and negative infrastructure to stand-up the Cloud environment for the specific policy. Create a policy specification like a recommendation, audit and remediation procedures. Build and Create auto remediation framework and scripts for the specific service or policy. We offer: Сompetitive compensation based on your skills and experience. Compensation fixed in USD. 24 days of annual paid vacation and 5 sick leaves. Exciting project involving the newest technologies. Accounting as a service. Flexible working hours. Long-term employment. Recruitment process: A screening call with with HR (20mins). A technical interview with Engineering Leader (60 mins). A interview with VP of R&D (60 mins). Final feedback received within a week after the interview."
+    },
+    {
+      "pair_id": "007",
+      "band": "matched",
+      "cv_file": "devops-senior-strong_Alex-Vaisman.pdf",
+      "cv_true_title": "DevOps Engineer",
+      "cv_scenario": "clear-cut",
+      "jd_id": "0128b3b5-fad3-5967-bf73-12b360dee5e3",
+      "jd_og_title": "DevOps Engineer",
+      "jd_posting_title": "Senior DevOps Engineer",
+      "jd_company": "Academy SMART",
+      "jd_description": "About project: Sensys Gatso is the leading provider of automated traffic enforcement solutions with a strong global presence.The mission is saving lives by changing the driving behavior of motorists. We are firmly committed to improving road safety by reducing vehicle speed and red light negation, by optimizing traffic flows and by contributing to a sustainable urban environment, always in close partnership with governments and other authorities all over the world. Requirements: Hands-on experience with Containers & Kubernetes, Helm is a plus; Solid understanding of infrastructure as code, experience with Terraform or Ansible is a plus; You are an expert in CI/CD (Gitlab CI/CD, Google cloud builder etc.); Experience with monitoring and logging solutions (Datadog, Prometheus, ELK etc.); Hands-on experience in one or more cloud providers like GCP, Azure, AWS and on-premise hosting; Have a good understanding of Linux/Unix operating systems and tools; Experience with Networking & Security Basics; Know how HTTP, DNS, FTP, and other protocols work; Strong knowledge in scripting languages like Bash, knowledge in Go or Java is a plus; A strong SRE mindset is always a plus; What will you do: Work as part of a team on multiple cloud providers or on premise solutions; Advocate for improvements when it comes to infrastructure, CI/CD and monitoring; Produce solutions that adhere to our standards and industry best practices; Be responsible for the operations and the health of our infrastructure;"
+    },
+    {
+      "pair_id": "008",
+      "band": "adjacent",
+      "cv_file": "devops-senior-strong_Alex-Vaisman.pdf",
+      "cv_true_title": "DevOps Engineer",
+      "cv_scenario": "clear-cut",
+      "jd_id": "002e2ff7-3352-52c7-baa0-755cc0fa4e87",
+      "jd_og_title": "Backend Developer",
+      "jd_posting_title": "Middle PHP developer (Magento)",
+      "jd_company": "Arpo",
+      "jd_description": "Required skills: - OOP knowledge, PHP, MySQL; - Knowledge of HTML, CSS; - Javascript: PrototypeJS, jQuery, Ajax; - 2 years of experience or more in Magento 2; - Understanding of XML page Magento 1 structure; - Customization / development of existing Magento projects; - Development of online stores and web services on Magento 2; - Magento modules development; - You are an experienced object-oriented programmer; you can handle every complex project. About a work: - Magento 2 projects from scratch, depence of developer preference and experience. About the company: Small company with up to 10 ten employees, working for Australian and US market and brands with big ambitions and desire to create and deliver great projects in eCommerce and connected fields. Our passionate team works in a fully creative and friendly environment with plenty of opportunities for personal development. Being a backoffice of online businesses we evaluate and support our reputation of professionals who want to understand not just the clients but their customers. Our passions are innovations and technical know-hows that result in inspiring win-win future-ready solutions. Currently, we are looking for talented people who adore coding, are not afraid of challenges to their minds, and share our values to create outstanding websites and comfortable shopper journeys. Projects: - Outsource projects, for AU, US customers. Big magento cloud Highly loaded projects with custom logic. - Product - magento marketplace extension for Highly loaded marketplaces."
+    },
+    {
+      "pair_id": "009",
+      "band": "mismatched",
+      "cv_file": "devops-senior-strong_Alex-Vaisman.pdf",
+      "cv_true_title": "DevOps Engineer",
+      "cv_scenario": "clear-cut",
+      "jd_id": "05402a01-db74-578f-9b3d-ecde36f40ead",
+      "jd_og_title": "UX Designer",
+      "jd_posting_title": "Middle Digital Designer",
+      "jd_company": "SlashDevsUkraine",
+      "jd_description": "**We’re looking for an product / interaction designer who can:** ●Work as part of a multidisciplinary team including service designers, content designers, user researchers and software engineers to meet user needs ●Design intuitive, inclusive and accessible services for government, third and private sector organisations ●Communicate clearly and help clients to put user needs at the centre of their services ●Champion user-centred design by working in the open and frequently sharing the thinking and evidence behind your work ●Contribute to our interaction design. **Qualifications*** ✅We’d like to hear from you if you have any of these skills or experiences: * ◉**Have experience 3+ year ** in designing products, services or a design related degree ◉Are experienced at sketching and prototyping in different fidelities ◉Are experienced in explaining your designs in a way that other people understand ◉Can work in the open and collaborate well with others ◉Are skilled at designing intuitive, accessible, responsive user interfaces ◉Can interpret user research and analytics to inform your design decisions ◉Creative, organised and but importantly, calm under pressure. ◉Digital background or a demonstrable passion for digital design, any experience with HTML, JavaScript, CSS and CMS platforms would be highly valuable. Knowledge of Adobe Creative Suite /XD/ Illustrator/ Photoshop/ Acrobat/ and Figma essential. ◉Attention to detail and accuracy are essential. ◉Flexible approach to work and able to deal with changing priorities at short notice. ◉Excellent communication and interpersonal skills, with demonstrable experience of managing stakeholders. ◉Self-motivated with the ability to work both independently and as part of a team. ◉Experience of working in fast paced and deadline driven creative teams in an agency or client side. ◉Experience producing assets and design for all required digital assets. **Think this is for you? Get in touch for a confidential chat about how you can become part of the team.**"
+    },
+    {
+      "pair_id": "010",
+      "band": "matched",
+      "cv_file": "datascientist-mid-strong_Maya-Berkovich.pdf",
+      "cv_true_title": "Data Scientist",
+      "cv_scenario": "clear-cut",
+      "jd_id": "036b7344-3d01-5e97-9a36-5d24d78609c3",
+      "jd_og_title": "Data Scientist",
+      "jd_posting_title": "Data Engineer",
+      "jd_company": "WizardsDev",
+      "jd_description": "Hi! We are looking for a Data Engineer developer to join our progressive team. **PROJECT** Statistic and marketing analysis over the US population. This project involves working with infrastructure built in AWS, including Spark EMR, S3, and DynamoDB. **REQUIREMENTS** ● 3+ years of development experience in data engineering; ● 1+ years of professional experience working in Big data ecosystems, preference for Spark; ● 1+ years of professional experience working with data flow management tools, such as Airflow; ● 1+ years experience working with Pentaho (or equivalent tools); ● hands-on scripting experience with Python, Scala, and/or shell scripting; ● experience in development in highly scalable, distributed systems and cluster architectures (e.g. AWS, Azure, Google Cloud, etc.); ● Prior experience working with large data sets (1M+ records). **WE OFFER** ● regular performance and salary review; ● flexible schedule; ● bonuses for great performance; ● 20 vacation days; ● 5 sick leave days; ● hardware equipment if needed; ● remote work or help with relocation to Romania. **RESPONSIBILITIES** ● building infrastructure and automation for the extraction, preparation, and loading of data from various sources; ● creating unit and stress test components to monitor technical performance and ensure identified issues are resolved; ● building and maintaining analytical tools to provide data insight and capture key metrics; ● automating and integrating new components into the data pipeline; ● utilizing best practices for data governance, quality, cleansing, and other ETL-related activities; ● maintaining technical documentation. **Don’t delay - just send your CV!**"
+    },
+    {
+      "pair_id": "011",
+      "band": "adjacent",
+      "cv_file": "datascientist-mid-strong_Maya-Berkovich.pdf",
+      "cv_true_title": "Data Scientist",
+      "cv_scenario": "clear-cut",
+      "jd_id": "0587e14a-4125-5719-996e-645110dd5f01",
+      "jd_og_title": "Data Engineer",
+      "jd_posting_title": "Data Engineer",
+      "jd_company": "Bunch Consulting",
+      "jd_description": "We’re looking for Kafka/Confluent specialists for our customer in retail. The project is about renewing existing fulfillment/resupply solutions and registering sales data to SAP. Also, providing new Data Products for other projects to use. We are looking for both middle and senior-level specialists. **Bunch Consulting** is an international outsourcing IT company focused on software development and business digital transformation consulting. Headquarter is located in Warsaw, Poland, and the main office is based in Kyiv, Ukraine. **Requirements**: - Hands-on development experience with Kafka, Confluent Kafka Connect, and Kafka Streams. - Experience and interest of Kafka Developer - producers, consumers, streams, preferred connectors knowledge, preferred KSQL knowledge, schema registry, and confluent experience /knowledge preferred. - Experience with Confluent Kafka API lifecycle development and management. - Experience in CI/CD Deployment procedures and DevOps. - An understanding as well as further curiosity about ensuring that unit, system, integration, stress, and user acceptance testing are in alignment with architecture. - Fluent English. - Desire to develop and challenge himself while working on a project. Outstanding communication skills **We offer you**: - Continuous growth and development as a professional in terms of Seniority and Tech Leadership in a fast-growing company. - The decent salary level and revisions depend on your growth in the company and your desires. - Comfortable working conditions on a remote basis. - A motivated team. - Improvement of your spoken English. - To be surrounded by people who love what they do and be in the continuous development of new technologies. **Working conditions**: Full time. Remote. **Project duration**: 6-12 months, with further prolongation."
+    },
+    {
+      "pair_id": "012",
+      "band": "mismatched",
+      "cv_file": "datascientist-mid-strong_Maya-Berkovich.pdf",
+      "cv_true_title": "Data Scientist",
+      "cv_scenario": "clear-cut",
+      "jd_id": "03213513-b263-5c5a-99de-a6c174926b1c",
+      "jd_og_title": "QA Automation Engineer",
+      "jd_posting_title": "QA Engineer (Manual)",
+      "jd_company": "LocalTrade",
+      "jd_description": "Your Qualifications: - 2+ years of experience in manual testing of applications on different platforms - Good understanding of client-server architecture (API, REST, HTTP) - Knowledge of how to test web applications - Experience with mobile applications testing - Experience with API testing - Experience with test cases creation and execution - Good analytical and problem-solving skills - Attention to details Would be a big advantage: - Desire to switch into Automated testing. Both: for web applications testing & mobile apps Technologies we work with: - Gitlab - User-story based flow - Node.js - React - Swift/Kotlin - PHP - Vue.js Benefits: - Flexible schedule; - Competitive salary, regular salary review, financial stability - Opportunity to vary remote-office work; - Paid sick leaves and vacations; - Regular out-of-office activities; - Work laptops (Apple Macbook); - Coverage of professional events & certifications; - 1.5 days off per month can be accumulated and used whenever needed."
+    },
+    {
+      "pair_id": "013",
+      "band": "matched",
+      "cv_file": "qa-automation-mid-mid_Yossi-Alfasi.pdf",
+      "cv_true_title": "QA Automation Engineer",
+      "cv_scenario": "clear-cut",
+      "jd_id": "0a5fea18-c0b0-5449-aa4f-a79dfb8dc1bf",
+      "jd_og_title": "QA Automation Engineer",
+      "jd_posting_title": "AQA Engineer",
+      "jd_company": "Jazzros",
+      "jd_description": "Jazzros takes part in developing solutions in the area of Industry 4.0. Currently we are seeking a Middle AQA Engineer (Kharkiv office or remote) to be a part of our client's technology team and work on one of the ambitious projects we participate in. This is an American product company that develops the platform to improve online education for children. An AI-powered LMS (learning management system) allows to conduct individual testing, identify individual characteristics and mental capacity, and find the most effective education program for each child. This is an out-staff position with a lot of direct communication within the customer’s team. Requirements: - At least 1-year commercial experience writing automation tests using JavaScript/TypeScript; - Experience with WebDriver.io; - Experience working with AWS; - Good English Communication Skills (at least Intermediate level). This is a long-term project, no bureaucracy, direct communication, and a competitive salary."
+    },
+    {
+      "pair_id": "014",
+      "band": "adjacent",
+      "cv_file": "qa-automation-mid-mid_Yossi-Alfasi.pdf",
+      "cv_true_title": "QA Automation Engineer",
+      "cv_scenario": "clear-cut",
+      "jd_id": "03c0ccce-6db1-50d6-bb0e-e3c39fbcf7ca",
+      "jd_og_title": "Software Engineer",
+      "jd_posting_title": "3С Gameplay Programmer",
+      "jd_company": "Fractured Byte",
+      "jd_description": "**Fractured Byte** is a game development studio whose experience involves work on titles such as **Borderlands: The Legendary Collection and Tony Hawk’s Pro Skater 1+2** for Nintendo Switch. We are a team of experienced professionals, focused on video game development for PC and consoles. **Responsibilities:** - Developing game systems for controls, cameras, and animations. - Working closely with lead game designer, to develop a 3C melee combat prototype. - Integration and implementation of tools and techniques to get a high-quality gameplay experience. **Requirements:** - Experience with 3C - 2+ years. - Experience with UE - 1+ years. - Familiar with impact systems creation. - Strong C++ skills. - Good knowledge of OOP, Vector Algebra, Serialization. - Experience in creating and supporting 3C systems in UE4 for PC / Consoles. - Familiar with common algorithms, data structures, and patterns. **A strong candidate has:** - Knowledge of Networking / Multiplayer, VCS. - Good verbal English. **We offer:** - Unlimited Vacations in our company. Our goal is to release great games. - And when we need to rest — we do rest! - Full financial and legal support for private entrepreneurs. We will pay your taxes :) - Freedom of choice: you can work from home/office or wherever you want! - Caring management team."
+    },
+    {
+      "pair_id": "015",
+      "band": "mismatched",
+      "cv_file": "qa-automation-mid-mid_Yossi-Alfasi.pdf",
+      "cv_true_title": "QA Automation Engineer",
+      "cv_scenario": "clear-cut",
+      "jd_id": "1fcc3873-ce18-5a0a-96c8-bb9505df52e6",
+      "jd_og_title": "Cyber Security",
+      "jd_posting_title": "DevSecOps Engineer",
+      "jd_company": "INCOAlliance",
+      "jd_description": "We are seeking a skilled and experienced DevSecOps Engineer. As a DevSecOps Engineer, you will play a crucial role in the project, which involves building a platform aimed at protecting thousands of customers from cyberattacks and data loss. This is an exciting opportunity to be part of a dynamic and innovative team working on cutting-edge cloud-based solutions. Requirements: 5-7 years of experience as a Cloud or DevOps Engineer. Good understanding of at least two cloud platforms (Azure/AWS/GCP/OCI). Hands-on experience in designing, implementing, and operating different cloud-based application infrastructure. Proficiency in Infrastructure Automation using at least two IaC tools (Terraform, ARM Templates, Cloudformation, Bicep, etc.) Scripting experience in at least one language (Powershell, Bash, Python, etc.) Nice to have: Cloud Security Understanding. Understanding of CIS Policies and security/compliance framework. Logica Language. Responsibilities: Build automation scripts or Cloud formation templates to create positive and negative infrastructure to stand-up the Cloud environment for the specific policy. Create a policy specification like a recommendation, audit and remediation procedures. Build and Create auto remediation framework and scripts for the specific service or policy. We offer: Сompetitive compensation based on your skills and experience. Compensation fixed in USD. 24 days of annual paid vacation and 5 sick leaves. Exciting project involving the newest technologies. Accounting as a service. Flexible working hours. Long-term employment. Recruitment process: A screening call with with HR (20mins). A technical interview with Engineering Leader (60 mins). A interview with VP of R&D (60 mins). Final feedback received within a week after the interview."
+    },
+    {
+      "pair_id": "016",
+      "band": "matched",
+      "cv_file": "java-senior-mid_Marina-Feldman.pdf",
+      "cv_true_title": "Java Developer",
+      "cv_scenario": "clear-cut",
+      "jd_id": "11071cf2-5ee3-52ed-8841-1a1a606795a1",
+      "jd_og_title": "Java Developer",
+      "jd_posting_title": "Middle Java Developer",
+      "jd_company": "DNA325",
+      "jd_description": "Edifecs is the leading business process automation services provider for the Healthcare Insurance industry with its own line of products. Requirements: - specialized post-secondary education; - good knowledge of OOP; - excellent knowledge of basic data structures; - 3+ years of experience in Java development; - experience in implementing REST web services; - participation in the development of business-level software (enterprise or commercial solutions); - excellent time management and communication skills; - written English: working correspondence (emails, BRD, bug reports, etc) takes place in English; - ability to learn quickly. AN IDEAL CANDIDATE MUST ALSO HAVE: - experience with Spring Boot; - experience with concurrency and horizontal scalability; - experience with SQL databases; - experience with Docker, understanding of container design patterns; - experience with cloud computing (AWS, Azure, or any others). Responsibilities: - development of new and expansion of existing software products; - development of new functionality; - search for problems and correction of comments according to the requirements of customers; - analysis of requirements and determination of the optimal architectural solution, as well as technological stack for solving the problem; - adaptation of existing products for the SaaS model. We offer: - a Russian-speaking team of IT engineers in the USA, Russia, Ukraine, Belarus, and Moldova; - payment in USD or EURO; - annual review of the level of compensation; - annual leave: 22 working days (~ 1 calendar month); - holidays according to the calendar: all weekends marked in the national calendar; - sick pay: 10 days a year; - comfortable conditions: flexible schedule; - English: online learning in groups with a teacher; - access to the educational platform LinkedIn Learning; - equal opportunities for all."
+    },
+    {
+      "pair_id": "017",
+      "band": "adjacent",
+      "cv_file": "java-senior-mid_Marina-Feldman.pdf",
+      "cv_true_title": "Java Developer",
+      "cv_scenario": "clear-cut",
+      "jd_id": "002e2ff7-3352-52c7-baa0-755cc0fa4e87",
+      "jd_og_title": "Backend Developer",
+      "jd_posting_title": "Middle PHP developer (Magento)",
+      "jd_company": "Arpo",
+      "jd_description": "Required skills: - OOP knowledge, PHP, MySQL; - Knowledge of HTML, CSS; - Javascript: PrototypeJS, jQuery, Ajax; - 2 years of experience or more in Magento 2; - Understanding of XML page Magento 1 structure; - Customization / development of existing Magento projects; - Development of online stores and web services on Magento 2; - Magento modules development; - You are an experienced object-oriented programmer; you can handle every complex project. About a work: - Magento 2 projects from scratch, depence of developer preference and experience. About the company: Small company with up to 10 ten employees, working for Australian and US market and brands with big ambitions and desire to create and deliver great projects in eCommerce and connected fields. Our passionate team works in a fully creative and friendly environment with plenty of opportunities for personal development. Being a backoffice of online businesses we evaluate and support our reputation of professionals who want to understand not just the clients but their customers. Our passions are innovations and technical know-hows that result in inspiring win-win future-ready solutions. Currently, we are looking for talented people who adore coding, are not afraid of challenges to their minds, and share our values to create outstanding websites and comfortable shopper journeys. Projects: - Outsource projects, for AU, US customers. Big magento cloud Highly loaded projects with custom logic. - Product - magento marketplace extension for Highly loaded marketplaces."
+    },
+    {
+      "pair_id": "018",
+      "band": "mismatched",
+      "cv_file": "java-senior-mid_Marina-Feldman.pdf",
+      "cv_true_title": "Java Developer",
+      "cv_scenario": "clear-cut",
+      "jd_id": "05402a01-db74-578f-9b3d-ecde36f40ead",
+      "jd_og_title": "UX Designer",
+      "jd_posting_title": "Middle Digital Designer",
+      "jd_company": "SlashDevsUkraine",
+      "jd_description": "**We’re looking for an product / interaction designer who can:** ●Work as part of a multidisciplinary team including service designers, content designers, user researchers and software engineers to meet user needs ●Design intuitive, inclusive and accessible services for government, third and private sector organisations ●Communicate clearly and help clients to put user needs at the centre of their services ●Champion user-centred design by working in the open and frequently sharing the thinking and evidence behind your work ●Contribute to our interaction design. **Qualifications*** ✅We’d like to hear from you if you have any of these skills or experiences: * ◉**Have experience 3+ year ** in designing products, services or a design related degree ◉Are experienced at sketching and prototyping in different fidelities ◉Are experienced in explaining your designs in a way that other people understand ◉Can work in the open and collaborate well with others ◉Are skilled at designing intuitive, accessible, responsive user interfaces ◉Can interpret user research and analytics to inform your design decisions ◉Creative, organised and but importantly, calm under pressure. ◉Digital background or a demonstrable passion for digital design, any experience with HTML, JavaScript, CSS and CMS platforms would be highly valuable. Knowledge of Adobe Creative Suite /XD/ Illustrator/ Photoshop/ Acrobat/ and Figma essential. ◉Attention to detail and accuracy are essential. ◉Flexible approach to work and able to deal with changing priorities at short notice. ◉Excellent communication and interpersonal skills, with demonstrable experience of managing stakeholders. ◉Self-motivated with the ability to work both independently and as part of a team. ◉Experience of working in fast paced and deadline driven creative teams in an agency or client side. ◉Experience producing assets and design for all required digital assets. **Think this is for you? Get in touch for a confidential chat about how you can become part of the team.**"
+    },
+    {
+      "pair_id": "019",
+      "band": "matched",
+      "cv_file": "software-mid-mid_Tomer-Azulay.pdf",
+      "cv_true_title": "Software Engineer",
+      "cv_scenario": "clear-cut",
+      "jd_id": "01a9eb36-86af-54fc-b913-7ae5ecc6c782",
+      "jd_og_title": "Software Engineer",
+      "jd_posting_title": "Android Developer",
+      "jd_company": "intive",
+      "jd_description": "**You are a good match if you:** • Have strong Kotlin programming skills and experience with various APIs (UI, networking, payments, database, media, etc.) • Are able to write quality Android applications from scratch • Have experience in designing modern application architecture (e.g. Clean Architecture, MVVM, etc.) • Have experience in management and shipping of apps to the store • Have knowledge of continuous integration and build automation • Have hands-on experience in writing tests **You get extra points for:** • Knowledge and professional experience with RxJava • Good memory and experience in Java Android • Trials with Android TV and/or Android Wear • Interest in cross-platform development (Flutter, ReactNative, etc.) ** You will be responsible for:** • Implementing new and improving existing applications of different complexity levels • Writing high quality, clean, stable and tested code • Creating full-size application architecture according to modern standards • Prototyping apps like MVPs and supporting pre-sales process advising and estimating solutions • Sharing knowledge inside/outside the company • Actively collaborating within cross-functional teams during plannings, execution and revisions **We offer:** • You can choose how to work (tools, methods) • Work-life balance - flexible hours and work remotely • Modern equipment • Health insurance • 24 days of PTO • Learning from other experts • No stiff structure The controller of personal data in relation to the recruitment is intive GmbH Sp. z o.o. Branch Office in Poland with its registered office in Warszawa, 1 Sierpnia 8, 02-134 Warszawa. More information on the principles of personal data processing, including the purposes of processing and the rights of individuals, is available in our Privacy Policy ( https://www.intive.com/en/privacy-policy )"
+    },
+    {
+      "pair_id": "020",
+      "band": "adjacent",
+      "cv_file": "software-mid-mid_Tomer-Azulay.pdf",
+      "cv_true_title": "Software Engineer",
+      "cv_scenario": "clear-cut",
+      "jd_id": "22be1781-8386-5576-a526-7e173b24de7f",
+      "jd_og_title": "Java Developer",
+      "jd_posting_title": "Lead Java Engineer",
+      "jd_company": "PSR",
+      "jd_description": "Customer’s core activities involve designing, building, and managing consolidated telecom infrastructure facilities that enable state of the art and modular connectivity. By enhancing tower sharing, the company enables its partners to attain operational excellence and accrue higher profits resulting from reduced capital expenses for network rollouts and lowered operating expenses for managing infrastructure at multiple sites. Tower sharing also provides additional benefits for congested urban areas, including minimizing infrastructure duplications and excessive network redundancies, as well as reducing visual pollution that usually results from dense equipment installations. Team: PM, 3 FE devs, 2 BE devs, 1 QA, DevOps, Designer, 2 Sr Java, 1 Lead. Company expect: Lead Java Engineer experience 1+ 5+ years with Java 8 or Java 11 Deep understanding of OOP concepts Professional expertise in relational databases and NoSQL Experience with Maven and understanding of continuous building Hands-on experience with Kafka Familiarity with agile development methodologies Upper-Intermediate level of English Company propose: Flexible working hours A masseur and a corporate doctor Healthcare & sport benefits An inspiring, comfy, clean and safe office Challenging tasks and innovative projects Meetups and events for professional development An individual development plan Feel free to contact me for the all details. I will guiding you through all the important stages of communication and building long-term relationships."
+    },
+    {
+      "pair_id": "021",
+      "band": "mismatched",
+      "cv_file": "software-mid-mid_Tomer-Azulay.pdf",
+      "cv_true_title": "Software Engineer",
+      "cv_scenario": "clear-cut",
+      "jd_id": "05402a01-db74-578f-9b3d-ecde36f40ead",
+      "jd_og_title": "UX Designer",
+      "jd_posting_title": "Middle Digital Designer",
+      "jd_company": "SlashDevsUkraine",
+      "jd_description": "**We’re looking for an product / interaction designer who can:** ●Work as part of a multidisciplinary team including service designers, content designers, user researchers and software engineers to meet user needs ●Design intuitive, inclusive and accessible services for government, third and private sector organisations ●Communicate clearly and help clients to put user needs at the centre of their services ●Champion user-centred design by working in the open and frequently sharing the thinking and evidence behind your work ●Contribute to our interaction design. **Qualifications*** ✅We’d like to hear from you if you have any of these skills or experiences: * ◉**Have experience 3+ year ** in designing products, services or a design related degree ◉Are experienced at sketching and prototyping in different fidelities ◉Are experienced in explaining your designs in a way that other people understand ◉Can work in the open and collaborate well with others ◉Are skilled at designing intuitive, accessible, responsive user interfaces ◉Can interpret user research and analytics to inform your design decisions ◉Creative, organised and but importantly, calm under pressure. ◉Digital background or a demonstrable passion for digital design, any experience with HTML, JavaScript, CSS and CMS platforms would be highly valuable. Knowledge of Adobe Creative Suite /XD/ Illustrator/ Photoshop/ Acrobat/ and Figma essential. ◉Attention to detail and accuracy are essential. ◉Flexible approach to work and able to deal with changing priorities at short notice. ◉Excellent communication and interpersonal skills, with demonstrable experience of managing stakeholders. ◉Self-motivated with the ability to work both independently and as part of a team. ◉Experience of working in fast paced and deadline driven creative teams in an agency or client side. ◉Experience producing assets and design for all required digital assets. **Think this is for you? Get in touch for a confidential chat about how you can become part of the team.**"
+    },
+    {
+      "pair_id": "022",
+      "band": "matched",
+      "cv_file": "dataeng-mid-strong_Shira-Golan.pdf",
+      "cv_true_title": "Data Engineer",
+      "cv_scenario": "clear-cut",
+      "jd_id": "00a44496-94ae-53c1-a67c-fdd3e01042c0",
+      "jd_og_title": "Data Engineer",
+      "jd_posting_title": "DB Administrator",
+      "jd_company": "Grid Dynamics",
+      "jd_description": "**Responsibilities:** - Review current DB normalization and database structures; - Implement suggestions from findings; - Review and apply performance improvements for DB partitioning; - Performance tunning of long-running SQL queries; - Helping the team to create efficient stored procedures; - Design strategy to maintain large tables including processes to add new columns/partition; - Definition of indexing strategy; - Set the architectural direction, long-term vision, and guiding principles for the platform; - Asses project requirements and design architecture for the platform; - Define security and backup procedures; **Requirements:** - Hands-on experience in Mysql DB performance turning; - Experience in working with the large implementation of MySQL databases; - Experience in query optimization, partitioning, MySQL stored procedures; - Experience with optimization of DB normalization; - Experience of using tools like Solarwinds for DB health/monitoring/performance; **We offer:** - Opportunity to work on bleeding-edge projects; - Work with a highly motivated and dedicated team; - Competitive salary; - Flexible schedule; - Medical insurance; - Benefits program; - Social package - medical insurance, sports; - Corporate social events; - Professional development opportunities;"
+    },
+    {
+      "pair_id": "023",
+      "band": "adjacent",
+      "cv_file": "dataeng-mid-strong_Shira-Golan.pdf",
+      "cv_true_title": "Data Engineer",
+      "cv_scenario": "clear-cut",
+      "jd_id": "04542ec5-2f52-555e-9453-5c39a1c41e2b",
+      "jd_og_title": "Data Scientist",
+      "jd_posting_title": "Data Engineer",
+      "jd_company": "MintyMint",
+      "jd_description": "MintyMint is a custom full-cycle web development and mobile company. At MintyMint, the priority is to save your time and effort by delivering world-class software that makes life easier. Our talented team helps partners to achieve exceptional business goals by producing high-quality products. Our business values are People, Innovations, Responsibility. Project : Paris-based project created to radically change the skincare and consumer industry for the better. Clients ambition is to create through the brand a movement for more clean products, more transparency and more information for the consumer. We are growing and looking for a Data Engineer. Requirements: 4 years of commercial experience; Data modeling, Data processing; Data warehouse (BigQuery is a plus); Experience using ETLs; Programming language: Python or other SQL; Good spoken and written English. We offer: New comfortable office in the city center — Khreshatyk; Flexible work schedule; Paid vacation and sick days; English classes compensation; Professional workshops and training. If you have the qualifications needed and you are a hard-working professional, MintyMint is a great place to get ahead. Apply now!"
+    },
+    {
+      "pair_id": "024",
+      "band": "mismatched",
+      "cv_file": "dataeng-mid-strong_Shira-Golan.pdf",
+      "cv_true_title": "Data Engineer",
+      "cv_scenario": "clear-cut",
+      "jd_id": "0563d166-0d55-5d81-b846-38cd64057a4b",
+      "jd_og_title": "Frontend Developer",
+      "jd_posting_title": "Mid/Senior React Native developer",
+      "jd_company": "AmaBay",
+      "jd_description": "**Requirements:** + Solid experience with both iOS and Android app development (React Native) proven by an extensive portfolio + Familiarity with the toolkit: React Native, Redux, Redux-Saga, TypeScript, Git, React Navigation + Ability to work full time **What we offer:** + Immense opportunities for impacting the product - we are a small team, and everybody’s opinion is valued + Low hierarchy and zero bureaucracy - do cool things and grow professionally instead of navigating office politics + Flexible working hours and remote work in an international team **Who we are:** Since 2018 we’ve been making it easier for small business owners and freelancers to run their business by taking the burden of invoicing the clients and following up on the payments. Invoice Maker is the mobile app that helps do that in just a few taps, on the go, from any mobile device. In 2020 we are planning to continue developing Invoice Maker, as well as create new apps to help even more small business owners forget about the pains of handling the administration and managing finances and focus on what’s really important to grow their businesses."
+    }
+  ],
+  "jd_pool": {
+    "Backend Developer": [
+      {
+        "jd_id": "001ace28-e40b-5f63-8d00-8cfe08d7f441",
+        "og_title": "Backend Developer",
+        "posting_title": "Elixir / Phoenix developer for meaningful product",
+        "company": "Innoteka",
+        "exp_years": "3y",
+        "description": "**Company / Mission** Most retailers don’t know what to do with returned and unsold items, they lack technologies and efficient systems. Eventually a huge amount of goods is sent to the landfill. Our solution allows to take unsold and returned goods from retailers’ warehouses, process and analyze each item and choose the right market and channel to remarket it, thus reducing waste and making quality overstock and returned items available to new consumers. **Technology** - Backend systems currently use Elixir and Phoenix, as well as Postgres, Redis and RabbitMQ (AMQP) for integrations with in-warehouse systems and 3rd party warehouse vendors, and are currently hosted on Heroku. - On-site/in-warehouse system responsible for supporting warehouse operations, capable of working even without internet. Here Elixir’s Nerves project is used to package the server and stationary workstations into burnable firmware running on Raspberry Pi 4s. In-warehouse server consists of a Regular Phoenix app packaged into Nerves firmware. - Just FYI: Frontend apps are being built with Ember.js (Octane). Auth0 is used for authentication, authorization, user management. UI clients are hosted on Amazon S3. **Team** - Currently 4 people in Berlin - Very soon: You, in Ukraine:) - Then: 3-4 more developers also in Ukraine **About you** - You have been building software for at least 3 years, incl. with Elixir and Phoenix - You write code for human comprehension first, then for machines to execute fast - If you’re stuck, you have no fear of asking questions - You have good verbal and written communication skills in English - You have some idea about the Elixir Nerves project, and are eager to experiment with it - You understand the DevOps principles (Ideally you have read the DevOps Handbook or something similar) **Model** - Dedicated product team (some call it outstaffing) - work like one team with the CTO in Berlin - No walls, no project managers in between - Travel to Berlin from time to time **Offer** - Very competitive salary (can be paid to Payoneer if you want) - Flexible hours; No bureaucracy; Freedom to do your work right - Remote OK! - If you're in Lviv or want to move here - we have modern office in city center - 20 days per year paid vacation, paid sick leaves"
+      },
+      {
+        "jd_id": "002e2ff7-3352-52c7-baa0-755cc0fa4e87",
+        "og_title": "Backend Developer",
+        "posting_title": "Middle PHP developer (Magento)",
+        "company": "Arpo",
+        "exp_years": "2y",
+        "description": "Required skills: - OOP knowledge, PHP, MySQL; - Knowledge of HTML, CSS; - Javascript: PrototypeJS, jQuery, Ajax; - 2 years of experience or more in Magento 2; - Understanding of XML page Magento 1 structure; - Customization / development of existing Magento projects; - Development of online stores and web services on Magento 2; - Magento modules development; - You are an experienced object-oriented programmer; you can handle every complex project. About a work: - Magento 2 projects from scratch, depence of developer preference and experience. About the company: Small company with up to 10 ten employees, working for Australian and US market and brands with big ambitions and desire to create and deliver great projects in eCommerce and connected fields. Our passionate team works in a fully creative and friendly environment with plenty of opportunities for personal development. Being a backoffice of online businesses we evaluate and support our reputation of professionals who want to understand not just the clients but their customers. Our passions are innovations and technical know-hows that result in inspiring win-win future-ready solutions. Currently, we are looking for talented people who adore coding, are not afraid of challenges to their minds, and share our values to create outstanding websites and comfortable shopper journeys. Projects: - Outsource projects, for AU, US customers. Big magento cloud Highly loaded projects with custom logic. - Product - magento marketplace extension for Highly loaded marketplaces."
+      }
+    ],
+    "Cyber Security": [
+      {
+        "jd_id": "0a2a216c-5c8a-5952-adc0-ac93724179d0",
+        "og_title": "Cyber Security",
+        "posting_title": "Cloud Security Engineer",
+        "company": "PandaDoc",
+        "exp_years": "3y",
+        "description": "PandaDoc is looking for talented security engineers focused on security operations activities to join the Security team. SecOps engineers focused on enabling product teams in streamlining incident management and vulnerability management processes. **As a Cloud Security Engineer in Security Team you will:** Monitor and test information systems to identify vulnerabilities Execute or manage mitigation remediation of identified vulnerabilities Respond to security incidents and performs root cause analysis Assess and understand PandaDoc’s current security framework and future architecture, providing recommendations for risk reduction Design and evangelize automated security capabilities Serve as a security expert in application development and microservice design Analyze and monitor relevant security threats and prevention measures based on industry trends and standards with reference to business specifics **Our stack:** Service-oriented architecture Two main stacks: Java and Python Python services are mostly written using AsyncIO frameworks and libraries, but we also have Django-based services with Celery workers under the hood Message queues: NATS, Kafka, and RabbitMQ Amazon Web Services: EKS, RDS, ElastiCache, etc. Prometheus stack for monitoring and alerting **About you:** 3+ years’ experience with security management tools, including IDS/IPS, WAF, SIEM, vulnerability scanning, and penetration testing 1+ years’ experience with cloud provider ecosystems (Amazon Web Services, Microsoft Azure, etc) with reference to security aspects and best practices Practical experience in web application security testing methodologies and remediation approaches (OWASP, SANS, NIST, etc) Understanding Access Control and Identity Access Management principles (SAML 2.0, OAuth, JWT, etc) Understanding DevSecOps methodology Solid interpersonal, written and verbal communication skills Intermediate English level (B1+) **What we offer:** An honest, open culture that emphasizes feedback and promotes professional and personal development An opportunity to work from anywhere — our team is distributed worldwide, from Minsk to Manila, from Florida to California An annual personal budget for educational classes, conferences, etc. — anything to further your professional knowledge A competitive salary And much more!"
+      },
+      {
+        "jd_id": "1fcc3873-ce18-5a0a-96c8-bb9505df52e6",
+        "og_title": "Cyber Security",
+        "posting_title": "DevSecOps Engineer",
+        "company": "INCOAlliance",
+        "exp_years": "5y",
+        "description": "We are seeking a skilled and experienced DevSecOps Engineer. As a DevSecOps Engineer, you will play a crucial role in the project, which involves building a platform aimed at protecting thousands of customers from cyberattacks and data loss. This is an exciting opportunity to be part of a dynamic and innovative team working on cutting-edge cloud-based solutions. Requirements: 5-7 years of experience as a Cloud or DevOps Engineer. Good understanding of at least two cloud platforms (Azure/AWS/GCP/OCI). Hands-on experience in designing, implementing, and operating different cloud-based application infrastructure. Proficiency in Infrastructure Automation using at least two IaC tools (Terraform, ARM Templates, Cloudformation, Bicep, etc.) Scripting experience in at least one language (Powershell, Bash, Python, etc.) Nice to have: Cloud Security Understanding. Understanding of CIS Policies and security/compliance framework. Logica Language. Responsibilities: Build automation scripts or Cloud formation templates to create positive and negative infrastructure to stand-up the Cloud environment for the specific policy. Create a policy specification like a recommendation, audit and remediation procedures. Build and Create auto remediation framework and scripts for the specific service or policy. We offer: Сompetitive compensation based on your skills and experience. Compensation fixed in USD. 24 days of annual paid vacation and 5 sick leaves. Exciting project involving the newest technologies. Accounting as a service. Flexible working hours. Long-term employment. Recruitment process: A screening call with with HR (20mins). A technical interview with Engineering Leader (60 mins). A interview with VP of R&D (60 mins). Final feedback received within a week after the interview."
+      }
+    ],
+    "Data Engineer": [
+      {
+        "jd_id": "00a44496-94ae-53c1-a67c-fdd3e01042c0",
+        "og_title": "Data Engineer",
+        "posting_title": "DB Administrator",
+        "company": "Grid Dynamics",
+        "exp_years": "3y",
+        "description": "**Responsibilities:** - Review current DB normalization and database structures; - Implement suggestions from findings; - Review and apply performance improvements for DB partitioning; - Performance tunning of long-running SQL queries; - Helping the team to create efficient stored procedures; - Design strategy to maintain large tables including processes to add new columns/partition; - Definition of indexing strategy; - Set the architectural direction, long-term vision, and guiding principles for the platform; - Asses project requirements and design architecture for the platform; - Define security and backup procedures; **Requirements:** - Hands-on experience in Mysql DB performance turning; - Experience in working with the large implementation of MySQL databases; - Experience in query optimization, partitioning, MySQL stored procedures; - Experience with optimization of DB normalization; - Experience of using tools like Solarwinds for DB health/monitoring/performance; **We offer:** - Opportunity to work on bleeding-edge projects; - Work with a highly motivated and dedicated team; - Competitive salary; - Flexible schedule; - Medical insurance; - Benefits program; - Social package - medical insurance, sports; - Corporate social events; - Professional development opportunities;"
+      },
+      {
+        "jd_id": "0587e14a-4125-5719-996e-645110dd5f01",
+        "og_title": "Data Engineer",
+        "posting_title": "Data Engineer",
+        "company": "Bunch Consulting",
+        "exp_years": "3y",
+        "description": "We’re looking for Kafka/Confluent specialists for our customer in retail. The project is about renewing existing fulfillment/resupply solutions and registering sales data to SAP. Also, providing new Data Products for other projects to use. We are looking for both middle and senior-level specialists. **Bunch Consulting** is an international outsourcing IT company focused on software development and business digital transformation consulting. Headquarter is located in Warsaw, Poland, and the main office is based in Kyiv, Ukraine. **Requirements**: - Hands-on development experience with Kafka, Confluent Kafka Connect, and Kafka Streams. - Experience and interest of Kafka Developer - producers, consumers, streams, preferred connectors knowledge, preferred KSQL knowledge, schema registry, and confluent experience /knowledge preferred. - Experience with Confluent Kafka API lifecycle development and management. - Experience in CI/CD Deployment procedures and DevOps. - An understanding as well as further curiosity about ensuring that unit, system, integration, stress, and user acceptance testing are in alignment with architecture. - Fluent English. - Desire to develop and challenge himself while working on a project. Outstanding communication skills **We offer you**: - Continuous growth and development as a professional in terms of Seniority and Tech Leadership in a fast-growing company. - The decent salary level and revisions depend on your growth in the company and your desires. - Comfortable working conditions on a remote basis. - A motivated team. - Improvement of your spoken English. - To be surrounded by people who love what they do and be in the continuous development of new technologies. **Working conditions**: Full time. Remote. **Project duration**: 6-12 months, with further prolongation."
+      }
+    ],
+    "Data Scientist": [
+      {
+        "jd_id": "036b7344-3d01-5e97-9a36-5d24d78609c3",
+        "og_title": "Data Scientist",
+        "posting_title": "Data Engineer",
+        "company": "WizardsDev",
+        "exp_years": "2y",
+        "description": "Hi! We are looking for a Data Engineer developer to join our progressive team. **PROJECT** Statistic and marketing analysis over the US population. This project involves working with infrastructure built in AWS, including Spark EMR, S3, and DynamoDB. **REQUIREMENTS** ● 3+ years of development experience in data engineering; ● 1+ years of professional experience working in Big data ecosystems, preference for Spark; ● 1+ years of professional experience working with data flow management tools, such as Airflow; ● 1+ years experience working with Pentaho (or equivalent tools); ● hands-on scripting experience with Python, Scala, and/or shell scripting; ● experience in development in highly scalable, distributed systems and cluster architectures (e.g. AWS, Azure, Google Cloud, etc.); ● Prior experience working with large data sets (1M+ records). **WE OFFER** ● regular performance and salary review; ● flexible schedule; ● bonuses for great performance; ● 20 vacation days; ● 5 sick leave days; ● hardware equipment if needed; ● remote work or help with relocation to Romania. **RESPONSIBILITIES** ● building infrastructure and automation for the extraction, preparation, and loading of data from various sources; ● creating unit and stress test components to monitor technical performance and ensure identified issues are resolved; ● building and maintaining analytical tools to provide data insight and capture key metrics; ● automating and integrating new components into the data pipeline; ● utilizing best practices for data governance, quality, cleansing, and other ETL-related activities; ● maintaining technical documentation. **Don’t delay - just send your CV!**"
+      },
+      {
+        "jd_id": "04542ec5-2f52-555e-9453-5c39a1c41e2b",
+        "og_title": "Data Scientist",
+        "posting_title": "Data Engineer",
+        "company": "MintyMint",
+        "exp_years": "3y",
+        "description": "MintyMint is a custom full-cycle web development and mobile company. At MintyMint, the priority is to save your time and effort by delivering world-class software that makes life easier. Our talented team helps partners to achieve exceptional business goals by producing high-quality products. Our business values are People, Innovations, Responsibility. Project : Paris-based project created to radically change the skincare and consumer industry for the better. Clients ambition is to create through the brand a movement for more clean products, more transparency and more information for the consumer. We are growing and looking for a Data Engineer. Requirements: 4 years of commercial experience; Data modeling, Data processing; Data warehouse (BigQuery is a plus); Experience using ETLs; Programming language: Python or other SQL; Good spoken and written English. We offer: New comfortable office in the city center — Khreshatyk; Flexible work schedule; Paid vacation and sick days; English classes compensation; Professional workshops and training. If you have the qualifications needed and you are a hard-working professional, MintyMint is a great place to get ahead. Apply now!"
+      }
+    ],
+    "DevOps Engineer": [
+      {
+        "jd_id": "0128b3b5-fad3-5967-bf73-12b360dee5e3",
+        "og_title": "DevOps Engineer",
+        "posting_title": "Senior DevOps Engineer",
+        "company": "Academy SMART",
+        "exp_years": "5y",
+        "description": "About project: Sensys Gatso is the leading provider of automated traffic enforcement solutions with a strong global presence.The mission is saving lives by changing the driving behavior of motorists. We are firmly committed to improving road safety by reducing vehicle speed and red light negation, by optimizing traffic flows and by contributing to a sustainable urban environment, always in close partnership with governments and other authorities all over the world. Requirements: Hands-on experience with Containers & Kubernetes, Helm is a plus; Solid understanding of infrastructure as code, experience with Terraform or Ansible is a plus; You are an expert in CI/CD (Gitlab CI/CD, Google cloud builder etc.); Experience with monitoring and logging solutions (Datadog, Prometheus, ELK etc.); Hands-on experience in one or more cloud providers like GCP, Azure, AWS and on-premise hosting; Have a good understanding of Linux/Unix operating systems and tools; Experience with Networking & Security Basics; Know how HTTP, DNS, FTP, and other protocols work; Strong knowledge in scripting languages like Bash, knowledge in Go or Java is a plus; A strong SRE mindset is always a plus; What will you do: Work as part of a team on multiple cloud providers or on premise solutions; Advocate for improvements when it comes to infrastructure, CI/CD and monitoring; Produce solutions that adhere to our standards and industry best practices; Be responsible for the operations and the health of our infrastructure;"
+      },
+      {
+        "jd_id": "051a9aae-a2bf-5512-a546-b0f0add8b317",
+        "og_title": "DevOps Engineer",
+        "posting_title": "DevOps Engineer",
+        "company": "Stuzo",
+        "exp_years": "1y",
+        "description": "**Requirements:** - Experience in either of these roles Support Engineer, QA, System Administrator, Software Engineer or similar; - Demonstrated history of responsibility for production systems and collaboration with Engineering, Support and/or Operations teams; - System administration (Linux preferred, Windows Okay); - Source/version control protocol and tools (i.e. GIT, Subversion, bitbucket, github); - Agile or ITIL (experience working from tickets); - Networking (working knowledge of OSI model, IP networking, DNS, etc); - Non-zero experience programming or scripting automation (Bash, powershell, python, ruby, ansible, C#, SQL, etc); - Strong written and spoken English; - Interested in a future role in DevOps, security, or other areas of software development. **Responsibilities:** - Handling internal support and system administration tasks; - Handling escalations of critical issues impacting Stuzo and our customers as L2/3 support; - Contribution to infrastructure automation as a DevOps contributor, with the primary responsibility of handling time-sensitive blockers related to systems and infrastructure. **We offer:** — Long-term employment; — Competitive compensation with regular performance based salary and career development reviews; — 22 working days of vacation per year; — 8 paid sick leave working days per year; — Health insurance programme; — Flexible working hours; — Sponsored company educational program, corporate library, Toastmasters club; — Funny celebrations, team outings and company events; — Unique and friendly environment where everyone can explore and learn new technologies."
+      }
+    ],
+    "Frontend Developer": [
+      {
+        "jd_id": "03fc0bdd-1c6e-5adf-b5fe-30cd11b3ccf2",
+        "og_title": "Frontend Developer",
+        "posting_title": "Front-End developer",
+        "company": "Simplify",
+        "exp_years": "2y",
+        "description": "**About us** We’re a creative team of marketers, designers, developers and copywriters, who are focused on solving business problems by making simple, but effective websites & mobile apps. Our job is to eliminate barriers, misunderstanding and unawareness between a product and a consumer. We make their ways to each other simple. Simplify. Your way to Greatness. This is a great opportunity to work with our friendly team on many interesting projects and be involved in architecture design and development as well and other challenging and interesting tasks. **Requirements:** ● 2+ years development experience ● HTML - high level, knowledge of semantic markup, skills for working with any template maker ● CSS - knowledge of flexbox, grid layout will be a plus, foundation/bootstrap, SCSS, LESS, BEM ● Experience to work with Vue.js, Nuxt ● ES6, JQuery ● Experience to work with Gulp or Webpack or others **We Offer:** ● Interesting tasks ● Professional growth ● Flexible working hour ● Corporate events and meetings ● Friendly team and nice environment"
+      },
+      {
+        "jd_id": "0563d166-0d55-5d81-b846-38cd64057a4b",
+        "og_title": "Frontend Developer",
+        "posting_title": "Mid/Senior React Native developer",
+        "company": "AmaBay",
+        "exp_years": "2y",
+        "description": "**Requirements:** + Solid experience with both iOS and Android app development (React Native) proven by an extensive portfolio + Familiarity with the toolkit: React Native, Redux, Redux-Saga, TypeScript, Git, React Navigation + Ability to work full time **What we offer:** + Immense opportunities for impacting the product - we are a small team, and everybody’s opinion is valued + Low hierarchy and zero bureaucracy - do cool things and grow professionally instead of navigating office politics + Flexible working hours and remote work in an international team **Who we are:** Since 2018 we’ve been making it easier for small business owners and freelancers to run their business by taking the burden of invoicing the clients and following up on the payments. Invoice Maker is the mobile app that helps do that in just a few taps, on the go, from any mobile device. In 2020 we are planning to continue developing Invoice Maker, as well as create new apps to help even more small business owners forget about the pains of handling the administration and managing finances and focus on what’s really important to grow their businesses."
+      }
+    ],
+    "Java Developer": [
+      {
+        "jd_id": "11071cf2-5ee3-52ed-8841-1a1a606795a1",
+        "og_title": "Java Developer",
+        "posting_title": "Middle Java Developer",
+        "company": "DNA325",
+        "exp_years": "2y",
+        "description": "Edifecs is the leading business process automation services provider for the Healthcare Insurance industry with its own line of products. Requirements: - specialized post-secondary education; - good knowledge of OOP; - excellent knowledge of basic data structures; - 3+ years of experience in Java development; - experience in implementing REST web services; - participation in the development of business-level software (enterprise or commercial solutions); - excellent time management and communication skills; - written English: working correspondence (emails, BRD, bug reports, etc) takes place in English; - ability to learn quickly. AN IDEAL CANDIDATE MUST ALSO HAVE: - experience with Spring Boot; - experience with concurrency and horizontal scalability; - experience with SQL databases; - experience with Docker, understanding of container design patterns; - experience with cloud computing (AWS, Azure, or any others). Responsibilities: - development of new and expansion of existing software products; - development of new functionality; - search for problems and correction of comments according to the requirements of customers; - analysis of requirements and determination of the optimal architectural solution, as well as technological stack for solving the problem; - adaptation of existing products for the SaaS model. We offer: - a Russian-speaking team of IT engineers in the USA, Russia, Ukraine, Belarus, and Moldova; - payment in USD or EURO; - annual review of the level of compensation; - annual leave: 22 working days (~ 1 calendar month); - holidays according to the calendar: all weekends marked in the national calendar; - sick pay: 10 days a year; - comfortable conditions: flexible schedule; - English: online learning in groups with a teacher; - access to the educational platform LinkedIn Learning; - equal opportunities for all."
+      },
+      {
+        "jd_id": "22be1781-8386-5576-a526-7e173b24de7f",
+        "og_title": "Java Developer",
+        "posting_title": "Lead Java Engineer",
+        "company": "PSR",
+        "exp_years": "2y",
+        "description": "Customer’s core activities involve designing, building, and managing consolidated telecom infrastructure facilities that enable state of the art and modular connectivity. By enhancing tower sharing, the company enables its partners to attain operational excellence and accrue higher profits resulting from reduced capital expenses for network rollouts and lowered operating expenses for managing infrastructure at multiple sites. Tower sharing also provides additional benefits for congested urban areas, including minimizing infrastructure duplications and excessive network redundancies, as well as reducing visual pollution that usually results from dense equipment installations. Team: PM, 3 FE devs, 2 BE devs, 1 QA, DevOps, Designer, 2 Sr Java, 1 Lead. Company expect: Lead Java Engineer experience 1+ 5+ years with Java 8 or Java 11 Deep understanding of OOP concepts Professional expertise in relational databases and NoSQL Experience with Maven and understanding of continuous building Hands-on experience with Kafka Familiarity with agile development methodologies Upper-Intermediate level of English Company propose: Flexible working hours A masseur and a corporate doctor Healthcare & sport benefits An inspiring, comfy, clean and safe office Challenging tasks and innovative projects Meetups and events for professional development An individual development plan Feel free to contact me for the all details. I will guiding you through all the important stages of communication and building long-term relationships."
+      }
+    ],
+    "QA Automation Engineer": [
+      {
+        "jd_id": "0a5fea18-c0b0-5449-aa4f-a79dfb8dc1bf",
+        "og_title": "QA Automation Engineer",
+        "posting_title": "AQA Engineer",
+        "company": "Jazzros",
+        "exp_years": "1y",
+        "description": "Jazzros takes part in developing solutions in the area of Industry 4.0. Currently we are seeking a Middle AQA Engineer (Kharkiv office or remote) to be a part of our client's technology team and work on one of the ambitious projects we participate in. This is an American product company that develops the platform to improve online education for children. An AI-powered LMS (learning management system) allows to conduct individual testing, identify individual characteristics and mental capacity, and find the most effective education program for each child. This is an out-staff position with a lot of direct communication within the customer’s team. Requirements: - At least 1-year commercial experience writing automation tests using JavaScript/TypeScript; - Experience with WebDriver.io; - Experience working with AWS; - Good English Communication Skills (at least Intermediate level). This is a long-term project, no bureaucracy, direct communication, and a competitive salary."
+      },
+      {
+        "jd_id": "03213513-b263-5c5a-99de-a6c174926b1c",
+        "og_title": "QA Automation Engineer",
+        "posting_title": "QA Engineer (Manual)",
+        "company": "LocalTrade",
+        "exp_years": "2y",
+        "description": "Your Qualifications: - 2+ years of experience in manual testing of applications on different platforms - Good understanding of client-server architecture (API, REST, HTTP) - Knowledge of how to test web applications - Experience with mobile applications testing - Experience with API testing - Experience with test cases creation and execution - Good analytical and problem-solving skills - Attention to details Would be a big advantage: - Desire to switch into Automated testing. Both: for web applications testing & mobile apps Technologies we work with: - Gitlab - User-story based flow - Node.js - React - Swift/Kotlin - PHP - Vue.js Benefits: - Flexible schedule; - Competitive salary, regular salary review, financial stability - Opportunity to vary remote-office work; - Paid sick leaves and vacations; - Regular out-of-office activities; - Work laptops (Apple Macbook); - Coverage of professional events & certifications; - 1.5 days off per month can be accumulated and used whenever needed."
+      }
+    ],
+    "Software Engineer": [
+      {
+        "jd_id": "01a9eb36-86af-54fc-b913-7ae5ecc6c782",
+        "og_title": "Software Engineer",
+        "posting_title": "Android Developer",
+        "company": "intive",
+        "exp_years": "3y",
+        "description": "**You are a good match if you:** • Have strong Kotlin programming skills and experience with various APIs (UI, networking, payments, database, media, etc.) • Are able to write quality Android applications from scratch • Have experience in designing modern application architecture (e.g. Clean Architecture, MVVM, etc.) • Have experience in management and shipping of apps to the store • Have knowledge of continuous integration and build automation • Have hands-on experience in writing tests **You get extra points for:** • Knowledge and professional experience with RxJava • Good memory and experience in Java Android • Trials with Android TV and/or Android Wear • Interest in cross-platform development (Flutter, ReactNative, etc.) ** You will be responsible for:** • Implementing new and improving existing applications of different complexity levels • Writing high quality, clean, stable and tested code • Creating full-size application architecture according to modern standards • Prototyping apps like MVPs and supporting pre-sales process advising and estimating solutions • Sharing knowledge inside/outside the company • Actively collaborating within cross-functional teams during plannings, execution and revisions **We offer:** • You can choose how to work (tools, methods) • Work-life balance - flexible hours and work remotely • Modern equipment • Health insurance • 24 days of PTO • Learning from other experts • No stiff structure The controller of personal data in relation to the recruitment is intive GmbH Sp. z o.o. Branch Office in Poland with its registered office in Warszawa, 1 Sierpnia 8, 02-134 Warszawa. More information on the principles of personal data processing, including the purposes of processing and the rights of individuals, is available in our Privacy Policy ( https://www.intive.com/en/privacy-policy )"
+      },
+      {
+        "jd_id": "03c0ccce-6db1-50d6-bb0e-e3c39fbcf7ca",
+        "og_title": "Software Engineer",
+        "posting_title": "3С Gameplay Programmer",
+        "company": "Fractured Byte",
+        "exp_years": "2y",
+        "description": "**Fractured Byte** is a game development studio whose experience involves work on titles such as **Borderlands: The Legendary Collection and Tony Hawk’s Pro Skater 1+2** for Nintendo Switch. We are a team of experienced professionals, focused on video game development for PC and consoles. **Responsibilities:** - Developing game systems for controls, cameras, and animations. - Working closely with lead game designer, to develop a 3C melee combat prototype. - Integration and implementation of tools and techniques to get a high-quality gameplay experience. **Requirements:** - Experience with 3C - 2+ years. - Experience with UE - 1+ years. - Familiar with impact systems creation. - Strong C++ skills. - Good knowledge of OOP, Vector Algebra, Serialization. - Experience in creating and supporting 3C systems in UE4 for PC / Consoles. - Familiar with common algorithms, data structures, and patterns. **A strong candidate has:** - Knowledge of Networking / Multiplayer, VCS. - Good verbal English. **We offer:** - Unlimited Vacations in our company. Our goal is to release great games. - And when we need to rest — we do rest! - Full financial and legal support for private entrepreneurs. We will pay your taxes :) - Freedom of choice: you can work from home/office or wherever you want! - Caring management team."
+      }
+    ],
+    "UX Designer": [
+      {
+        "jd_id": "042e1cb0-2f17-592a-97a8-bc09668fd93b",
+        "og_title": "UX Designer",
+        "posting_title": "Junior Web Designer",
+        "company": "Qoders Family",
+        "exp_years": "1y",
+        "description": "**Requirements:** At least 0.6- 1 years of experience in web design; Portfolio on Dribble and/or Behance; Understanding of usability and an eye for modern design; Strong knowledge of Sketch, Photoshop, InVision, Avocode, Zeplin Sketch; Creativity, the extraordinal way of thinking, attentiveness to details; Multitasking skills to work on a few projects simultaneously; Basic understanding of web development; Good communication skills to talk to our customers and team; Upper-intermediate English level. **As a plus:** Portfolio on Themeforest; Basic knowledge of HTML/CSS; Knowledge of After Effects, Adobe Illustrator, Figma. **We offer:** Challenging tasks, professional growth opportunities, and mentorship; Competitive salary (reviewed regularly); Paid vacation, paid sick leave; Health insurance; Free English courses; Comfortable office in the center of Lviv; Cool team and corporate events. **Responsibilities:** Create Themes and Templates in WordPress; Create design for new websites; Create wireframe, prototypes, and design for our products; Support and improvement of the existing visual style of the company`s products; Redesign of the existing websites; Constant analysis and improvement of the company`s products functional."
+      },
+      {
+        "jd_id": "05402a01-db74-578f-9b3d-ecde36f40ead",
+        "og_title": "UX Designer",
+        "posting_title": "Middle Digital Designer",
+        "company": "SlashDevsUkraine",
+        "exp_years": "3y",
+        "description": "**We’re looking for an product / interaction designer who can:** ●Work as part of a multidisciplinary team including service designers, content designers, user researchers and software engineers to meet user needs ●Design intuitive, inclusive and accessible services for government, third and private sector organisations ●Communicate clearly and help clients to put user needs at the centre of their services ●Champion user-centred design by working in the open and frequently sharing the thinking and evidence behind your work ●Contribute to our interaction design. **Qualifications*** ✅We’d like to hear from you if you have any of these skills or experiences: * ◉**Have experience 3+ year ** in designing products, services or a design related degree ◉Are experienced at sketching and prototyping in different fidelities ◉Are experienced in explaining your designs in a way that other people understand ◉Can work in the open and collaborate well with others ◉Are skilled at designing intuitive, accessible, responsive user interfaces ◉Can interpret user research and analytics to inform your design decisions ◉Creative, organised and but importantly, calm under pressure. ◉Digital background or a demonstrable passion for digital design, any experience with HTML, JavaScript, CSS and CMS platforms would be highly valuable. Knowledge of Adobe Creative Suite /XD/ Illustrator/ Photoshop/ Acrobat/ and Figma essential. ◉Attention to detail and accuracy are essential. ◉Flexible approach to work and able to deal with changing priorities at short notice. ◉Excellent communication and interpersonal skills, with demonstrable experience of managing stakeholders. ◉Self-motivated with the ability to work both independently and as part of a team. ◉Experience of working in fast paced and deadline driven creative teams in an agency or client side. ◉Experience producing assets and design for all required digital assets. **Think this is for you? Get in touch for a confidential chat about how you can become part of the team.**"
+      }
+    ]
+  }
+}
