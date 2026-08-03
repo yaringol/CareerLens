@@ -133,6 +133,18 @@ AGREEMENT_SIGNAL_ENABLED = os.getenv('AGREEMENT_SIGNAL_ENABLED', '0').lower() in
 AGREEMENT_BOOST_CONFIDENCE = float(os.getenv('AGREEMENT_BOOST_CONFIDENCE', '87'))
 DISAGREEMENT_OVERRIDE_MAX = float(os.getenv('DISAGREEMENT_OVERRIDE_MAX', '85'))
 DISAGREEMENT_CONFIDENCE_CAP = float(os.getenv('DISAGREEMENT_CONFIDENCE_CAP', '50'))
+# Above this confidence the signal is provably a no-op: the agree branch only
+# lifts to AGREEMENT_BOOST_CONFIDENCE (max() leaves a higher value alone) and the
+# disagree/rejects branch is gated on base < DISAGREEMENT_OVERRIDE_MAX. Running
+# the check anyway costs a full SkillNer pass (measured 1.2-7.4s, M05 step 3),
+# which pushed /cv/role past the backend's DS timeout and returned 503s on the
+# headerless path. Short-circuiting here is behaviour-preserving by construction.
+SIGNAL_NO_OP_ABOVE = max(AGREEMENT_BOOST_CONFIDENCE, DISAGREEMENT_OVERRIDE_MAX)
+SIGNAL_SKIPPED = {
+    'agreement': 'skipped_high_confidence',
+    'skills_model_title': None,
+    'skills_model_confidence': None,
+}
 SKILLS_ROUTER_PATH = os.getenv(
     'SKILLS_ROUTER_PATH', f'{os.path.dirname(__file__)}/skills_to_24_plus_other.joblib'
 )
@@ -212,6 +224,8 @@ def apply_agreement_signal(resp: dict, cv_text: str) -> dict:
                         router's own pick joins the candidate list for the UI
     not_covered / no_skills / signal-off -> untouched
     """
+    if skills_router is not None and float(resp.get('confidence') or 0.0) >= SIGNAL_NO_OP_ABOVE:
+        return {**resp, **SIGNAL_SKIPPED}
     signal = agreement_check(resp.get('canonical_title'), cv_text)
     if signal is None:
         return resp
@@ -252,6 +266,9 @@ def apply_agreement_signal_to_roles(candidates: list, cv_text: str) -> list:
     every candidate item so the list response shape stays backward compatible.
     """
     top = candidates[0] if candidates else None
+    if (top is not None and skills_router is not None
+            and float(top.get('confidence') or 0.0) >= SIGNAL_NO_OP_ABOVE):
+        return [{**c, **SIGNAL_SKIPPED} for c in candidates]
     signal = agreement_check(top.get('canonical_title') if top else None, cv_text)
     if signal is None or top is None:
         return candidates

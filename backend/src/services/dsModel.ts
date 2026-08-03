@@ -11,7 +11,11 @@ import {
 } from '../utils/logger';
 
 const DS_MODEL_URL = process.env.DS_MODEL_URL ?? 'http://localhost:8000';
-const DS_MODEL_TIMEOUT_MS = 5000;
+// 5s was sized for the pure-sklearn classifier. Since the M19 agreement signal
+// landed on /cv/role, a headerless CV also pays a SkillNer pass (measured
+// 1.2-7.4s), so the old ceiling turned a slow-but-correct detection into a
+// user-facing 503. Env-overridable so the demo box can tune it without a build.
+const DS_MODEL_TIMEOUT_MS = Number(process.env.DS_MODEL_TIMEOUT_MS ?? '15000');
 
 // Below this normalised confidence (0-100) for ALL classifier candidates, the CV
 // is routed to the closed-list LLM fallback - typically roles the classifier has
@@ -47,7 +51,7 @@ interface CVTitleDetectionResponse {
   confidence: number;
   // M19 agreement signal (see ExtractTitleResult below): /cv/role attaches the
   // same three fields to every candidate item to keep the list shape compatible.
-  agreement?: 'agree' | 'disagree' | 'rejects' | 'not_covered' | 'no_skills';
+  agreement?: 'agree' | 'disagree' | 'rejects' | 'not_covered' | 'no_skills' | 'skipped_high_confidence';
   skills_model_title?: string | null;
   skills_model_confidence?: number;
 }
@@ -355,7 +359,7 @@ export interface ExtractTitleResult {
   // on the DS side): whether the skills->title router concurred with the ladder's
   // answer. 'disagree'/'rejects' arrive with confidences already capped below the
   // LLM threshold, so no routing logic is needed here - logged for analysis only.
-  agreement?: 'agree' | 'disagree' | 'rejects' | 'not_covered' | 'no_skills';
+  agreement?: 'agree' | 'disagree' | 'rejects' | 'not_covered' | 'no_skills' | 'skipped_high_confidence';
   skills_model_title?: string | null;
   skills_model_confidence?: number;
 }
