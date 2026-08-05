@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CareerLens - מפת המיילסטונים | ספרינט ההגשה</title>
+<style>
+  :root {
+    --bg: #f4f4fb;
+    --surface: #ffffff;
+    --primary: #1e1b6e;
+    --secondary: #5b5a7a;
+    --accent: #8b74f6;
+    --border: #e4e2f0;
+    --green: #059669;
+    --green-bg: #ecfdf5;
+    --amber: #b45309;
+    --amber-bg: #fffbeb;
+    --red: #dc2626;
+    --red-bg: #fef2f2;
+    --gray: #6b7280;
+    --gray-bg: #f3f4f6;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--primary);
+    line-height: 1.7;
+    padding: 2rem 1rem 5rem;
+  }
+  .container { max-width: 980px; margin: 0 auto; }
+
+  header { text-align: center; margin-bottom: 2rem; }
+  header h1 { font-size: 1.9rem; margin-bottom: 0.25rem; }
+  header .subtitle { color: var(--secondary); font-size: 1rem; }
+  header .updated { color: var(--secondary); font-size: 0.8rem; margin-top: 0.5rem; }
+
+  .stats {
+    display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center;
+    margin: 1.5rem 0 2.5rem;
+  }
+  .stat {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 0.75rem 1.5rem; text-align: center; min-width: 120px;
+    box-shadow: 0 2px 10px rgba(30,27,110,0.05);
+  }
+  .stat .num { font-size: 1.6rem; font-weight: 800; }
+  .stat .label { font-size: 0.75rem; color: var(--secondary); }
+  .stat.done .num { color: var(--green); }
+  .stat.partial .num { color: var(--amber); }
+  .stat.frozen .num { color: var(--red); }
+
+  .legend { text-align: center; font-size: 0.8rem; color: var(--secondary); margin-bottom: 2rem; }
+
+  .milestone {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 18px;
+    margin-bottom: 1.25rem; overflow: hidden;
+    box-shadow: 0 3px 16px rgba(30,27,110,0.06);
+  }
+  .milestone summary {
+    list-style: none; cursor: pointer; padding: 1.1rem 1.4rem;
+    display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap;
+    user-select: none;
+  }
+  .milestone summary::-webkit-details-marker { display: none; }
+  .milestone summary:hover { background: rgba(139,116,246,0.04); }
+  .m-id {
+    font-weight: 800; font-size: 0.95rem; color: var(--accent);
+    background: rgba(139,116,246,0.1); border-radius: 8px; padding: 0.15rem 0.6rem;
+    flex-shrink: 0;
+  }
+  .m-title { font-weight: 700; font-size: 1.05rem; flex: 1; min-width: 200px; }
+  .badge {
+    font-size: 0.72rem; font-weight: 700; padding: 0.25rem 0.7rem; border-radius: 99px;
+    flex-shrink: 0; letter-spacing: 0.02em;
+  }
+  .badge.done    { background: var(--green-bg); color: var(--green); border: 1px solid #a7f3d0; }
+  .badge.partial { background: var(--amber-bg); color: var(--amber); border: 1px solid #fde68a; }
+  .badge.frozen  { background: var(--red-bg);  color: var(--red);  border: 1px solid #fecaca; }
+  .badge.plan    { background: var(--gray-bg); color: var(--gray); border: 1px solid #d1d5db; }
+  .chev { color: var(--secondary); font-size: 0.8rem; transition: transform 0.2s; }
+  details[open] .chev { transform: rotate(180deg); }
+
+  .m-body { padding: 0 1.4rem 1.4rem; border-top: 1px solid var(--border); }
+  .m-body h3 {
+    font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--secondary); margin: 1.2rem 0 0.4rem;
+  }
+  .m-body p { font-size: 0.92rem; color: #33325a; margin-bottom: 0.5rem; }
+  .m-body ul { padding-right: 1.3rem; font-size: 0.92rem; color: #33325a; }
+  .m-body li { margin-bottom: 0.35rem; }
+  .m-body strong { color: var(--primary); }
+
+  .deliverables { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 0.3rem; }
+  .deliverables th {
+    text-align: right; padding: 0.4rem 0.6rem; font-size: 0.72rem;
+    color: var(--secondary); border-bottom: 1px solid var(--border);
+  }
+  .deliverables td { padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .deliverables tr:last-child td { border-bottom: none; }
+  code, .path {
+    font-family: Consolas, monospace; font-size: 0.8rem; direction: ltr; display: inline-block;
+    background: var(--gray-bg); border-radius: 6px; padding: 0.05rem 0.4rem; color: #4c1d95;
+  }
+  .commits { font-family: Consolas, monospace; font-size: 0.78rem; direction: ltr; display: inline-block; color: var(--secondary); }
+
+  .callout {
+    border-radius: 12px; padding: 0.7rem 1rem; font-size: 0.88rem; margin: 0.6rem 0;
+  }
+  .callout.good { background: var(--green-bg); border: 1px solid #a7f3d0; }
+  .callout.warn { background: var(--amber-bg); border: 1px solid #fde68a; }
+  .callout.bad  { background: var(--red-bg); border: 1px solid #fecaca; }
+
+  .section-title {
+    font-size: 1.1rem; font-weight: 800; margin: 2.2rem 0 1rem; color: var(--primary);
+    display: flex; align-items: center; gap: 0.6rem;
+  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  footer { text-align: center; color: var(--secondary); font-size: 0.8rem; margin-top: 3rem; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>🎯 CareerLens - מפת ספרינט ההגשה</h1>
+  <div class="subtitle">כל המיילסטונים שעבדנו עליהם - לעומק, עם התוצרים ומיקומם</div>
+  <div class="updated">עודכן: 02/08/2026 | branch: final-submission-prep | נדחף עד <span class="commits">8cc2907</span> (28/07); 7 קומיטי M18+M19 עדיין מקומיים</div>
+</header>
+
+<div class="stats">
+  <div class="stat done"><div class="num">7</div><div class="label">הושלמו ☑</div></div>
+  <div class="stat partial"><div class="num">4</div><div class="label">חלקיים ◐</div></div>
+  <div class="stat frozen"><div class="num">2</div><div class="label">מוקפאים ⛔</div></div>
+  <div class="stat"><div class="num">7</div><div class="label">טרם התחילו ☐</div></div>
+</div>
+<div class="legend">לחיצה על כל כרטיס פותחת את הפירוט המלא | הנתיבים יחסיים לשורש הריפו <code>c:\Git\CareerLens</code></div>
+
+<!-- ============ תשתית התכנון ============ -->
+<div class="section-title">🧭 תשתית התכנון (לפני המיילסטונים)</div>
+
+<details class="milestone">
+  <summary>
+    <span class="m-id">תכנון</span>
+    <span class="m-title">תוכנית-העל, ביקורת המוכנות וסקיל ה-Kickoff</span>
+    <span class="badge done">הושלם</span>
+    <span class="chev">▼</span>
+  </summary>
+  <div class="m-body">
+    <h3>מה זה</h3>
+    <p>לפני שנגענו בקוד נבנתה תשתית: תוכנית-על עם 18 מיילסטונים מסודרים ב-6 גלים, בריפינג עצמאי לכל משימה (כך שאייג'נט יכול לבצע אותה בלי קונטקסט מוקדם), וביקורת מוכנות רב-סוכנית - 8 סוכנים סרקו את <strong>הקוד</strong> (לא את המסמכים), 74 ממצאים עברו אימות אדוורסרי ו-52 שרדו. הביקורת גילתה ששלושה ממנועי הליבה מחזירים תוצאות שגויות והולידה 5 מיילסטונים חדשים (13-17).</p>
+    <p>בנוסף, לפי בקשתך נוצר <strong>סקיל milestone-kickoff</strong>: אף מיילסטון לא מתחיל מימוש בלי תדריך טרום-מימוש (אימות הבריפינג מול הקוד, תוכנית, סיכונים, החלטות) + שאלות אלייך + אישור מפורש.</p>
+    <h3>תוצרים</h3>
+    <table class="deliverables">
+      <tr><th>תוצר</th><th>איפה</th></tr>
+      <tr><td>תוכנית-העל (סטטוסים חיים)</td><td><span class="path">docs/final-sprint/00-MASTER-PLAN.md</span></td></tr>
+      <tr><td>18 בריפינגים עצמאיים</td><td><span class="path">docs/final-sprint/01-*.md ... 17-*.md</span></td></tr>
+      <tr><td>דוח ביקורת המוכנות (52 ממצאים)</td><td><span class="path">docs/final-sprint/outputs/00-readiness-audit.md</span></td></tr>
+      <tr><td>סקיל שער ה-Kickoff</td><td><span class="path">.claude/skills/milestone-kickoff/SKILL.md</span></td></tr>
+    </table>
+  </div>
+</details>
+
+<!-- ============ הושלמו ============ -->
+<div class="section-title">✅ מיילסטונים שהושלמו</div>
+
+<details class="milestone">
+  <summary>
+    <span class="m-id">M04</span>
+    <span class="m-title">32 קורות חיים אותנטיים + Ground Truth</span>
+    <span class="badge done">☑ הושלם 20/07</span>
+    <span class="chev">▼</span>
+  </summary>
+  <div class="m-body">
+    <h3>מה זה ולמה</h3>
+    <p>מאגר קו"ח PDF לבדיקות ולדמו. הדרישה שלך: שייראו <strong>כמו קורות חיים אמיתיים</strong> - מבנים מהעולם האמיתי (אחרי סריקת מבני CV נפוצים), לא "ידידותיים לסריקה", עם שם קובץ משמעותי שמקודד את התרחיש (חזק/חלש/גבולי).</p>
+    <h3>מה נבנה</h3>
+    <ul>
+      <li>32 קבצי PDF על מרחב 59 התפקידים + תרחישי none: פרסונות חזקות/חלשות/מעורפלות, 2 בעברית (לבדיקת הדחייה), 1 סרוק (תמונה בלי טקסט), ופרסונות שליליות (חוקר נוזקות, אחות) לבדיקת גבולות המערכת</li>
+      <li><strong>manifest.json</strong> עם ground truth: תווית צפויה, <code>acceptable_titles</code> (טווח תשובות לגיטימי), דגלי <code>is_negative_fixture</code></li>
+      <li>צינור בנייה: מקורות HTML + רנדור Edge headless + ולידטור שמחקה את שערי המערכת האמיתיים</li>
+    </ul>
+    <p>אישרת את הקבצים אחרי בדיקה ידנית ("אהבתי מאוד את הקבצים").</p>
+    <h3>תוצרים</h3>
+    <table class="deliverables">
+      <tr><th>תוצר</th><th>איפה</th></tr>
+      <tr><td>32 קבצי ה-PDF</td><td><span class="path">test-fixtures/authentic-cvs/*.pdf</span></td></tr>
+      <tr><td>Ground truth</td><td><span class="path">test-fixtures/authentic-cvs/manifest.json</span></td></tr>
+      <tr><td>מקורות + כלים</td><td><span class="path">test-fixtures/authentic-cvs/src/, tools/render.ps1, tools/validate.cjs</span></td></tr>
+      <tr><td>דוח ה-kickoff וההחלטות</td><td><span class="path">docs/final-sprint/outputs/kickoffs/04-kickoff.md</span></td></tr>
+    </table>
+  </div>
+</details>
+
+<details class="milestone">
+  <summary>
+    <span class="m-id">M17</span>
+    <span class="m-title">תיק ספרות אקדמי</span>
+    <span class="badge done">☑ הושלם 20/07</span>
+    <span class="chev">▼</span>
+  </summary>
+  <div class="m-body">
+    <h3>מה זה ולמה</h3>
+    <p>פרק Literature Review בספר דורש מקורות אמיתיים ומאומתים - לא הזיות. המשימה: איתור ואימות מקורות אקדמיים ותעשייתיים רלוונטיים לכל רכיב במערכת (חילוץ סקילז, סיווג תפקידים, embedding models, ניתוח שוק עבודה).</p>
+    <h3>מה נעשה</h3>
+    <p><strong>15 מקורות מאומתים</strong> בפורמט IEEE, כל אחד עם: ציטוט מלא, קישור שנבדק חי, תקציר רלוונטיות, ולאיזה חלק בספר הוא משרת. המקורות כבר שולבו בפרק 2 של הספר (M09).</p>
+    <h3>תוצרים</h3>
+    <table class="deliverables">
+      <tr><th>תוצר</th><th>איפה</th></tr>
+      <tr><td>תיק הספרות המלא</td><td><span class="path">docs/final-sprint/outputs/literature-dossier.md</span></td></tr>
+      <tr><td>פרק Literature Review (משתמש בו)</td><td><span class="path">docs/progect_book/chapters/02-literature-review.md</span></td></tr>
+      <tr><td>רשימת References</td><td><span class="path">docs/progect_book/chapters/99-references.md</span></td></tr>
+    </table>
+  </div>
+</details>
+
+<details class="milestone">
+  <summary>
+    <span class="m-id">M10</span>
+    <span class="m-title">מחקר ניסוי-וטעייה: הראיון והכרוניקה</span>
+    <span class="badge done">☑ הושלם 23/07</span>
+    <span class="chev">▼</span>
+  </summary>
+  <div class="m-body">
+    <h3>מה זה ולמה</h3>
+    <p>ספר הפרויקט חייב לספר את סיפור הניסוי-והטעייה האמיתי - מה ניסינו, מה נכשל, למה שינינו כיוון. הידע הזה היה בראש שלך ולא בכתב.</p>
+    <h3>מה נעשה</h3>
+    <ul>
+      <li><strong>ארכיאולוגיה</strong>: חפירה בהיסטוריית git, בקבצי "מודל אפס" (הרגקס שנכשל), ובלוח ה-GitHub של הצוות - כדי לעגן כל שאלה בראיה</li>
+      <li><strong>25 שאלות מעוגנות-ראיות</strong> → <strong>ראיון חי איתך ב-6 סבבים</strong> - ממנו יצאו סיפורים מרכזיים: "הוצאנו את התותחים הכבדים" (המעבר מ-AllJobs ל-LinkedIn), כישלון מודל האפס, רף 80% של מגייסת, הערת המנחה על הסקייל</li>
+      <li><strong>כרוניקת 13 אפיזודות</strong> של ניסוי-וטעייה, כתובה ומוכנה לשילוב בספר</li>
+      <li>פרק 3 (Research) הועשר בכל הממצאים - אפס placeholders שנשארו</li>
+    </ul>
+    <p>הראיון גם הזין משימות אחרות: חקירות חדשות ל-M05 (מתח הספים, separability, דטרמיניזם), פריטים ל-M07, ותיקון runbook של M13.</p>
+    <h3>תוצרים</h3>
+    <table class="deliverables">
+      <tr><th>תוצר</th><th>איפה</th></tr>
+      <tr><td>שאלות הראיון + התשובות שלך inline</td><td><span class="path">docs/final-sprint/outputs/10-interview-questions.md</span></td></tr>
+      <tr><td>ארכיאולוגיית מודל האפס</td><td><span class="path">docs/final-sprint/outputs/10-model-zero-archaeology.md</span></td></tr>
+      <tr><td>כריית לוח ה-GitHub</td><td><span class="path">docs/final-sprint/outputs/10-github-board-mining.md</span></td></tr>
+      <tr><td>כרוניקת 13 האפיזודות</td><td><span class="path">docs/final-sprint/outputs/trial-and-error-chronicle.md</span></td></tr>
+      <tr><td>פרק המחקר המועשר</td><td><span class="path">docs/progect_book/chapters/03-research.md</span></td></tr>
+    </table>
+  </div>
+</details>
+
+<details class="milestone">
+  <summary>
+    <span class="m-id">M14</span>
+    <span class="m-title">11 תיקוני נכונות מוצר</span>
+    <span class="badge done">☑ הושלם 27/07</span>
+    <span class="chev">▼</span>
+  </summary>
+  <div class="m-body">
+    <h3>מה זה ולמה</h3>
+    <p>ביקורת המוכנות מצאה 10 באגים אמיתיים במוצר - מ"קו"ח מיוצא הרוס" ועד "mocks גלויים בפרודקשן". כולם אומתו שלוש פעמים מול הקוד לפני המימוש, ותוקנו אחד-אחד עם קומיט נפרד ואימות חי לכל תיקון.</p>
+    <h3>התיקונים (10 קומיטים <span class="commits">bb6bb8b→e05ba42</span>)</h3>
+    <ul>
+      <li><strong>P0</strong> - mocks בגידור DEV (נעלמים מה-build דרך tree-shaking); <strong>rawText</strong> - הטקסט המקורי של הקו"ח (רישיות, שורות, פיסוק) נשמר וזורם עד מסך Improve והייצוא - במקום הטקסט המנורמל-מרוסק</li>
+      <li><strong>P1</strong> - LLM שנכשל נופל ל-keyword scoring במקום להחזיר JSON גולמי; CV-only מקבל ציוני LLM אמיתיים; קישור-URL עובד גם במסלול personalized; קבצים מסומנים בכוכב מוגנים ממחיקה</li>
+      <li><strong>P2</strong> - דחייה ברורה של קו"ח לא-אנגלי; תפקיד עקבי בין Upload ל-Personalize; 5 alerts הוחלפו ב-toasts; timeouts עם הודעות אנושיות (90 שניות ל-LLM)</li>
+      <li><strong>14.11</strong> - חיווט דגל ה-limited_data מ-M06 להערה במסך Personalize</li>
+    </ul>
+    <div class="callout warn"><strong>ממצא לוואי לדמו:</strong> backend/.env מגדיר PORT=3001 בעוד ה-proxy מצפה ל-3000 - מיושר ידנית כרגע, מטופל סופית ב-M11.</div>
+    <h3>תוצרים</h3>
+    <table class="deliverables">
+      <tr><th>תוצר</th><th>איפה</th></tr>
+      <tr><td>דוח מלא: טבלת 11 התיקונים + ראיות אימות חי</td><td><span class="path">docs/final-sprint/outputs/kickoffs/14-kickoff.md</span></td></tr>
+      <tr><td>הקוד עצמו</td><td><span class="commits">git log bb6bb8b..e05ba42</span> (backend + frontend)</td></tr>
+    </table>
+  </div>
+</details>
+
+<details class="milestone">
+  <summary>
+    <span class="m-id">M15</span>
+    <span class="m-title">Gap Analysis / Skill Deep-Dive - ההבטחה מהאפיון</span>
+    <span class="badge done">☑ הושלם 27/07</span>
+    <span class="chev">▼</span>
+  </summary>
+  <div class="m-body">
+    <h3>מה זה ולמה</h3>
+    <p>האפיון המקורי מבטיח שלושה דברים שלא היו קיימים: טבלת Gap Analysis, פידבק סמנטי מסוכן הניקוד, ומסך Skill Deep-Dive (mockup מלא ב-image3.png). המנחה יקרא את הספר עם האפיון פתוח לידו - החלטת לבנות ולא לחתוך.</p>
+    <h3>מה נבנה (4 קומיטים <span class="commits">91987a5→5d1fee5</span>)</h3>
+    <ul>
+      <li><strong>הסוכן מחזיר יותר</strong>: אותה קריאת LLM אחת מחזירה לכל סקיל גם <code>evidence</code> (מה נמצא בקו"ח) ו-<code>missing</code> (מה חסר). בדרך נוטרל מוקש: מגבלת 500 tokens גלובלית שהייתה חותכת את ה-JSON</li>
+      <li><strong>פאנל Deep-Dive</strong>: לחיצה על סקיל פותחת accordion עם Strengths / Missing Elements / כפתור Improve</li>
+      <li><strong>טבלת Gap</strong>: Skill | Required | In your CV | Gap - בדיוק ה-comparison table מהאפיון</li>
+      <li><strong>Preselect</strong>: הכפתור פותח את Improve ישר בטאב של הסקיל שנלחץ (באג אמיתי נמצא ותוקן תוך כדי האימות)</li>
+    </ul>
+    <div class="callout good"><strong>ראיית האימות החי:</strong> ה-evidence ציטט את הקו"ח מילה במילה - "Introduced strict TypeScript across the codebase and reviewed type-safety in PRs" עם ציון 9. ניתוחים ישנים בלי השדות לא נשברים.</div>
+    <h3>תוצרים</h3>
+    <table class="deliverables">
+      <tr><th>תוצר</th><th>איפה</th></tr>
+      <tr><td><strong>צילום המסך לפלייר ולספר</strong></td><td><span class="path">docs/final-sprint/outputs/m15-gap-deepdive.png</span></td></tr>
+      <tr><td>דוח מלא: kickoff + תחקיר + ביצוע</td><td><span class="path">docs/final-sprint/outputs/kickoffs/15-kickoff.md</span></td></tr>
+      <tr><td>הקוד</td><td><span class="commits">git log 91987a5..5d1fee5</span></td></tr>
+      <tr><td>לראות חי</td><td>ה-stack רץ: <span class="path">http://localhost:8080</span> → העלאת קו"ח → לחיצה על סקיל בתוצאות</td></tr>
+    </table>
+  </div>
+</details>
+
+<!-- ============ חלקיים ============ -->
+<details class="milestone">
+  <summary>
+    <span class="m-id">M18</span>
+    <span class="m-title">מחברת skills→title - "המודל ההפוך" נבנה ונמדד</span>
+    <span class="badge done">☑ הושלם 29/07 (כולל סבב 2)</span>
+    <span class="chev">▼</span>
+  </summary>
+  <div class="m-body">
+    <h3>מה זה ולמה</h3>
+    <p>מימוש החלטת פגישת 05/07 - זיהוי תפקיד <strong>מסט הסקילז המחולץ</strong> (bidirectional role-skill inference) במקום מטקסט גולמי. נבנה כמחברת מחקר עם הערכה ישרה, ובסבב שני (בהנחייתך) הורחב ל-24 מחלקות עם איזון מפורש.</p>
+    <h3>מה נעשה בפועל</h3>
+    <ul>
+      <li><strong>דאטה משלושה מקורות</strong>: 41.7K משרות (מ-M06) · 11,776 קו"ח lang-uk (חולצו ב-SkillNer מקבילי עם checkpoint, תיוג נקי מ-Primary Keyword) · 4,792 קו"ח master_resumes (12 מחלקות חדשות: ML, Pentester, Platform, Embedded...)</li>
+      <li><strong>איזון כדרישתך</strong>: cap 600 למחלקה + class_weight='balanced' - כמות הופעות לא קונה משקל; leakage guard של 118 שמות-תפקיד</li>
+      <li><strong>מדדים</strong>: held-out <strong>acc 0.844 · top-3 0.951 · macro-F1 0.899</strong> (24 מחלקות); העברה בין דומיינים 0.75-0.78; עקומת למידה מתכנסת (פער 0.10) - אין אוברפיטינג; 6 גרפי התפלגות ואימות במחברת</li>
+      <li><strong>המבחן האמיתי</strong>: 32 האותנטיים דרך הצינור המלא - <strong>תיקו 16/25 מול המסווג המוגש</strong>; במכוסים-היטב סיגנל ההסכמה שווה 87% מול ~50%</li>
+      <li><strong>בונוס לפרודקשן</strong>: תיקון chunked-fallback ל-SkillNer (קו"ח שנכשל: 0→37 סקילז) נכנס גם ל-<code>/text/skills</code> החי</li>
+    </ul>
+    <div class="callout"><strong>מזכר החיווט:</strong> לא להחליף את המסווג - לחווט את סיגנל ההסכמה כטריגר low-confidence (kickoff נפרד). <strong>פתוח מול הצוות:</strong> תיעוד מקור master_resumes (מאפייניו מעידים על יצירה שיטתית - חובת גילוי בספר).</div>
+    <h3>תוצרים</h3>
+    <table class="deliverables">
+      <tr><th>תוצר</th><th>איפה</th></tr>
+      <tr><td>המחברת המלאה (רצה מלמעלה-למטה, 0 שגיאות)</td><td><span class="path">ds/model/skills_to_24_titles.ipynb</span></td></tr>
+      <tr><td>תוצאות שני הסבבים + פסקת ספר + מזכר חיווט + provenance</td><td><span class="path">docs/final-sprint/outputs/18-skills-to-title-results.md</span></td></tr>
+      <tr><td>kickoff + דוחות ביצוע</td><td><span class="path">docs/final-sprint/outputs/kickoffs/18-kickoff.md</span></td></tr>
+      <tr><td>קוד הצינור (5 קומיטים מקומיים)</td><td><span class="path">ds/model/</span> (<span class="commits">83f340c..6c725f4</span>)</td></tr>
+    </table>
+  </div>
+</details>
+
+<details class="milestone">
+  <summary>
+    <span class="m-id">M19</span>
+    <span class="m-title">איחוד זיהוי הטייטל - normalizer, ראוטר, וסיגנל ההסכמה</span>
+    <span class="badge done">☑ הושלם 02/08 (W1-W4)</span>
+    <span class="chev">▼</span>
+  </summary>
+  <div class="m-body">
+    <h3>מה זה ולמה</h3>
+    <p>נולדה מהשאלה שלך "למה שלבים 2 ו-3 מופרדים?" - סגירת כל הפערים בסולם זיהוי התפקיד: תיעוד, דחייה ישרה, וחיבור שני כיווני ההיסק. ה-LLM נשאר פולבק אחרון והבחירה הידנית תמיד קיימת.</p>
+    <h3>מה נעשה בפועל (4 חלקים)</h3>
+    <ul>
+      <li><strong>W1 שיום</strong> - מודל ה-24 בשם יציב בגיט: <span class="path">skills_to_24_titles.ipynb/.joblib</span> (LFS)</li>
+      <li><strong>W2 שחזור ה-normalizer</strong> - למודל הוותיק לא הייתה מחברת (NEW.ipynb אבודה); <span class="path">title_normalizer_59.ipynb</span> משחזרת ומודדת: <strong>שקילות אגרגטית מדויקת</strong> (82.2%=82.2% נאמנות לטקסונומיה) → שער השקילות סירב בצדק להחלפה שלא קונה כלום - המקורי נשאר, המחברת היא ה-spec שלו. בונוס: תועדו שגיאות במודל החי ('SW Engineer'→Hardware)</li>
+      <li><strong>W3 מודל הראוטר</strong> - <span class="path">skills_to_24_plus_other.ipynb/.joblib</span>: מודל ה-24 + מחלקת <code>__other__</code> אמיתית (1,750 קו"ח לא-הנדסיים; בלי זנב סינתטי - הכרעתך). acc 0.828 / macro-F1 0.887, דחייה f1 0.71, ואפס אובדן דיוק על ה-32 (16/25 כמו כולם)</li>
+      <li><strong>W4 חיווט סיגנל ההסכמה</strong> (<span class="commits">f66fd40</span>) - הראוטר מצביע על כל העלאה: הסכמה (top-3)→ביטחון 87; מחלוקת/דחייה→פולבק ה-LLM הקיים; כותרת מוצהרת מעל 85 לא נדרסת</li>
+      <li><strong>W5 חיווט מחדש ל-endpoint האמיתי</strong> - התגלה (ממצא של מיי) שה-backend לא קורא ל-<code>POST /cv/title</code> בכלל - הסולם המוצרי חי ב-backend ונופל ל-<code>GET /cv/role</code>. הסיגנל הועבר לשם (<code>apply_agreement_signal_to_roles</code>), ושדות ה-agreement מושחלים עד ללוג ה-backend. <strong>E2E דרך ה-backend האמיתי: אפס רגרסיות</strong> (27/32 עם ובלי); קו"ח ללא כותרת אומתו במסלול המוצרי - DevOps→הסכמה/boost, HR→דחייה/פולבק. מתג env דלוק מקומית</li>
+    </ul>
+    <div class="callout"><strong>ממצא מדוד ששווה לספר:</strong> "מודל ה-59" הוותיק בפועל עונה רק ~24 (ל-33 מחלקות אין לו אף דוגמה - הוכח ב-probe); כיסוי הזנב האמיתי תמיד הגיע מהכותרת המוצהרת + LLM. <strong>פתוח מול הצוות:</strong> הדלקת הסיגנל בסביבת הדמו + שאלות provenance.</div>
+    <h3>תוצרים</h3>
+    <table class="deliverables">
+      <tr><th>תוצר</th><th>איפה</th></tr>
+      <tr><td>דוח מלא (W1-W4, כולל שני סבבי מדידה בגילוי מלא)</td><td><span class="path">docs/final-sprint/outputs/19-title-unification-report.md</span></td></tr>
+      <tr><td>שתי מחברות + שני ארטיפקטים</td><td><span class="path">ds/model/title_normalizer_59.ipynb · skills_to_24_plus_other.ipynb/.joblib</span></td></tr>
+      <tr><td>צילומי Playwright (זיהוי DS 96% · האחות מוגנת)</td><td><span class="path">docs/final-sprint/outputs/19-*.png</span></td></tr>
+      <tr><td>קוד החיווט (4 קומיטים מקומיים)</td><td><span class="path">ds/model/server.py, backend</span> (<span class="commits">c6ffc4c..f66fd40</span>)</td></tr>
+    </table>
+  </div>
+</details>
+
+<div class="section-title">🔶 מיילסטונים חלקיים (עבודה בעיצומה)</div>
+
+<details class="milestone">
+  <summary>
+    <span class="m-id">M09</span>
+    <span class="m-title">ספר הפרויקט - שלב א' הושלם</span>
+    <span class="badge partial">◐ שלד + 5 פרקים</span>
+    <span class="chev">▼</span>
+  </summary>
+  <div class="m-body">
+    <h3>מה זה ולמה</h3>
+    <p>ספר הפרויקט באנגלית, לפי תבנית המכללה, נכתב מול האפיון המקורי עם הסבר לכל סטייה. ההחלטות שלך: כל הפרקים הנדרשים נשמרים, כתיבה קולקטיבית ("We"), כנות ארוגה בטקסט (לא סעיף התנצלויות), כריכה "August 2026, Rishon LeZion".</p>
+    <h3>מה כבר כתוב</h3>
+    <ul>
+      <li><strong>שלד + תוכנית</strong> עם רשימת "מספרים מאושרים" (88%, 92.6%, 31,278...) שכל פרק חייב לצטט ממנה בלבד</li>
+      <li><strong>פרק 1</strong> Introduction | <strong>פרק 2</strong> Literature (מ-M17) | <strong>פרק 3</strong> Research מועשר בכל חומרי הראיון (M10)</li>
+      <li><strong>פרק 4</strong> System Design עם הדיאגרמות של M16 משובצות | <strong>פרק 5</strong> "תוכנן מול בוצע" - Figure 1 (as-designed) מול Figure 2 (as-built)</li>
+    </ul>
+    <h3>מה נשאר</h3>
+    <ul>
+      <li><strong>ממתין לך:</strong> קריאת הפרקים ואישורם</li>
+      <li>פרק Results - נכתב רק אחרי M05 (המדדים הרשמיים) | Executive Summary | הרכבה סופית והגהה (גל 4)</li>
+    </ul>
+    <h3>תוצרים</h3>
+    <table class="deliverables">
+      <tr><th>תוצר</th><th>איפה</th></tr>
+      <tr><td>כל הפרקים</td><td><span class="path">docs/progect_book/chapters/00-skeleton-and-plan.md ... 05, 99-references.md</span></td></tr>
+      <tr><td>דוח ה-kickoff</td><td><span class="path">docs/final-sprint/outputs/kickoffs/09-kickoff.md</span></td></tr>
+    </table>
+  </div>
+</details>
+
+<details class="milestone">
+  <summary>
+    <span class="m-id">M16</span>
+    <span class="m-title">דיאגרמות ארכיטקטורה</span>
+    <span class="badge partial">◐ ממתין לאישורך</span>
+    <span class="chev">▼</span>
+  </summary>
+  <div class="m-body">
+    <h3>מה זה ולמה</h3>
+    <p>נכס משותף לספר, למצגת ולפלייר. הסבב הראשון (דיאגרמות מפורטות) נדחה על ידך - "מסובכות וקשות להבנה" - והוחלף לפי הנחייתך בסט של <strong>דיאגרמות פשוטות, אחת לכל סקשן, עם כותרת נפרדת</strong>: "יותר קריא ומופרד גם אם פחות מפורט". הדרישה הנוספת: תמונות מוכנות שקל להטמיע.</p>
+    <h3>מה נוצר</h3>
+    <ul>
+      <li><strong>7 תמונות PNG</strong>: Figure 1 (המערכת כפי שתוכננה באפיון), Figure 2 (סקירת המערכת כפי שנבנתה), Figure 3 (הלמידה הלילית), Figures 4-7 (זרימות המסכים: Upload/Detect, Personalize, Analyze, Improve)</li>
+      <li><span class="path">docs/architecture.md</span> שוחזר (היה 0 בייטים!) כמסמך הקאנוני - mermaid טכני מפורט + הפניה לסט הפשוט</li>
+    </ul>
+    <div class="callout warn"><strong>ממתין לך:</strong> אישור שהדיאגרמות משקפות את המערכת ("זו המערכת?") - הן כבר משובצות בפרק 4 של הספר, אז אישורן סוגר גם את זה.</div>
+    <h3>תוצרים</h3>
+    <table class="deliverables">
+      <tr><th>תוצר</th><th>איפה</th></tr>
+      <tr><td>7 התמונות (PNG מוכנות להטמעה)</td><td><span class="path">docs/progect_book/figures/figure-1 ... figure-7*.png</span></td></tr>
+      <tr><td>המסמך הקאנוני</td><td><span class="path">docs/architecture.md</span></td></tr>
+      <tr><td>דוח ה-kickoff</td><td><span class="path">docs/final-sprint/outputs/kickoffs/16-kickoff.md</span></td></tr>
+    </table>
+  </div>
+</details>
+
+<details class="milestone">
+  <summary>
+    <span class="m-id">M06</span>
+    <span class="m-title">מודל 1: נכונות + דאטה - שלבים א'+ב'-ג' הושלמו</span>
+    <span class="badge partial">◐ א' ☑ 23/07 | ב'-ג' ☑ 28/07 | נותר: פייפליין לילי</span>
+    <span class="chev">▼</span>
+  </summary>
+  <div class="m-body">
+    <h3>מה זה ולמה</h3>
+    <p>ה-QA מ-03/07 גילה שדאטת הסקילז של המודל שבורה לכל תפקיד. ביקשת זהירות מיוחדת: "אני רוצה להבין בדיוק מה הבעיות, איך אתה הולך לתקן אותן ואיך מצאת אותן" - כל תיקון תועד עם שרשרת הגילוי המלאה שלו.</p>
+    <h3>שלב א' - 4 תיקוני הגשה (4 קומיטים <span class="commits">b1735b2→7e3df49</span>, ☑ 23/07)</h3>
+    <ul>
+      <li><strong>באג מפתח האמינות</strong>: הקוד קרא <code>time_features_reliable</code> כשהארטיפקט שומר <code>time_coverage_reliable</code> - כל הסקילז נראו "לא אמינים"</li>
+      <li><strong>פילטר ubiquity</strong>: סקילז שמופיעים ב-48+ מ-59 תפקידים (communication, teamwork) לא נבחרים יותר כ"ליבה". הנוסחה 0.7/0.3 מהמסמכים <strong>נכשלה אמפירית</strong> - הפילטר נבחר מהדאטה, והכישלון תועד לספר</li>
+      <li><strong>רה-קליברציית טרנדים</strong>: תוויות rising/stable/falling מחושבות באחוזונים בזמן טעינת השרת - הפיך, בלי לגעת ב-joblib</li>
+      <li><strong>דגל limited_data</strong>: תפקידים עם פחות מ-25 רשומות מסומנים - זרם עד ל-UI ב-M14</li>
+    </ul>
+    <h3>שלבים ב'-ג' - מיילסטון הדאטה הרציף (☑ 28/07, 4 קומיטים <span class="commits">908609c→6e6ac47</span>)</h3>
+    <p>הפער שאת זיהית שינה את התוכנית: הקורפוס <strong>לא</strong> אבד - 141,897 משרות RAW ישבו ב-Mongo המקומי (<code>careerlens.lang-uk-job</code>) בשמות שדות מקוריים של HuggingFace, וה-DB שהצינור כיוון אליו היה פשוט אחר. במקום שחזור מהאינטרנט - התאמה ללוקאלי. מה שבוצע בפועל:</p>
+    <ul>
+      <li><strong>מדגם מאוזן</strong> - 106,979 משרות ממופות דרך המיפוי הקיים → 41,745 מסמכים (עד 4,000 ל-12 תפקידים, seed 42) - <span class="path">ds/model/sample_local_corpus.py</span></li>
+      <li><strong>חילוץ SkillNer מקבילי עם checkpoint</strong> - 9 עובדים, ~5 שעות, 41,745/41,745 בלי כשלים, אף מסמך לא חולץ פעמיים; 773,696 תצפיות, 21,103 סקילז - <span class="path">ds/model/extract_skills_parallel.py</span></li>
+      <li><strong>EDA מלא במחברת</strong> - התפלגות חודשית (הקורפוס נגמר ב-09/2023), top-12 סקילז לכל תפקיד, עקומות סקיל×חודש, עולים/יורדים מובהקים בתוך 2020-2023</li>
+      <li><strong>העשרה מסומנת 2023→2026</strong> - רשימות מאוצרות פר-תפקיד (llm/rag ל-DS, gitops/llmops ל-DevOps, playwright ל-QA...) עם רמפת שכיחות חצי-שנתית; 10,800 רשומות, כל אחת נושאת <code>source='augmented-2026'</code>. <strong>לא מזייפים דאטה בשקט</strong> - פרק מתודולוגיה שלם בדוח לספר - <span class="path">ds/model/market_2026_skills.py + augment_2026.py</span></li>
+      <li><strong>אימון + promote</strong> - <code>train.py</code> ללא שינוי (env: קבועי זמן 365/365), שער האיכות עבר, גיבוי המודל הישן נשמר. מודל חדש: 52,545 רשומות, 66,257 שורות (role,skill), ניתן לשחזור מלא - בעיית ה-reproducibility סגורה</li>
+      <li><strong>תיקון נלווה בקוד ההגשה</strong> - פילטר הנפוצות של שלב א' רווי בקורפוס צפוף (react=12/12 כמו english); נוסף סף שכיחות תואם-לאחור (<code>ROLE_COUNT_MIN_PREVALENCE</code>)</li>
+      <li><strong>אימות חי מקצה-לקצה</strong> - Frontend: typescript/react/html/css · Data Scientist: llm/generative ai/pytorch · llm מסומן <strong>rising</strong> ו-jquery בירידה · TPM מחזיר "מידע מוגבל" בכנות · <strong>הסליידר עובד</strong> (Playwright מלא: Stable → python/sql/analytics; Trending מלא → llm/generative ai/pytorch) - באג ה-no-op של 86.6% מת</li>
+    </ul>
+    <div class="callout"><strong>קונפיגורציית הגשה מחייבת למודל החדש:</strong> <code>MONGO_URI=…/careerlens SKILL_UBIQUITY_CAP=11 ROLE_COUNT_MIN_PREVALENCE=0.05</code></div>
+    <h3>מה נשאר - תיאום, לא תיקון (עדכון בעלות 29/07)</h3>
+    <p><strong>הריצה הלילית רצה על סביבה של חבר צוות אחר ובאחריותו</strong> (הבהרת המשתמשת). אומת מקומית: על המכונה הזו אין Docker כלל ו-model_runs מכיל רק את הריצות הידועות - הלילי המקומי מעולם לא רץ כאן, וזה תקין. הפריטים שנותרו הם תיאום מול מפעיל הסטאק:</p>
+    <ul>
+      <li><strong>העברת המודל החדש לסביבת הדמו</strong> - <code>model.joblib</code> (בקומיט <span class="commits">6e6ac47</span>, LFS) + env: <code>SKILL_UBIQUITY_CAP=11 ROLE_COUNT_MIN_PREVALENCE=0.05</code> לקונטיינר ה-DS - בלעדיהם הדמו יגיש מודל ישן/רשימות מזוהמות</li>
+      <li><strong>לוודא שהלילי אצלו לא דורס</strong> - אם ה-cron שלו עושה promote מדאטה אחרת, הוא עלול להחליף את המודל; לברר קורפוס + שער promotion</li>
+      <li><strong>מוקש ה-volume חל בסביבתו</strong> - <code>model_data</code> שורד compose down; לפני הדמו: מחיקה או השוואת <code>trained_at</code></li>
+      <li><strong>הערת ריפו</strong>: <code>secrets/mongo.env</code> חסר ב-checkout נקי (רק .example) - מי שמרים סטאק טרי ייתקל בכשל שקט; שווה שורת README</li>
+      <li><strong>אופציונלי</strong>: סקרייפינג LinkedIn אמיתי - להחליף בהדרגה את הרמפות המאוצרות</li>
+    </ul>
+    <p><strong>ממצא UX שנרשם ל-M03/M11:</strong> פריסט "Trending" ממופה ל-0.8 ובקורפוס הזה שווה-ערך ל-Stable; רק Custom 0/100/0 מציף את סקילז 2026. מומלץ למפות את הפריסט ל-1.0.</p>
+    <h3>תוצרים</h3>
+    <table class="deliverables">
+      <tr><th>תוצר</th><th>איפה</th></tr>
+      <tr><td>המחברת המלאה (רצה מלמעלה-למטה, נכנסת לספר)</td><td><span class="path">ds/model/model1_retrain.ipynb</span></td></tr>
+      <tr><td>דוח לפני/אחרי + מתודולוגיית ההעשרה (אנגלית, לספר)</td><td><span class="path">docs/final-sprint/outputs/06-model1-report.md</span></td></tr>
+      <tr><td>דוח kickoff מלא (שני השלבים) כולל שרשראות הגילוי</td><td><span class="path">docs/final-sprint/outputs/kickoffs/06-kickoff.md</span></td></tr>
+      <tr><td>צילומי הסליידר (Stable מול Trending בדשבורד)</td><td><span class="path">docs/final-sprint/outputs/06-slider-*.png</span></td></tr>
+      <tr><td>קוד הצינור + המודל החדש (LFS)</td><td><span class="path">ds/model/</span> (<span class="commits">b1735b2..7e3df49, 908609c..6e6ac47</span>)</td></tr>
+    </table>
+  </div>
+</details>
+
+<details class="milestone">
+  <summary>
+    <span class="m-id">M01</span>
+    <span class="m-title">ייצוב ה-branch מול main</span>
+    <span class="badge partial">◐ מיזוג בוצע, נשאר E2E</span>
+    <span class="chev">▼</span>
+  </summary>
+  <div class="m-body">
+    <h3>מה זה</h3>
+    <p>יישור final-submission-prep מול main. המיזוג עצמו הושלם (עדכנת שהכל מיושר), הבקאנד מתקמפל ואין קונפליקטים. נשאר מעבר אימות E2E פורמלי לסגירה - בפועל האימותים החיים של M06/M14/M15 כיסו חלק גדול ממנו.</p>
+    <h3>תוצרים</h3>
+    <table class="deliverables">
+      <tr><th>תוצר</th><th>איפה</th></tr>
+      <tr><td>בריפינג המשימה</td><td><span class="path">docs/final-sprint/01-branch-stabilization.md</span></td></tr>
+    </table>
+  </div>
+</details>
+
+<!-- ============ מוקפאים ============ -->
+<div class="section-title">⛔ מוקפאים בהחלטתך</div>
+
+<details class="milestone">
+  <summary>
+    <span class="m-id">M13</span>
+    <span class="m-title">יסודות ריפו ו-git</span>
+    <span class="badge frozen">⛔ kickoff מוכן, מימוש לא אושר</span>
+    <span class="chev">▼</span>
+  </summary>
+  <div class="m-body">
+    <h3>מה זה ולמה</h3>
+    <p>שלוש בעיות תשתית: ה-<code>.gitignore</code> בולע את תיקיות הספר והתוכנית (עבודה עלולה ללכת לאיבוד), <code>npm install</code> נכשל ב-clone נקי, והיסטוריית קומיטים עם עקבות AI ב-main. ה-kickoff הוכן במלואו - כולל runbook לניקוי ההיסטוריה (הרגקס עודכן אחרי הראיון לכלול גם Cursor) - אבל <strong>עצרת את המימוש</strong> ("לא מאשרת להתחיל, לא להריץ שום פקודה").</p>
+    <div class="callout"><strong>עדכון 29/07:</strong> המשתמשת דחפה את הענף עד <span class="commits">8cc2907</span> (28/07) - כל עבודת M06/M14/M15 והמודל החדש כבר ב-origin. נותרו מקומיים: 4 קומיטי M18 (<span class="commits">83f340c..6c725f4</span>). הכרעת M13 (ניקוי היסטוריית ה-AI ב-main וכו') עדיין פתוחה - רלוונטית בעיקר ל-main ולמיזוג הסופי.</div>
+    <h3>תוצרים</h3>
+    <table class="deliverables">
+      <tr><th>תוצר</th><th>איפה</th></tr>
+      <tr><td>ה-kickoff המלא (מוקפא)</td><td><span class="path">docs/final-sprint/outputs/kickoffs/13-kickoff.md</span></td></tr>
+    </table>
+  </div>
+</details>
+
+<details class="milestone">
+  <summary>
+    <span class="m-id">M07</span>
+    <span class="m-title">השלמת עבודה טכנית פתוחה</span>
+    <span class="badge frozen">⛔ kickoff הוכן 27/07, לא אושר</span>
+    <span class="chev">▼</span>
+  </summary>
+  <div class="m-body">
+    <h3>מה זה ומה התגלה</h3>
+    <p>סגירת פריטי העבודה הטכנית הפתוחים. התחקיר של היום הפך את המשימה: <strong>6 מ-7 הפריטים כבר ממומשים במלואם</strong> - טאב "מצב הלמידה" ב-Admin (3 endpoints + פאנל מלא), pipeline trigger (מומש כ-spawn, לא sidecar), embedding fallback (SBERT), LLM fallback, מסווג 59+other, ודלת המילוט לתפקיד לא מזוהה (uncertain→הצעות, not-found→חיפוש ידני). ממצא הראיון על דלת המילוט התייחס למצב ישן שכבר תוקן.</p>
+    <p>המשימה הוגדרה מחדש כ<strong>אימות-חי + תיעוד</strong>. הכרעות שכבר קיבלת: both-ways model → Future Work בספר <strong>+ מחברת מחקר ייעודית שנוצרה בעקבות בקשתך - ראי M18 למטה</strong>; חריגת שער M01 אושרה. <strong>המימוש נעצר בהחלטתך</strong> - הכל שמור לקיקוף חוזר.</p>
+    <h3>תוצרים</h3>
+    <table class="deliverables">
+      <tr><th>תוצר</th><th>איפה</th></tr>
+      <tr><td>ה-kickoff + התחקיר המלא (טבלת מתועד-מול-מצוי)</td><td><span class="path">docs/final-sprint/outputs/kickoffs/07-kickoff.md</span></td></tr>
+    </table>
+  </div>
+</details>
+
+<!-- ============ טרם התחילו ============ -->
+<div class="section-title">☐ טרם התחילו - מה הולך לקרות בכל אחד</div>
+
+<details class="milestone">
+  <summary>
+    <span class="m-id">M03</span>
+    <span class="m-title">הגהת טקסטים + הערות ה-UX של המנחה</span>
+    <span class="badge plan">☐ מוכנה לריצה (התלויות הושלמו)</span>
+    <span class="chev">▼</span>
+  </summary>
+  <div class="m-body">
+    <h3>מה הולך לקרות</h3>
+    <p>מעבר מסך-מסך על <strong>כל טקסט שמשתמש רואה</strong>: כותרות, כפתורים, placeholders, הודעות שגיאה, empty states, tooltips, badges. שני חלקים:</p>
+    <ul>
+      <li><strong>הגהה שיטתית</strong> - אנגלית תקינה, מינוח עקבי ("CV" ולא Resume לסירוגין; Match Score, Core/Dynamic Skills כמו באפיון), סגנון Capitalization אחיד, הודעות שגיאה בלי סלנג פנימי ("DS model returned 500" אסור). כולל הטקסטים החדשים שנולדו ב-M14/M15 (הודעת English-only, timeouts, Strengths/Missing elements, כותרות טבלת ה-Gap)</li>
+      <li><strong>הערות המנחה מפגישת 05/07 (דרישה ישירה להגשה)</strong>: כפתור <strong>About</strong> במסך Personalization שמסביר את Stable/Balanced/Trending/Custom (מחייב modal חדש - חריג מאושר); tooltips בהובר במסך Upload; הסברים בולטים יותר במסך Results; הגדלה/הבהרה של הטקסט הקטן-אפור בכל נקודת החלטה</li>
+    </ul>
+    <h3>גבולות וסיכונים</h3>
+    <p>אפס שינויי לוגיקה (חוץ מה-About modal). מלכודות ידועות: מחרוזות שמשמשות גם כלוגיקה (השוואות, מפתחות sessionStorage) - משנים רק תצוגה; טקסטי ה-low-confidence כוילו בקפידה - משפרים ניסוח, לא לוגיקה.</p>
+    <h3>תוצרים צפויים</h3>
+    <table class="deliverables">
+      <tr><th>תוצר</th><th>איפה יהיה</th></tr>
+      <tr><td>מעבר מתועד: רשימת מסכים + מה תוקן בכל אחד</td><td>דוח ה-kickoff</td></tr>
+      <tr><td>צילומי לפני/אחרי לכל מסך ששונה</td><td><span class="path">docs/final-sprint/outputs/03-screenshots/</span></td></tr>
+      <tr><td>כפתור About + tooltips + הסברים - בקוד</td><td><span class="path">frontend/src/**</span></td></tr>
+    </table>
+  </div>
+</details>
+
+<details class="milestone">
+  <summary>
+    <span class="m-id">M05</span>
+    <span class="m-title">הערכה ומדדים רשמיים - הבסיס לפרק Results</span>
+    <span class="badge plan">☐ גל 3 | דורש 2 מפגשי תיוג שלך</span>
+    <span class="chev">▼</span>
+  </summary>
+  <div class="m-body">
+    <h3>מה הולך לקרות</h3>
+    <p>ייצור <strong>המספרים היחידים שמותר לצטט</strong> בספר, בפלייר ובמצגת. הביקורת גילתה ששלושת מנועי המערכת מוערכים בצורה לא-אחידה: למודל 2 יש מדידה חלקית, <strong>לסוכן הניקוד - טענת הליבה של המוצר - אין שום מדד</strong>, ולמודל 1 אין מדד איכות בכלל. שלושה חלקים:</p>
+    <ul>
+      <li><strong>מודל 2 (CV→Title)</strong>: benchmark על 32 הקו"ח האותנטיים דרך הצינור המלא (העלאת PDF אמיתית, לא רק המודל). Top-1/Top-3, כיול confidence לפי מקור (שני מסלולים עם התפלגויות שונות!), וטבלת כיסוי שחושפת ש-33/59 תפקידים אומנו על דאטה סינתטי בלבד - מגבלה שחייבת להיכתב בספר. המספר 0.93 הישן <strong>אסור לציטוט</strong> - האמיתי הוא ~62.3%/55.9% על קו"ח אמיתיים</li>
+      <li><strong>סוכן הניקוד (החדש והקריטי)</strong>: 20-30 זוגות CV×JD, <strong>את המתייגת היחידה</strong> - תיוג עיוור (בלי לראות את ציוני המודל) עם מדגם עקביות-עצמית (~5 זוגות כפולים). מדדים: MAE, Spearman, %±2, יציבות test-retest, והשוואה מול baseline של keyword - אם ה-LLM מנצח, זו התוצאה שמצדיקה את הארכיטקטורה</li>
+      <li><strong>מודל 1</strong>: precision@10 - 15 תפקידים × 10 סקילז, את מסמנת רלוונטי/לא (~30 דקות), כולל השוואה לפני/אחרי תיקוני M06 - הוכחה מדידה שהתיקון עבד</li>
+      <li><strong>3 חקירות מהראיון שלך</strong>: מתח הספים 60/55 מול 80/95 (benchmark בשתי הקונפיגורציות + הכרעה), ניתוח separability נישה-מול-mainstream, ובדיקת דטרמיניזם (אותו PDF ×5)</li>
+    </ul>
+    <div class="callout warn"><strong>דורש אותך:</strong> שני סשנים של תיוג עיוור (~30-60 דקות כל אחד). אייג'נט לא מתייג בעצמו - מדד כזה חסר ערך.</div>
+    <h3>תוצרים צפויים</h3>
+    <table class="deliverables">
+      <tr><th>תוצר</th><th>איפה יהיה</th></tr>
+      <tr><td>מסמך המדדים הרשמי (באנגלית) + סעיף "אסור לצטט"</td><td><span class="path">docs/final-sprint/outputs/official-metrics.md</span></td></tr>
+      <tr><td>גיליונות התיוג + דאטה גולמי לשחזור</td><td><span class="path">docs/final-sprint/outputs/</span> (CSV/JSON)</td></tr>
+      <tr><td>טבלת כיסוי 59 התפקידים</td><td>בתוך official-metrics.md</td></tr>
+    </table>
+  </div>
+</details>
+
+<details class="milestone">
+  <summary>
+    <span class="m-id">M02</span>
+    <span class="m-title">ניקיון קוד להגשה - שהקוד לא "ייראה AI"</span>
+    <span class="badge plan">☐ גל 3 | אחרון בשרשרת הקוד</span>
+    <span class="chev">▼</span>
+  </summary>
+  <div class="m-body">
+    <h3>מה הולך לקרות</h3>
+    <p>מעבר על כל הקוד (backend, frontend, ds, scraping, pipeline) עם "רשימת ציד" של 11 דפוסים מסגירים - <strong>בלי שום שינוי התנהגות</strong>:</p>
+    <ul>
+      <li>הערות שמסבירות את המובן מאליו והערות-שיחה ("This ensures that...", "Fixed: ...") - נמחקות</li>
+      <li>docstrings מנופחים על פונקציות טריוויאליות, אימוג'ים בלוגים, שאריות console.log/print</li>
+      <li>try/catch הגנתי שרק בולע שגיאות, קוד מת (פונקציות בלי קוראים, imports עזובים), TODO/FIXME</li>
+      <li>שמות גנריים (data2, temp, handleStuff), חוסר עקביות סגנונית בין קבצים מגלים שונים</li>
+      <li>קבצים נטושים (training.ipynb שהוחלף ב-train.py → ארכוב), dsModel.interface.ts המיושן</li>
+      <li><strong>README ראשי</strong>: תיאור המערכת האמיתית (3 שירותים, לא "POC"), הסרת פקודות macOS-only, ותיקון ההפניה השבורה ל-requirements-server.txt (קובץ שמעולם לא היה - הפקודה הראשונה בהתקנה נכשלת!)</li>
+    </ul>
+    <h3>למה אחרון בשרשרת הקוד</h3>
+    <p>ניקיון לפני שהקוד סופי = ניקיון כפול. רץ אחרי M13/M14/M15/M07, עם קומיט לכל תחום ו-build אחרי כל אחד. הגדרת Done כוללת: אפס תוצאות grep על אימוג'ים/console.log/TODO, והזרימה המרכזית עובדת בדיוק כמו לפני.</p>
+    <h3>תוצרים צפויים</h3>
+    <table class="deliverables">
+      <tr><th>תוצר</th><th>איפה יהיה</th></tr>
+      <tr><td>הקוד הנקי (קומיט פר-תחום)</td><td><span class="path">backend/src, frontend/src, ds/, scraping/, pipeline/</span></td></tr>
+      <tr><td>README משוכתב</td><td><span class="path">README.md</span></td></tr>
+      <tr><td>דיווח "החלטות מחיקה" - מה נמחק/הועבר ולמה + אילו TODO נשארו במכוון</td><td>דוח ה-kickoff</td></tr>
+    </table>
+  </div>
+</details>
+
+<details class="milestone">
+  <summary>
+    <span class="m-id">M08</span>
+    <span class="m-title">חומרי הצגה: סקרינשוטים, פלייר, סרטון, מצגת + פוסטר</span>
+    <span class="badge plan">☐ גל 4 | תלוי במספרים של M05</span>
+    <span class="chev">▼</span>
+  </summary>
+  <div class="m-body">
+    <h3>מה הולך לקרות</h3>
+    <p>כל חומרי יום ההשקה מול השופטים, בארבעה חלקים (החלטתך מ-14/07: גם מצגת וגם פוסטר):</p>
+    <ul>
+      <li><strong>סקרינשוטים</strong> - צילום עם Playwright בלבד, ברזולוציה אחידה (1440px + גרסת מובייל), על קו"ח אותנטי עם ציון "טוב אבל משתפר" (60-75%) כדי שסיפור ה-improve יעבוד. 7 מסכי חובה: Upload עם auto-detect, Personalization עם הבורר, Dashboard, Gap Analysis (הצילום כבר מוכן מ-M15!), Improve לפני/אחרי, Account, וטאב מצב הלמידה</li>
+      <li><strong>פלייר A5 דו-צדדי</strong> - הוק ("Your CV is being rejected by robots. Fight back."), ויז'ואל, QR, צעדי how-it-works, ושמות הצוות והמנחה בדיוק כמו באפיון</li>
+      <li><strong>תסריט סרטון לופ 60-90 שניות</strong> - shot-by-shot לעמדת התצוגה, חייב לעבוד בלי סאונד</li>
+      <li><strong>מצגת 10-14 שקופיות + פוסטר A1/A2</strong> - הבעיה → הפער בשוק → ארכיטקטורה → שני המודלים → טבלת התוצאות → מגבלות → Future Work. <strong>שקופית המגבלות אינה אופציונלית</strong> - צוות שמציג את מגבלותיו בעצמו נתפס רציני</li>
+    </ul>
+    <div class="callout warn"><strong>כלל הברזל של המשימה:</strong> כל מספר בכל התוצרים נשען רק על official-metrics.md של M05. אפס מספרים מומצאים - גם לא ה-0.93 הישן.</div>
+    <h3>תוצרים צפויים</h3>
+    <table class="deliverables">
+      <tr><th>תוצר</th><th>איפה יהיה</th></tr>
+      <tr><td>סט הסקרינשוטים</td><td><span class="path">docs/final-sprint/outputs/marketing/screenshots/</span></td></tr>
+      <tr><td>תוכן הפלייר / תסריט הסרטון / שלד המצגת / תוכן הפוסטר</td><td><span class="path">outputs/marketing/flyer-content.md, video-script.md, slides-outline.md, poster-content.md</span></td></tr>
+      <tr><td>עימוד סופי</td><td>Canva (יש חיבור MCP) - אחרי שתאשרי טיוטות</td></tr>
+    </table>
+  </div>
+</details>
+
+<details class="milestone">
+  <summary>
+    <span class="m-id">M11</span>
+    <span class="m-title">מוכנות לדמו חי - תסריט, סביבה, שאלות שופטים</span>
+    <span class="badge plan">☐ גל 4 | "שום דבר לא מפתיע ביום השיפוט"</span>
+    <span class="chev">▼</span>
+  </summary>
+  <div class="m-body">
+    <h3>מה הולך לקרות</h3>
+    <ul>
+      <li><strong>סביבה בפקודה אחת</strong> - סקריפט שמרים הכל (Mongo, DS, backend, frontend) עם health checks, runbook מתועד, ותשובה ל"מה עושים בלי אינטרנט" (אילו פיצ'רים דורשים LLM). state נקי: משתמש דמו, היסטוריה מרשימה אבל לא עמוסה, בלי דאטת בדיקות מביכה. <strong>כולל יישור ה-PORT</strong> (הממצא מ-M14: backend/.env אומר 3001, ה-proxy מצפה ל-3000)</li>
+      <li><strong>תסריט דמו 7-10 דקות + גרסת 3 דקות</strong> - מסלול דרמטי עם קו"ח נבחרים מ-M04: העלאה → זיהוי אוטומטי → Personalization → תוצאות + Gap → Improve → סיפור הדאטה בטאב האדמין ("המערכת לומדת כל יום"). לכל צעד: מה אומרים, על מה מקליקים, מה אמור להופיע</li>
+      <li><strong>מוכנות לבדיקה רנדומלית</strong> (דרישת המנחה!) - תרגול עם 5-6 קו"ח שלא בתסריט כולל עמום אחד; מסלול ה-manual selection מוצג כפיצ'ר</li>
+      <li><strong>Q&A: 15+ שאלות שופטים צפויות</strong> עם תשובות מנוסחות: "מה החדשנות?", "המודל באמת לומד?", "מה הדיוק האמיתי?", "למה LLM לניקוד?", "קו"ח בעברית?", "מותר לסקרפ את LinkedIn?", "מה הייתם עושים אחרת?" (מחומרי M10)</li>
+      <li><strong>תוכניות מגירה</strong> - הקלטת וידאו של הדמו המלא, סט סקרינשוטים, מצב אופליין</li>
+    </ul>
+    <p>אימות: הרצת התסריט המלא פעמיים מקצה-לקצה עם Playwright. בסוף - את עוברת על התסריט וה-Q&A ומאשרת.</p>
+    <h3>תוצרים צפויים</h3>
+    <table class="deliverables">
+      <tr><th>תוצר</th><th>איפה יהיה</th></tr>
+      <tr><td>סקריפט ההרמה</td><td><span class="path">scripts/demo-up.ps1</span> (או docker compose profile)</td></tr>
+      <tr><td>ה-runbook + התסריטים + ה-Q&A</td><td><span class="path">docs/final-sprint/outputs/demo-runbook.md</span></td></tr>
+    </table>
+  </div>
+</details>
+
+<details class="milestone">
+  <summary>
+    <span class="m-id">M12</span>
+    <span class="m-title">ביקורת סיום - סגירת כל הקצוות</span>
+    <span class="badge plan">☐ תמיד אחרונה</span>
+    <span class="chev">▼</span>
+  </summary>
+  <div class="m-body">
+    <h3>מה הולך לקרות</h3>
+    <p>הדרישה המקורית שלך: "לוודא שאחרי כל התכנון כל הקצוות הפתוחים סגורים ואין עוד בעיה." ביקורת עצמאית, חשדנית, ש<strong>לא סומכת על הדיווח של אף משימה</strong> אלא מאמתת מחדש כל הגדרת-Done בפועל. כל כישלון פותח מחדש את משימת המקור, והביקורת חוזרת עד אפס ממצאים. ארבעה תחומים:</p>
+    <ul>
+      <li><strong>קוד ו-git</strong> - git status נקי והכל דחוף; אף .env בהיסטוריה; אפס זכר ל-AI בקומיטים; builds עוברים; ה-grep-ים של M02 עדיין נקיים</li>
+      <li><strong>מערכת חיה (Playwright חובה)</strong> - הזרימה המלאה על 2 קו"ח; בדיקת 59 הטייטלים (הבאג ההיסטורי של הסקילז הריקים!); אפס שגיאות console</li>
+      <li><strong>תוצרי המשימות</strong> - כל תוצר קיים ותקין; בדיקת עקביות צולבת של כל מספר בספר מול מקורו; רפרנסים אמיתיים (מדגם); ה-runbook באמת עובד מהרצה מאפס</li>
+      <li><strong>עקביות רוחבית</strong> - אין סתירות ספר↔README↔קוד; אף מסמך לא מפנה לקובץ שנמחק; grep אחרון על placeholder/TBD/lorem</li>
+    </ul>
+    <p>העיקרון: הביקורת מאתרת ומדווחת, לא מתקנת (מלבד זוטות) - תיקונים חוזרים למשימת המקור כדי שהאחריות לא תתמרח.</p>
+    <h3>תוצרים צפויים</h3>
+    <table class="deliverables">
+      <tr><th>תוצר</th><th>איפה יהיה</th></tr>
+      <tr><td>דוח ביקורת: pass/fail לכל סעיף + ראיה, ממצאים לפי חומרה</td><td><span class="path">docs/final-sprint/outputs/final-audit-report.md</span></td></tr>
+      <tr><td>בסבב הנקי: הצהרת סיום + כל הסטטוסים ל-✔</td><td><span class="path">00-MASTER-PLAN.md</span></td></tr>
+    </table>
+  </div>
+</details>
+
+<footer>
+  נוצר 27/07/2026 · הדף הזה: <span class="path">docs/final-sprint/outputs/milestones-overview.html</span> · מקור האמת לסטטוסים: <span class="path">00-MASTER-PLAN.md</span>
+</footer>
+
+</div>
+</body>
+</html>

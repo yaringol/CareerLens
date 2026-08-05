@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Omer Katzir - CV</title>
+<!-- T3: small-caps + letter-spaced headings. PDF extraction renders these as
+     "E x p e r i e n c e", which is exactly the case the section splitter has
+     to survive - kept deliberately in this demo set. -->
+<link rel="stylesheet" href="../../authentic-cvs/src/templates/t3-minimal-exec.css">
+</head>
+<body>
+
+<header>
+  <div class="name">Omer Katzir</div>
+  <div class="title">Frontend Developer</div>
+  <div class="contact">
+    <span>Tel Aviv</span>
+    <span>053-4418820</span>
+    <span>omer.katzir.dev@gmail.com</span>
+    <span>github.com/okatzir</span>
+  </div>
+</header>
+
+<section class="summary">
+  <h2>Summary</h2>
+  <p>Frontend developer with 4 years shipping React interfaces for data-heavy products. Strong on
+  component architecture, TypeScript and the CSS work that makes a dense screen readable. Comfortable
+  owning a feature end to end from Figma handoff to production.</p>
+</section>
+
+<section>
+  <h2>Skills</h2>
+  <p>React, TypeScript, JavaScript (ES2022), HTML, CSS, Sass, Redux Toolkit, React Query,
+  Vite, Webpack, Jest, Storybook, Git, Figma</p>
+</section>
+
+<section>
+  <h2>Experience</h2>
+
+  <div class="job">
+    <div class="job-head">
+      <div><span class="role">Frontend Developer</span><span class="company">Cartogram Analytics, Tel Aviv</span></div>
+      <span class="dates">Jan 2023 - Present</span>
+    </div>
+    <ul>
+      <li>Build the dashboard product in React and TypeScript - 60+ shared components, used by
+        three feature teams.</li>
+      <li>Rebuilt the data-grid rendering path (virtualisation, memoised selectors); a 20K-row table
+        went from 2.4s to 180ms to first paint.</li>
+      <li>Migrated the build from Webpack to Vite, cutting local cold start from 55s to 6s.</li>
+      <li>Set up the Storybook component library and the review habit around it.</li>
+      <li>Wrote Jest unit tests for shared components; coverage on the design system reached 78%.</li>
+    </ul>
+  </div>
+
+  <div class="job">
+    <div class="job-head">
+      <div><span class="role">Junior Frontend Developer</span><span class="company">Halcyon Labs, Petah Tikva</span></div>
+      <span class="dates">Sep 2021 - Jan 2023</span>
+    </div>
+    <ul>
+      <li>Implemented customer-facing screens in React from Figma designs, working directly with two designers.</li>
+      <li>Converted the legacy jQuery admin area to React page by page over three quarters.</li>
+      <li>Introduced Sass modules and a spacing scale that ended the ad-hoc inline styling in the codebase.</li>
+      <li>Fixed the top 15 reported accessibility issues - keyboard traps, missing labels, contrast failures.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>Projects</h2>
+  <ul>
+    <li><b>Chart primitives library</b> - small React and TypeScript wrapper over D3 scales; published
+      internally and used by two products.</li>
+    <li><b>Form builder</b> - schema-driven React form renderer with validation, built to remove
+      the copy-pasted form code across the admin area.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Education</h2>
+  <div class="edu-item"><span>B.A. Computer Science, The Academic College of Tel Aviv-Yaffo</span><span>2018 - 2021</span></div>
+</section>
+
+<section>
+  <h2>Languages</h2>
+  <p>Hebrew - native, English - fluent.</p>
+</section>
+
+</body>
+</html>

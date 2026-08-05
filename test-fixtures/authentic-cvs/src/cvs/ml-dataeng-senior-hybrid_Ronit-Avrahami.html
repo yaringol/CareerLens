@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ronit Avrahami - CV</title>
+<link rel="stylesheet" href="../templates/t3-minimal-exec.css">
+</head>
+<body>
+
+<header>
+  <div class="name">Ronit Avrahami</div>
+  <div class="title">Senior Machine Learning Engineer</div>
+  <div class="contact">
+    <span>Petah Tikva</span>
+    <span>054-2276589</span>
+    <span>ronit.avrahami87@gmail.com</span>
+    <span>linkedin.com/in/ronit-avrahami-5m8</span>
+    <span>github.com/ravrahami-data</span>
+  </div>
+</header>
+
+<section class="summary">
+  <h2>Summary</h2>
+  <p>Senior ML engineer with a data-engineering backbone: ten years building the full path from raw
+  events to trained models. I build the pipelines, the feature platform, and the models that sit on
+  top of them - and I care equally about all three.</p>
+</section>
+
+<section>
+  <h2>Experience</h2>
+
+  <div class="job">
+    <div class="job-head">
+      <div><span class="role">Senior Machine Learning Engineer</span> <span class="company">Heliosoft, Tel Aviv</span></div>
+      <span class="dates">05/2022 - Present</span>
+    </div>
+    <ul>
+      <li>Lead the ML platform group (6 engineers): feature store, training pipelines and online serving for 30M predictions/day.</li>
+      <li>Designed a Feast-based feature store over S3/Athena with Redis online serving; online-offline skew incidents at zero since 2024.</li>
+      <li>Rebuilt training-data pipelines in Spark on EMR - 4TB/day, run cost down 44%, SLA misses from weekly to none.</li>
+      <li>Trained ranking models (XGBoost, later two-tower neural retrieval) lifting CTR 9.5% across 3 product surfaces.</li>
+      <li>Drove migration of 40+ Airflow DAGs to managed MWAA with no missed SLAs during the cutover.</li>
+    </ul>
+  </div>
+
+  <div class="job">
+    <div class="job-head">
+      <div><span class="role">Data Engineer, later Machine Learning Engineer</span> <span class="company">Qualisense, Petah Tikva</span></div>
+      <span class="dates">01/2019 - 05/2022</span>
+    </div>
+    <ul>
+      <li>Launched streaming ingestion (Kafka, Spark Structured Streaming) for industrial sensor data at 250K events/sec peak.</li>
+      <li>Owned the Airflow platform - 120 DAGs serving analytics, data science and finance.</li>
+      <li>Moved into modeling in 2020: trained predictive-maintenance models (survival analysis, GBM) that cut unplanned downtime 18% for pilot customers.</li>
+      <li>Embedded model scoring directly in the ingestion path, achieving sub-second scoring on live sensor streams.</li>
+    </ul>
+  </div>
+
+  <div class="job">
+    <div class="job-head">
+      <div><span class="role">Data Engineer</span> <span class="company">Bluewave Systems, Ramat Gan</span></div>
+      <span class="dates">09/2016 - 01/2019</span>
+    </div>
+    <ul>
+      <li>Developed batch ETL (Python, SQL, early Airflow) consolidating 12 sources into a Redshift warehouse.</li>
+      <li>Brought the nightly warehouse build down from 9 hours to 2.5 via incremental loads and distribution-key redesign.</li>
+      <li>Wrote a checks-as-code data-quality framework that caught upstream breakage before it reached dashboards.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="skills">
+  <h2>Skills</h2>
+  <p><b>Data platform:</b> Spark, Kafka, Airflow, Feast, dbt, Redshift, Athena &nbsp;&middot;&nbsp; <b>ML:</b> Python, XGBoost, scikit-learn, PyTorch (working level)</p>
+  <p><b>MLOps:</b> MLflow, SageMaker, Docker, Kubernetes &nbsp;&middot;&nbsp; <b>Cloud:</b> AWS (EMR, MWAA, S3, Redshift) &nbsp;&middot;&nbsp; <b>Other:</b> SQL, Terraform (user level)</p>
+</section>
+
+<section>
+  <h2>Military Service</h2>
+  <p>Full military service, Israeli Air Force - technical unit (2010 - 2012).</p>
+</section>
+
+<section>
+  <h2>Education</h2>
+  <div class="edu-item"><span>M.Sc. Data Science (part-time), University of Haifa</span><span>2018 - 2020</span></div>
+  <div class="edu-item"><span>B.Sc. Computer Science, Technion - Israel Institute of Technology</span><span>2012 - 2015</span></div>
+</section>
+
+<section>
+  <h2>Languages</h2>
+  <p>Hebrew - native, English - fluent.</p>
+</section>
+
+</body>
+</html>

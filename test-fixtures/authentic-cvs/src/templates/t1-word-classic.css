@@ -1,0 +1,30 @@
+/* T1 "Word classic" - the default-settings Word CV most people actually send.
+   Markup: .name .title .contact | section > h2 + content | .job > .job-head(.role/.company/.dates) + ul */
+@page { size: A4; margin: 20mm 22mm; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: Calibri, 'Segoe UI', Arial, sans-serif; font-size: 11pt; color: #000; line-height: 1.25; }
+
+/* centered header - classic Word habit */
+.name { text-align: center; font-size: 20pt; font-weight: bold; }
+.title { text-align: center; font-size: 12pt; margin-top: 2pt; }
+.contact { text-align: center; font-size: 10pt; margin: 4pt 0 10pt; }
+.contact span + span::before { content: " | "; }
+
+section { margin-bottom: 9pt; }
+/* weak hierarchy: headings barely differ from body - a real common flaw */
+section > h2 { font-size: 12pt; font-weight: bold; text-decoration: underline; margin-bottom: 4pt; }
+
+.summary p { margin-bottom: 4pt; }
+.job { margin-bottom: 7pt; }
+.job-head { margin-bottom: 1pt; }
+.role { font-weight: bold; }
+.company { font-style: italic; }
+.dates { float: right; font-size: 10pt; }
+.job ul { margin: 2pt 0 0 18pt; }
+.job li { margin-bottom: 1pt; }
+
+.skills p, .skills ul { margin-left: 0; }
+.skills li { display: inline; }
+.skills li + li::before { content: ", "; }
+.edu-item, .extra-item { margin-bottom: 3pt; }
+.edu-item .dates { float: right; }

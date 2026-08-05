@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>שי לוי - קורות חיים</title>
+<link rel="stylesheet" href="../templates/t2-sidebar-dark.css">
+<style>
+  /* Minimal RTL fixes for T2: list indent side + main padding mirror.
+     The flex .page reverses on its own under dir=rtl (sidebar lands on the right). */
+  .job ul { margin: 3pt 14pt 0 0; }
+  main.main { padding: 14mm 9mm 14mm 10mm; }
+  .contact-block div { word-break: normal; direction: ltr; text-align: right; }
+  .contact-block div.he { direction: rtl; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <aside class="sidebar">
+    <div class="name">שי לוי</div>
+    <div class="title">מהנדס DevOps</div>
+
+    <section>
+      <h2>פרטי קשר</h2>
+      <div class="contact-block">
+        <div class="he">חיפה</div>
+        <div>054-7318264</div>
+        <div>shai.levi.ops@gmail.com</div>
+        <div>linkedin.com/in/shai-levi-84512</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>כישורים</h2>
+      <div>
+        <span class="skill-tag">Kubernetes</span>
+        <span class="skill-tag">Docker</span>
+        <span class="skill-tag">Terraform</span>
+        <span class="skill-tag">Helm</span>
+        <span class="skill-tag">ArgoCD</span>
+        <span class="skill-tag">Jenkins</span>
+        <span class="skill-tag">GitHub Actions</span>
+        <span class="skill-tag">AWS</span>
+        <span class="skill-tag">Prometheus</span>
+        <span class="skill-tag">Grafana</span>
+        <span class="skill-tag">Python</span>
+        <span class="skill-tag">Bash</span>
+        <span class="skill-tag">Linux</span>
+        <span class="skill-tag">PostgreSQL</span>
+      </div>
+    </section>
+
+    <section>
+      <h2>הסמכות</h2>
+      <ul>
+        <li>CKA — Certified Kubernetes Administrator (2024)</li>
+        <li>AWS Solutions Architect — Associate (2022)</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>שפות</h2>
+      <div class="lang-row"><span>עברית</span><span>שפת אם</span></div>
+      <div class="lang-row"><span>אנגלית</span><span>שוטפת</span></div>
+    </section>
+  </aside>
+
+  <main class="main">
+
+    <section>
+      <h2>תקציר</h2>
+      <p>מהנדס DevOps עם שש שנות ניסיון בהקמה ותפעול של תשתיות ענן בפרודקשן. מתמחה בניהול קלאסטרים של
+         Kubernetes, בבניית תהליכי CI/CD ובאוטומציה מקצה לקצה עם Terraform. מגיע מרקע של ניהול מערכות,
+         עם הבנה עמוקה של Linux ורשתות ותשוקה אמיתית לצמצום toil.</p>
+    </section>
+
+    <section>
+      <h2>ניסיון תעסוקתי</h2>
+
+      <div class="job">
+        <div class="job-head">
+          <div><span class="role">מהנדס DevOps בכיר</span> · <span class="company">Bluewave Systems, חיפה</span></div>
+          <span class="dates">2023 – היום</span>
+        </div>
+        <ul>
+          <li>ניהול קלאסטרים של Kubernetes בפרודקשן (EKS) המריצים יותר מ-45 מיקרו-שירותים.</li>
+          <li>כתיבת pipelines ב-Jenkins וב-GitHub Actions — קיצור זמן ה-build הממוצע מ-35 דקות ל-9 דקות.</li>
+          <li>ניהול כלל התשתית כ-Infrastructure as Code עם Terraform ו-Helm, על פני סביבות dev, staging ו-production.</li>
+          <li>הטמעת GitOps עם ArgoCD — ירידה של כ-60% בתקלות deploy וקיצור זמן rollback לדקות בודדות.</li>
+        </ul>
+      </div>
+
+      <div class="job">
+        <div class="job-head">
+          <div><span class="role">מהנדס DevOps</span> · <span class="company">Qualisense, תל אביב</span></div>
+          <span class="dates">2020 – 2023</span>
+        </div>
+        <ul>
+          <li>הקמת מערך ניטור והתראות מבוסס Prometheus ו-Grafana לכלל שירותי החברה, כולל התראות ל-Slack.</li>
+          <li>הובלת המעבר משרתי EC2 לקונטיינרים של Docker וניהול ה-migration המלא ל-Kubernetes.</li>
+          <li>כתיבת סקריפטים לאוטומציה ב-Python וב-Bash לניהול סביבות פיתוח ובדיקות.</li>
+          <li>השתתפות בסבב on-call, טיפול בתקלות פרודקשן וכתיבת runbooks מסודרים לצוות.</li>
+        </ul>
+      </div>
+
+      <div class="job">
+        <div class="job-head">
+          <div><span class="role">מנהל מערכות</span> · <span class="company">סיסטק מחשוב, חיפה</span></div>
+          <span class="dates">2018 – 2020</span>
+        </div>
+        <ul>
+          <li>ניהול שרתי Linux ו-Windows, וירטואליזציה ב-VMware, גיבויים ושחזורים.</li>
+          <li>תמיכה בסביבת ייצור פעילה ושדרוג תשתיות הרשת של החברה.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>שירות צבאי</h2>
+      <div class="job">
+        <div class="job-head">
+          <div><span class="role">מנהל רשתות ומערכות Linux</span> · <span class="company">צה"ל, חיל האוויר</span></div>
+          <span class="dates">2014 – 2017</span>
+        </div>
+        <ul>
+          <li>אחריות על זמינות של מערכות מבצעיות בסביבת אמת ותמיכה שוטפת ביחידה.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>השכלה</h2>
+      <div class="job">
+        <div class="job-head">
+          <div><span class="role">B.Sc. במדעי המחשב</span> · <span class="company">האוניברסיטה הפתוחה</span></div>
+          <span class="dates">2019 – 2023</span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+</body>
+</html>

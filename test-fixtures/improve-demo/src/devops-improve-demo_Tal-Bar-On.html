@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tal Bar-On - CV</title>
+<link rel="stylesheet" href="../../authentic-cvs/src/templates/t8-startup-modern.css">
+</head>
+<body>
+
+<header>
+  <div class="name">Tal Bar-On</div>
+  <div class="title">DevOps Engineer</div>
+  <div class="contact">
+    <span>Ramat Gan</span>
+    <span>054-7712906</span>
+    <span>tal.baron.dev@gmail.com</span>
+    <span>linkedin.com/in/tal-baron-4c2</span>
+  </div>
+</header>
+
+<section class="summary">
+  <h2>Professional Summary</h2>
+  <p>DevOps engineer with 5 years keeping Linux-based production estates healthy - build pipelines,
+  release automation and on-call ownership. Comfortable scripting in Bash and Python, and the
+  go-to person on the team for Jenkins pipeline design. Currently expanding into container
+  orchestration and infrastructure-as-code.</p>
+</section>
+
+<section>
+  <h2>Technical Skills</h2>
+  <div class="skills-grid">
+    <div><b>Operating systems:</b> Linux (RHEL, Ubuntu), systemd, networking, storage</div>
+    <div><b>Scripting:</b> Bash, Python, Make</div>
+    <div><b>CI/CD:</b> Jenkins, GitHub Actions, Artifactory</div>
+    <div><b>Cloud:</b> AWS (EC2, S3, IAM, CloudWatch, RDS)</div>
+    <div><b>Containers:</b> Docker</div>
+    <div><b>Monitoring:</b> Nagios, CloudWatch dashboards</div>
+    <div><b>Version control:</b> Git, GitLab</div>
+  </div>
+</section>
+
+<section>
+  <h2>Professional Experience</h2>
+
+  <div class="job">
+    <div class="job-head">
+      <div><span class="role">DevOps Engineer</span><span class="company">Northbeam Systems, Tel Aviv</span></div>
+      <span class="dates">Feb 2023 - Present</span>
+    </div>
+    <ul>
+      <li>Own the Jenkins estate - 90+ pipelines across 12 teams; cut average build time from 22m to 9m
+        by parallelising test stages and adding a shared artifact cache.</li>
+      <li>Automated release and rollback for 20 services with Bash and Python tooling, removing the
+        manual checklist that previously took an engineer 40 minutes per release.</li>
+      <li>Packaged four internal services as Docker images and moved them onto a shared build agent fleet.</li>
+      <li>Run production on-call for the Linux fleet (140 hosts): patching, capacity, incident response.</li>
+      <li>Manage AWS accounts and IAM policy hygiene; reduced over-permissive roles from 61 to 8.</li>
+    </ul>
+  </div>
+
+  <div class="job">
+    <div class="job-head">
+      <div><span class="role">Systems / Build Engineer</span><span class="company">Corveau Technologies, Herzliya</span></div>
+      <span class="dates">Aug 2020 - Feb 2023</span>
+    </div>
+    <ul>
+      <li>Maintained the Linux build farm and migrated the company from Subversion to Git across 30 repos.</li>
+      <li>Wrote the first CI pipelines in Jenkins for three product lines, introducing automated
+        smoke tests on every merge.</li>
+      <li>Set up Nagios monitoring and paging for 60 hosts, replacing an inbox-based alerting habit.</li>
+      <li>Ran a proof of concept deploying one service to Kubernetes; the team stayed on VMs for that cycle.</li>
+      <li>Supported developers on build, packaging and environment issues as the internal escalation point.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>Projects</h2>
+  <ul>
+    <li><b>Ephemeral review environments</b> - Bash + Jenkins job that spins a per-branch environment
+      on AWS and tears it down after 48h; adopted by two teams.</li>
+    <li><b>Log triage CLI</b> - Python tool that groups recurring Linux service failures from journald
+      and posts a daily digest to Slack.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Certifications</h2>
+  <p>AWS Certified SysOps Administrator - Associate (2022). Red Hat Certified System Administrator (2021).</p>
+</section>
+
+<section>
+  <h2>Military Service</h2>
+  <p class="mil">IDF, Computer Service Directorate - Systems Technician (2016 - 2019). Maintained
+  Linux servers and on-call infrastructure for a 200-user operational unit.</p>
+</section>
+
+<section>
+  <h2>Education</h2>
+  <div class="edu-item"><span>B.Sc. Information Systems Engineering, HIT Holon</span><span>2019 - 2023</span></div>
+</section>
+
+<section>
+  <h2>Languages</h2>
+  <p>Hebrew - native, English - fluent.</p>
+</section>
+
+</body>
+</html>

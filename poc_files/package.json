@@ -1,0 +1,17 @@
+{
+  "name": "careerlens-poc-tests",
+  "version": "1.0.0",
+  "description": "POC test suite for CareerLens CV analysis — generates 15 CVs (5 roles × weak/mid/strong) and validates scoring",
+  "scripts": {
+    "generate": "node generate_pdfs.js",
+    "test": "node test_poc.js",
+    "run-poc": "npm run generate && npm run test",
+    "test-verbose": "RUNS=3 node test_poc.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "form-data": "^4.0.0",
+    "pdf-parse": "^1.1.1",
+    "pdfkit": "^0.15.0"
+  }
+}

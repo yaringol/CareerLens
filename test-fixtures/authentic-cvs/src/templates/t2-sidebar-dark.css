@@ -1,0 +1,31 @@
+/* T2 "sidebar dark" - modern two-column, 35% dark left sidebar. Deliberately NOT scan-friendly.
+   Markup: .page > aside.sidebar (.name .title .contact-block section...) + main.main (section...) */
+@page { size: A4; margin: 0; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10.5pt; color: #222; }
+.page { display: flex; min-height: 297mm; }
+
+aside.sidebar { width: 35%; background: #263340; color: #eef2f5; padding: 14mm 8mm; }
+aside .name { font-size: 19pt; font-weight: 600; line-height: 1.1; }
+aside .title { font-size: 11pt; color: #9fb3c8; margin: 3pt 0 12pt; }
+aside section { margin-bottom: 12pt; }
+aside h2 { font-size: 10pt; letter-spacing: 1.5px; text-transform: uppercase; color: #7fd1c0;
+           border-bottom: 1px solid #3d4f61; padding-bottom: 2pt; margin-bottom: 5pt; }
+.contact-block div { font-size: 9.5pt; margin-bottom: 3pt; word-break: break-all; }
+aside ul { list-style: none; }
+aside li { font-size: 9.5pt; margin-bottom: 2.5pt; }
+.skill-tag { display: inline-block; background: #33475b; border-radius: 3px; padding: 1pt 5pt;
+             margin: 0 2pt 3pt 0; font-size: 9pt; }
+.lang-row { display: flex; justify-content: space-between; font-size: 9.5pt; }
+
+main.main { width: 65%; padding: 14mm 10mm 14mm 9mm; }
+main section { margin-bottom: 11pt; }
+main h2 { font-size: 12pt; color: #263340; border-bottom: 2px solid #7fd1c0;
+          padding-bottom: 2pt; margin-bottom: 6pt; }
+.job { margin-bottom: 8pt; }
+.job-head { display: flex; justify-content: space-between; align-items: baseline; }
+.role { font-weight: 600; font-size: 11pt; }
+.company { color: #4a5a6a; font-size: 10pt; }
+.dates { color: #7a8896; font-size: 9.5pt; white-space: nowrap; }
+.job ul { margin: 3pt 0 0 14pt; }
+.job li { margin-bottom: 2pt; }

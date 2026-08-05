@@ -1,0 +1,37 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<style>body{background:#fff;margin:0;padding:28px;font-family:'Segoe UI',Arial,sans-serif}</style>
+</head><body>
+<pre class="mermaid">
+sequenceDiagram
+  actor U as User
+  participant S as React SPA
+  participant A as Node API
+  participant D as DS service
+  participant O as OpenAI
+
+  U->>S: upload CV (PDF) + job description
+  S->>A: POST /api/upload
+  A->>A: pdf-parse, normalize,<br/>25-line header window
+  A->>O: title-extraction agent (header)
+  A->>D: /title/normalize (SBERT centroid)
+  alt low confidence
+    A->>D: /cv/role (TF-IDF + MLP)
+  end
+  alt still low confidence
+    A->>O: title-classification agent<br/>(closed list of 59)
+  end
+  A-->>S: detected role + confidence
+  U->>S: confirm role, set personalization
+  S->>A: POST /api/analyze
+  A->>D: /title/skills - 5 core skills
+  A->>O: skill-extraction agent (JD) - 5 dynamic
+  A->>O: scoring agent - each of 10 skills, 1-10
+  A-->>S: per-skill scores + Match Score
+  U->>S: improve CV (per section)
+  A->>O: suggestions agent (section rewrite)
+  A-->>S: merged improved CV (export)
+</pre>
+<script>mermaid.initialize({startOnLoad:true, theme:'neutral', sequence:{actorMargin:60, messageFontSize:14, noteFontSize:13, mirrorActors:false}, themeVariables:{fontFamily:'Segoe UI, Arial', primaryColor:'#f4f6f8', primaryBorderColor:'#37474f', lineColor:'#455a64', primaryTextColor:'#1c2833'}});</script>
+</body></html>

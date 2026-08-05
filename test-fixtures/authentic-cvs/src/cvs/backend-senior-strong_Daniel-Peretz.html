@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Daniel Peretz - CV</title>
+<link rel="stylesheet" href="../templates/t8-startup-modern.css">
+</head>
+<body>
+
+<header>
+  <div class="name">Daniel Peretz</div>
+  <div class="title">Senior Backend Developer</div>
+  <div class="contact">
+    <span>Tel Aviv</span>
+    <span>052-5837291</span>
+    <span>daniel.peretz88@gmail.com</span>
+    <span>linkedin.com/in/daniel-peretz-b71</span>
+    <span>github.com/dperetz-dev</span>
+  </div>
+</header>
+
+<section class="summary">
+  <h2>Summary</h2>
+  <p>Backend developer with 8 years building high-throughput Python services - currently tech lead
+  of a payments platform handling 40M+ requests/day. Mamram graduate. Strong on Kafka-based
+  event architectures, PostgreSQL at scale, and moving teams to Kubernetes without breaking production.</p>
+</section>
+
+<section>
+  <h2>Skills</h2>
+  <div class="skills-grid">
+    <div><b>Languages:</b> Python, SQL, Go (working level)</div>
+    <div><b>Frameworks:</b> Django, DRF, FastAPI, Celery</div>
+    <div><b>Data:</b> PostgreSQL, Redis, Kafka, Elasticsearch</div>
+    <div><b>Infra:</b> Kubernetes, Docker, AWS (EKS, RDS, SQS, Lambda)</div>
+    <div><b>Tooling:</b> GitHub Actions, Terraform (user level), Grafana, Sentry</div>
+    <div><b>Practices:</b> TDD, contract testing, design reviews, on-call</div>
+  </div>
+</section>
+
+<section>
+  <h2>Experience</h2>
+
+  <div class="job">
+    <div class="job-head">
+      <div><span class="role">Senior Backend Developer, Tech Lead</span><span class="company">Lumitech, Tel Aviv</span></div>
+      <span class="dates">Mar 2024 - Present</span>
+    </div>
+    <ul>
+      <li>Lead a team of 5 backend engineers building the core payments platform ($120M processed annually).</li>
+      <li>Redesigned order ingestion around Kafka; sustained throughput grew from 3K to 21K events/sec.</li>
+      <li>Cut p95 API latency from 480ms to 140ms across 30 endpoints via Redis caching and query tuning.</li>
+      <li>Owned migration of 14 services from EC2 to EKS - deploy time 35m to 7m, infra cost down 28%.</li>
+      <li>Introduced contract testing across 9 internal APIs; cross-team production incidents dropped 40%.</li>
+    </ul>
+  </div>
+
+  <div class="job">
+    <div class="job-head">
+      <div><span class="role">Senior Backend Developer</span><span class="company">Ferndale Cloud, Tel Aviv</span></div>
+      <span class="dates">Jun 2021 - Mar 2024</span>
+    </div>
+    <ul>
+      <li>Built a multi-tenant permissions service (Django, PostgreSQL row-level security) used by 200+ enterprise customers.</li>
+      <li>Scaled the Celery export pipeline to 1.2M jobs/day with zero-downtime worker rollouts.</li>
+      <li>Designed event-driven sync between billing and CRM over Kafka - 11 topics with exactly-once processing.</li>
+      <li>Reduced PostgreSQL storage cost 35% through table partitioning and S3 archive tiering.</li>
+      <li>Mentored 3 junior developers; ran the team's weekly design-review forum.</li>
+    </ul>
+  </div>
+
+  <div class="job">
+    <div class="job-head">
+      <div><span class="role">Backend Developer</span><span class="company">Bluewave Systems, Ramat Gan</span></div>
+      <span class="dates">Aug 2018 - Jun 2021</span>
+    </div>
+    <ul>
+      <li>Developed REST APIs (DRF) for a fleet-tracking product with 60K daily active vehicles.</li>
+      <li>Implemented Redis-based rate limiting and an idempotency layer; duplicate transactions dropped 99%.</li>
+      <li>Migrated the monolith's reporting module to a standalone service - report generation 12min to 90s.</li>
+      <li>Wrote a Locust load-testing harness later adopted by 3 other teams.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>Military Service</h2>
+  <p class="mil">IDF, Mamram - Software Developer (2014 - 2018). Graduate of the Mamram programming course;
+  developed and maintained logistics systems in a 6-person team, including a mission-critical inventory service.</p>
+</section>
+
+<section>
+  <h2>Education</h2>
+  <div class="edu-item"><span>B.Sc. Computer Science, The Open University of Israel (completed alongside service and work)</span><span>2016 - 2020</span></div>
+</section>
+
+<section>
+  <h2>Languages</h2>
+  <p>Hebrew - native, English - fluent.</p>
+</section>
+
+</body>
+</html>

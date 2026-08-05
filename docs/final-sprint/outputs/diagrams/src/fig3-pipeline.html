@@ -1,0 +1,21 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<style>body{background:#fff;margin:0;padding:28px;font-family:'Segoe UI',Arial,sans-serif}</style>
+</head><body>
+<pre class="mermaid">
+flowchart LR
+  LI["LinkedIn postings"] -->|"nightly scrape (ofelia)"| SCR["Scraper"]
+  EXT["External corpus<br/>(lang-uk, one-time import)"] --> EXTR
+  SCR --> EXTR["SkillNer extraction<br/>(once per document, persisted)"]
+  EXTR --> DB[("jobs DB<br/>skill observations")]
+  DB --> TRAIN["train.py<br/>weighted aggregation<br/>prevalence &middot; IDF specificity &middot; recency"]
+  TRAIN --> CAND["candidate model"]
+  CAND --> GATE{"Promotion gate<br/>vs. production:<br/>records &middot; coverage &middot; confidence"}
+  GATE -->|"pass"| PROD["model.joblib<br/>(served by DS after restart)"]
+  GATE -->|"fail"| REJ["rejected &mdash;<br/>production untouched"]
+  GATE --> LOG[("model_runs log")]
+  style GATE fill:#fff3d6,stroke:#8a6d1a,stroke-width:2.5px
+</pre>
+<script>mermaid.initialize({startOnLoad:true, theme:'neutral', flowchart:{htmlLabels:true, curve:'basis'}, themeVariables:{fontFamily:'Segoe UI, Arial', primaryColor:'#f4f6f8', primaryBorderColor:'#37474f', lineColor:'#455a64', primaryTextColor:'#1c2833'}});</script>
+</body></html>

@@ -1,0 +1,19 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<style>
+body{background:#fff;margin:0;padding:26px 30px;font-family:'Segoe UI',Arial,sans-serif}
+h1{font-size:24px;margin:0 0 4px;color:#1c2833}
+h1 span{color:#b03a2e}
+.sub{font-size:14px;color:#5d6d7e;margin:0 0 14px}
+</style></head><body>
+<h1><span>Step 3: Analyze</span></h1>
+<p class="sub">Every skill is judged only on evidence found in the CV.</p>
+<pre class="mermaid">
+flowchart LR
+  IN["📄 CV text<br/>+ 10 focus skills"] --> SCORE["🤖 AI scoring agent<br/>each skill graded 0–10<br/>on CV evidence"]
+  SCORE --> MS["📊 Match Score<br/>(average of 10)"]
+  MS --> DASH["Results dashboard<br/>per-skill breakdown"]
+</pre>
+<script>mermaid.initialize({startOnLoad:true, theme:'neutral', flowchart:{htmlLabels:true, curve:'linear', nodeSpacing:70, rankSpacing:90, padding:14}, themeVariables:{fontFamily:'Segoe UI, Arial', fontSize:'17px', primaryColor:'#fdedec', primaryBorderColor:'#b03a2e', lineColor:'#37474f', primaryTextColor:'#1c2833'}});</script>
+</body></html>

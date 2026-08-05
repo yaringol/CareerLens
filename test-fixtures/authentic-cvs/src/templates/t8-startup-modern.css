@@ -1,0 +1,32 @@
+/* T8 "startup modern" - clean single column, one accent color, links row. Strong tech CVs.
+   Markup: header(.name .title .contact) | section > h2 | .job(.job-head) | .skills-grid */
+@page { size: A4; margin: 16mm 20mm; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', -apple-system, Arial, sans-serif; font-size: 10.5pt;
+       color: #24292f; line-height: 1.35; }
+
+header { margin-bottom: 12pt; }
+.name { font-size: 21pt; font-weight: 700; color: #0b6e4f; }
+.title { font-size: 12pt; color: #57606a; margin-top: 1pt; }
+.contact { font-size: 9.5pt; color: #57606a; margin-top: 5pt; }
+.contact span + span::before { content: "  \00b7  "; }
+.contact a { color: #0b6e4f; text-decoration: none; }
+
+section { margin-bottom: 11pt; }
+section > h2 { font-size: 11pt; font-weight: 700; color: #0b6e4f;
+               text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6pt; }
+
+.summary p { color: #333; }
+.job { margin-bottom: 9pt; page-break-inside: avoid; }
+.job-head { display: flex; justify-content: space-between; align-items: baseline; }
+.role { font-weight: 600; font-size: 11pt; }
+.company { color: #57606a; }
+.company::before { content: " \00b7 "; }
+.dates { font-size: 9.5pt; color: #8b949e; white-space: nowrap; }
+.job ul { margin: 3pt 0 0 15pt; }
+.job li { margin-bottom: 2.5pt; }
+
+.skills-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2pt 16pt; font-size: 10pt; }
+.skills-grid b { color: #333; }
+.edu-item { display: flex; justify-content: space-between; margin-bottom: 3pt; }
+.mil { font-size: 10pt; color: #333; }

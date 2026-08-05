@@ -1,0 +1,21 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<style>
+body{background:#fff;margin:0;padding:26px 30px;font-family:'Segoe UI',Arial,sans-serif}
+h1{font-size:24px;margin:0 0 4px;color:#1c2833}
+h1 span{color:#8a6d1a}
+.sub{font-size:14px;color:#5d6d7e;margin:0 0 14px}
+</style></head><body>
+<h1><span>Nightly Learning</span> — the model re-trains every night</h1>
+<p class="sub">A new model goes live only if it covers at least as much of the market as the current one.</p>
+<pre class="mermaid">
+flowchart LR
+  J["🌐 Job postings<br/>(scraped nightly)"] --> SK["Skills<br/>extracted"]
+  SK --> TR["Model<br/>re-trained"]
+  TR --> G{"🚦 Coverage<br/>gate"}
+  G -->|"enough data"| LIVE["✅ New model<br/>goes live"]
+  G -->|"too little"| KEEP["Old model<br/>stays"]
+</pre>
+<script>mermaid.initialize({startOnLoad:true, theme:'neutral', flowchart:{htmlLabels:true, curve:'linear', nodeSpacing:60, rankSpacing:80, padding:14}, themeVariables:{fontFamily:'Segoe UI, Arial', fontSize:'17px', primaryColor:'#fef9e7', primaryBorderColor:'#8a6d1a', lineColor:'#37474f', primaryTextColor:'#1c2833'}});</script>
+</body></html>

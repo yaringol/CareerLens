@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Nadav Stern - CV</title>
+<link rel="stylesheet" href="../templates/t2-sidebar-dark.css">
+</head>
+<body>
+<div class="page">
+  <aside class="sidebar">
+    <div class="name">Nadav Stern</div>
+    <div class="title">DevOps Engineer / Fullstack</div>
+    <section class="contact-block">
+      <div>Herzliya</div>
+      <div>052-6473091</div>
+      <div>nadav.stern@gmail.com</div>
+      <div>linkedin.com/in/nadav-stern-7d20a5</div>
+      <div>github.com/nadavst-ops</div>
+    </section>
+    <section>
+      <h2>DevOps &amp; Infra</h2>
+      <span class="skill-tag">Kubernetes (EKS)</span>
+      <span class="skill-tag">Helm</span>
+      <span class="skill-tag">ArgoCD</span>
+      <span class="skill-tag">Terraform</span>
+      <span class="skill-tag">GitHub Actions</span>
+      <span class="skill-tag">Docker</span>
+      <span class="skill-tag">AWS (RDS, IAM, S3)</span>
+      <span class="skill-tag">Prometheus</span>
+      <span class="skill-tag">Grafana</span>
+      <span class="skill-tag">PagerDuty</span>
+    </section>
+    <section>
+      <h2>Development</h2>
+      <span class="skill-tag">React</span>
+      <span class="skill-tag">TypeScript</span>
+      <span class="skill-tag">Node.js</span>
+      <span class="skill-tag">Express</span>
+      <span class="skill-tag">GraphQL</span>
+      <span class="skill-tag">PostgreSQL</span>
+      <span class="skill-tag">Redis</span>
+      <span class="skill-tag">Bash / Python</span>
+    </section>
+    <section>
+      <h2>Military Service</h2>
+      <ul>
+        <li>IDF, Mamram</li>
+        <li>Software Developer</li>
+        <li>2015 - 2018</li>
+      </ul>
+    </section>
+    <section>
+      <h2>Education</h2>
+      <ul>
+        <li><b>B.Sc. Computer Science</b></li>
+        <li>Technion, Haifa</li>
+        <li>2011 - 2015</li>
+      </ul>
+    </section>
+    <section>
+      <h2>Languages</h2>
+      <div class="lang-row"><span>Hebrew</span><span>Native</span></div>
+      <div class="lang-row"><span>English</span><span>Fluent</span></div>
+    </section>
+  </aside>
+  <main class="main">
+    <section>
+      <h2>Summary</h2>
+      <p>Eight years in engineering: four building fullstack products in React/Node, four leading
+      DevOps. Brings a developer's view to infrastructure — pipelines, environments and tooling
+      designed for the people who ship code. Currently DevOps lead for a 25-engineer R&amp;D group.</p>
+    </section>
+    <section>
+      <h2>Experience</h2>
+      <div class="job">
+        <div class="job-head">
+          <div><span class="role">DevOps Lead</span> <span class="company">&middot; Argaman Networks, Petah Tikva</span></div>
+          <div class="dates">2022 - Present</div>
+        </div>
+        <ul>
+          <li>Lead DevOps team of 4; own CI/CD, Kubernetes and AWS infrastructure for the whole R&amp;D group.</li>
+          <li>Migrated deployment from bash-over-SSH to Helm + ArgoCD on EKS; deploy time 45 min &rarr; 7 min, rollback is one click.</li>
+          <li>Moved all AWS infrastructure to Terraform across 3 environments; manual console changes eliminated.</li>
+          <li>Built GitHub Actions pipelines with test, lint and security gates for every repository; broken-main incidents dropped sharply.</li>
+          <li>Set up Prometheus + Grafana + PagerDuty from scratch; introduced on-call rotation and wrote the first runbooks.</li>
+          <li>99.95% uptime on customer-facing services over the last 12 months.</li>
+          <li>Cut monthly AWS bill 22% through rightsizing, spot node groups and S3 lifecycle policies.</li>
+          <li>Still ship product code when it helps: built the internal admin panel (React + Node) used daily by the support team.</li>
+        </ul>
+      </div>
+      <div class="job">
+        <div class="job-head">
+          <div><span class="role">Fullstack Developer</span> <span class="company">&middot; BitSage, Tel Aviv</span></div>
+          <div class="dates">2018 - 2022</div>
+        </div>
+        <ul>
+          <li>Developed core banking-integration product in React, Node.js/Express and PostgreSQL.</li>
+          <li>Owned the payments-reconciliation module end to end: API design, DB schema, background jobs, UI.</li>
+          <li>Implemented GraphQL gateway consolidating 6 internal REST services behind one schema.</li>
+          <li>Added Redis caching layer for account lookups; p95 latency 900ms &rarr; 120ms.</li>
+          <li>Containerized the main service and wrote its first CI pipeline — the project that pulled me toward DevOps.</li>
+          <li>Mentored two junior developers; ran the team's weekly code-review session.</li>
+        </ul>
+      </div>
+      <div class="job">
+        <div class="job-head">
+          <div><span class="role">Software Developer</span> <span class="company">&middot; IDF, Mamram</span></div>
+          <div class="dates">2015 - 2018</div>
+        </div>
+        <ul>
+          <li>Fullstack development on internal logistics systems (Java backend, later Node.js; web frontend).</li>
+          <li>Mamram software course graduate; served as team's deployment and environments owner in final year.</li>
+        </ul>
+      </div>
+    </section>
+    <section>
+      <h2>Selected Projects</h2>
+      <div class="job">
+        <ul>
+          <li><b>Preview environments:</b> per-PR ephemeral namespaces on EKS with seeded data and TTL cleanup; QA verification moved from shared staging to isolated envs.</li>
+          <li><b>Secrets overhaul:</b> migrated hard-coded configs to AWS Secrets Manager + external-secrets operator across ~30 services.</li>
+          <li><b>Developer CLI:</b> internal Node.js CLI wrapping deploy, logs and port-forward commands; adopted by all product teams.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+</div>
+</body>
+</html>

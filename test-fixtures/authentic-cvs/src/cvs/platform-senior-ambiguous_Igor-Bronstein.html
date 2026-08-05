@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Igor Bronstein - CV</title>
+<link rel="stylesheet" href="../templates/t6-compact-tables.css">
+</head>
+<body>
+<div class="head">
+  <div>
+    <div class="name">Igor Bronstein</div>
+    <div class="title">Senior Platform Engineer</div>
+  </div>
+  <div class="contact">
+    Haifa &middot; 054-3906218<br>
+    igor.bronstein@gmail.com<br>
+    linkedin.com/in/igor-bronstein-91f4b2 &middot; github.com/ibron-platform
+  </div>
+</div>
+<div class="page">
+  <main class="main">
+    <section>
+      <h2>Summary</h2>
+      <p>Platform engineer, 12+ years across backend, DevOps and internal platforms. Builds
+      Kubernetes-based infrastructure and developer tooling that product teams actually adopt.
+      Go for operators and services; strong SRE practice — SLOs, error budgets, on-call that
+      does not burn people out.</p>
+    </section>
+    <section>
+      <h2>Experience</h2>
+      <div class="job-box">
+        <div class="job-head">
+          <div><span class="role">Senior Platform Engineer</span> <span class="company">&middot; Cloudrise, Haifa</span></div>
+          <div class="dates">2020 - Present</div>
+        </div>
+        <ul>
+          <li>Own the internal developer platform serving 140 engineers: golden-path templates, Backstage service catalog, self-service environments.</li>
+          <li>Wrote 3 Kubernetes operators in Go (kubebuilder): tenant provisioning, certificate rotation, database-per-namespace lifecycle. ~9K LOC, 85% test coverage.</li>
+          <li>Standardized deployment on Helm + ArgoCD across 5 clusters, ~400 services; config-drift incidents at zero since 2023.</li>
+          <li>Cut new-service bootstrap from 3 days to 25 minutes — template, pipeline, dashboards and alerts wired automatically.</li>
+          <li>Migrated CI from Jenkins to GitHub Actions with self-hosted runners on K8s; median pipeline 22 min &rarr; 9 min.</li>
+          <li>SRE rotation lead: defined SLOs for 30 tier-1 services, error budgets enforced as release gates; production incidents down 35% YoY.</li>
+          <li>Cost: node rightsizing + Karpenter consolidation cut EKS spend 28% (~$41K/month).</li>
+          <li>Run the platform guild; wrote the internal "paved road" docs that onboarding now starts from.</li>
+        </ul>
+      </div>
+      <div class="job-box">
+        <div class="job-head">
+          <div><span class="role">DevOps Engineer</span> <span class="company">&middot; Corvantis, Ramat Gan</span></div>
+          <div class="dates">2016 - 2020</div>
+        </div>
+        <ul>
+          <li>Moved 60+ services from EC2/Chef to Kubernetes (kops, later EKS); zero-downtime migration over 14 months.</li>
+          <li>Introduced Terraform across 3 AWS accounts; all infra changes reviewable, plan/apply in CI.</li>
+          <li>Built the Prometheus/Grafana/Alertmanager stack from scratch; paging noise down ~70% after a full alert review.</li>
+          <li>Wrote internal Go CLI for deploys, logs and secrets access; adopted by every team.</li>
+          <li>Ran quarterly game days: chaos drills on staging with the on-call rotation.</li>
+        </ul>
+      </div>
+      <div class="job-box">
+        <div class="job-head">
+          <div><span class="role">Software Engineer</span> <span class="company">&middot; SigmaWare, Tel Aviv</span></div>
+          <div class="dates">2013 - 2016</div>
+        </div>
+        <ul>
+          <li>Backend services in Go and Python for a network monitoring product (REST + gRPC).</li>
+          <li>Built a high-throughput metrics collector (~50K metrics/s) with batching and backpressure.</li>
+          <li>Owned the packaging and release process — first exposure to build/deploy engineering.</li>
+        </ul>
+      </div>
+    </section>
+    <section>
+      <h2>Key Projects</h2>
+      <div class="job-box">
+        <ul>
+          <li><b>Preview environments:</b> per-PR ephemeral namespaces with seeded data and a TTL cleanup operator; QA cycle time down ~40%.</li>
+          <li><b>Multi-cluster upgrades:</b> automated K8s 1.24 &rarr; 1.29 across 5 clusters with zero customer-visible downtime; surge pools + PDB audits.</li>
+          <li><b>Secrets platform:</b> Vault + external-secrets rollout replacing per-repo encrypted files across ~400 services.</li>
+        </ul>
+      </div>
+    </section>
+    <section>
+      <h2>Talks &amp; Community</h2>
+      <div class="job-box">
+        <ul>
+          <li>DevOpsDays Tel Aviv 2024 — "An internal platform 140 engineers didn't hate: what worked."</li>
+          <li>Occasional contributor to kubebuilder docs and external-secrets issues.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <aside class="sidebar">
+    <section>
+      <h2>Stack</h2>
+      <table>
+        <tr><td>Orchestration</td><td>Kubernetes (EKS), Helm, ArgoCD, Karpenter</td></tr>
+        <tr><td>Languages</td><td>Go, Python, Bash</td></tr>
+        <tr><td>IaC</td><td>Terraform, Packer</td></tr>
+        <tr><td>Observability</td><td>Prometheus, Grafana, Loki, OpenTelemetry</td></tr>
+        <tr><td>CI/CD</td><td>GitHub Actions, Jenkins</td></tr>
+        <tr><td>Platform</td><td>Backstage, Vault, external-secrets</td></tr>
+        <tr><td>Cloud</td><td>AWS (primary), some GCP</td></tr>
+      </table>
+    </section>
+    <section>
+      <h2>Certifications</h2>
+      <ul>
+        <li>CKA - Certified Kubernetes Administrator (2021)</li>
+        <li>AWS Solutions Architect - Associate (2019)</li>
+      </ul>
+    </section>
+    <section>
+      <h2>Education</h2>
+      <ul>
+        <li><b>B.Sc. Software Engineering</b></li>
+        <li>Technion, Haifa</li>
+        <li>2009 - 2013</li>
+      </ul>
+    </section>
+    <section>
+      <h2>Languages</h2>
+      <ul>
+        <li>Russian - native</li>
+        <li>Hebrew - fluent</li>
+        <li>English - fluent</li>
+      </ul>
+    </section>
+  </aside>
+</div>
+</body>
+</html>
