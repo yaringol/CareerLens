@@ -34,12 +34,11 @@ frequent skills among them — with the entire dataset serialized into a 4.77MB
 artifact. We never measured it; a manual spot check was enough to end it. Asked
 about `python developer`, it returned *python, backend, scalable, computer
 science, best practices* — three of the five generic noise. Three days later it
-was gone. Its replacement's artifact weighed 139KB — thirty-four times smaller
-and better at the same time, because the original had been carrying the whole
-dataset as its "model" — and its training notebook shed over nine and a half
-thousand of its ten thousand lines. What survives of model-zero is a fossil: the
-replacement's noise blacklist still contains, verbatim, the three bad outputs of
-that one spot check — the moment a failed check became an architecture decision.
+was gone. Its replacement's artifact weighed 139KB — thirty-four times smaller,
+because the original had been carrying the whole dataset as its "model" — and
+its training notebook shed over nine and a half thousand of its ten thousand
+lines. One trace of model-zero remains in the codebase: the replacement's noise
+blacklist still contains, verbatim, the three bad outputs of that spot check.
 
 What replaced it was barely a model at all, and that was the point. For each of a
 handful of hand-curated POC roles, we summed the weighted skill matches that
@@ -66,9 +65,9 @@ time machine. A five-month project cannot scrape the multi-year history that
 trend and stability features need, so a verified historical corpus stands in for
 the system's mature future, and the stable-versus-trending personalization
 signals can be demonstrated today over a horizon our own scraping will only
-reach years from now. From twenty-four postings to a corpus of over 180,000
-postings and profiles, the arc taught us one thing above all: data quality, not
-access convenience, sets a market model's ceiling.
+reach years from now. From twenty-four postings to 141,897 postings and
+210,250 candidate profiles, the arc taught us one thing above all: data quality,
+not access convenience, sets a market model's ceiling.
 
 Then, while mapping the project's architecture — establishing what actually
 connects to what — we found something uncomfortable: the nightly scrape-and-train
@@ -197,7 +196,7 @@ Developer*. Spelling similarity, we learned, is not semantic similarity; for job
 titles the two are frequently opposites. Its replacement was chosen by
 measurement, not taste: the sentence-embedding normalizer that ships today
 scored 92.6% on the same held-out split where the character matcher managed
-69.4% — a twenty-three point jump that ended the argument.
+69.4%.
 
 Even the "solved" rung kept teaching. Late in the project we discovered that the
 declared-title rung — the ladder's first and best step — had been *dead code for
@@ -207,17 +206,11 @@ CV-length "line", and every upload silently fell through to the classifier. We
 found it not through a bug report but while recording demo videos, when a
 textbook-clean CV refused to take the path it obviously should. The fix — a
 preserved header window travelling alongside the flattened text (the asymmetry
-Section 4.2 documents) — promptly opened two subtler holes, each caught and
-closed in turn. First, splitting header lines on commas shredded summary
-sentences into fragments, and a bare buzzword like "Kubernetes" could outscore
-the real title against the canonical list and win a silent, confident,
-wrong auto-accept. Then the repair for *that* — folding PDF line-wrap fragments
-back into their sentences — initially folded email addresses onto genuine title
-lines and destroyed them: twenty of twenty regression cases failed at once. The
-regression suite caught it within the hour, and the final fix folds only lines
-that are not independently recognizable as noise. The episode hardened a rule we
-kept for the rest of the project: PDF text is an adversary, and no header
-heuristic changes without the full suite running behind it.
+Section 4.2 documents) — opened two subtler extraction bugs of its own; both
+were caught by the regression suite before reaching users, and both are
+documented in Appendix B. The episode set a rule we kept for the rest of the
+project: no change to a header heuristic ships without the full regression suite
+running behind it.
 
 The regex failure had also planted an idea that took months to mature. If the
 title line cannot be trusted, but the skills we extract from a CV can, then the
@@ -241,7 +234,7 @@ grown undocumented, so we reconstructed it in a notebook and compared the
 rebuild against the live artifact — an exact aggregate tie, eight fixes against
 eight regressions. Our equivalence gate therefore refused the swap, and we
 obeyed it: the live artifact stayed, and the notebook became its specification.
-The gates we build to stop bad models, it turns out, also stop us. The second
+The second
 came from the reverse-direction notebook itself: a classifier predicting the
 role from a CV's extracted skill set alone, trained over the well-covered
 titles. Head-to-head on our authentic-CV corpus it tied the deployed text
@@ -281,8 +274,8 @@ Another change taught us about our own mistakes. When automatic role detection
 replaced the manual role dropdown, the manual override was removed along with
 it, which left an out-of-domain CV — a nurse's, say — with nothing but nonsense
 suggestions and no way to say "my role is not on your list." There was no design
-rationale behind this. It was a misunderstanding of the task, and we would
-rather say that than invent a justification after the fact. The escape hatch was
+rationale behind this. It was a misunderstanding of the task, and we record it
+as such. The escape hatch was
 restored in the final phase: an unsupported CV now routes to "choose the closest
 supported role" with a manual picker, and we verified the behavior live in the
 shipped UI.
@@ -293,8 +286,7 @@ silently disappeared in a later rewrite of the serving code; no one recalls
 choosing to drop it, and only its remnants stayed behind in the repository.
 Months later the same idea resurfaced, properly productized this time, as the
 Personalization screen with its stable, balanced, trending, and custom
-strategies. Ideas outlive their first implementations — provided someone
-eventually notices they were good.
+strategies.
 
 The screens had their own hardest case. The Personalize screen absorbed more
 consecutive fixes in one 48-hour stretch than any other part of the frontend,
@@ -324,16 +316,11 @@ logged success, a trainer that produced artifacts. What it lacked was a single
 end-to-end assertion — *did the serving model actually change, and is it
 better?*
 
-The same lesson kept returning in new costumes. One July morning the product
-was serving a model whose skill arrays were empty for all 269 stored roles — a
-mid-training intermediate artifact had ended up on disk — and every analysis
-request in the product failed until the next day's retrain. Nothing had
-crashed; the model was simply hollow, and nothing between training and serving
-had checked. Our own first test suite turned out to embody the opposite
-failure: it retried each CV up to three times until the score landed inside a
-band the team itself had defined — a test that, in effect, graded its own
-homework. When the audit caught the circularity we demoted the suite from
-evidence to smoke test, and built the labeled corpus of Chapter 5 in its place.
+The same lesson recurred in smaller forms — once, a mid-training intermediate
+artifact briefly served empty skill lists in place of the model until the next
+retrain (Appendix B); and our own first test suite turned out to score the
+system against bands we ourselves had defined, so we demoted it from evidence
+to smoke test and built the labeled corpus of Chapter 5 in its place.
 
 Every piece of automation we built after these discoveries carries an
 end-to-end assertion in some form: the promotion gate for training runs,

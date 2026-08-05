@@ -9,8 +9,6 @@ they showed weakness.
 
 ## 5.1 Experimental Setup
 
-The campaign earned its keep before producing a single table: its first end-to-end runs caught a live regression — the freshly wired agreement signal was invoking the skill extractor on every classifier call, pushing response times past the backend's timeout — which was fixed, re-verified, and only then measured. An evaluation harness, it turns out, is also an integration test.
-
 **Corpus.** The evaluation corpus is the 32-file authentic-CV set of Section 4.4:
 29 English CVs with ground-truth labels across nine scenario types, plus three
 negative fixtures (two Hebrew CVs and one scanned image) that a well-behaved
@@ -55,6 +53,12 @@ model.
 | Pipeline errors | 0 |
 | Negative fixtures correctly blocked | 3/3 |
 
+The precise claim matters: on the full pipeline, over the 29 positive CVs of
+this evaluation corpus, Top-1 accuracy was 89.7%. The corpus is authored, labeled
+by a single annotator, and spans nine scenario types without covering all 59
+roles evenly — so this is a corpus result, not a per-role guarantee across the
+taxonomy.
+
 Per scenario, Top-1 was perfect on ambiguous (4/4), career-changer (3/3), hybrid
 (3/3) and niche-core (5/5) CVs; clear-cut profiles scored 8/9, junior CVs 2/3,
 and unsupported-occupation CVs 1/2 — where "correct" for an unsupported CV means
@@ -68,10 +72,20 @@ model — the decomposition by rung makes this concrete:
 | `title_extraction` (declared title → normalizer) | 26 | 92.3% | cosine similarity × 100 |
 | `cv_classifier` (TF-IDF+MLP over the CV body) | 3 | 66.7% | renormalized softmax share |
 
-**26 of the 29 CVs never reach the classifier.** Measured in isolation on this
-corpus, the classifier path alone reaches 55.2% — consistent with its 62.3%
-component-level accuracy on scrubbed held-out data (Chapter 3), and a world apart
-from the 89.7% the user experiences. The system's accuracy *is* its architecture.
+**26 of the 29 CVs never reach the classifier** (the three that do are too few
+to support a rate of their own and are reported for completeness). Measured in
+isolation on this corpus, the classifier path alone reaches 55.2% — consistent
+with its component-level accuracy on scrubbed held-out data (Chapter 3) — a
+world apart from the 89.7% the user experiences on the same corpus. On this
+evidence, the system's accuracy is a property of its architecture. Because
+several nearby percentages measure different things, we fix their meanings once:
+
+| Number | What it measures |
+|---|---|
+| 57.6% | Logistic-regression baseline, scrubbed held-out split (component) |
+| 62.3% | Deployed MLP classifier, same scrubbed held-out split (component) |
+| 55.2% | Classifier path alone, on this 29-CV corpus |
+| **89.7%** | **The full detection ladder, on this 29-CV corpus** |
 
 ### Confidence calibration: one field, two incompatible scales
 
@@ -104,7 +118,8 @@ its correctness — which is precisely why the agreement signal exists.
 
 With the backend's decision rules replayed offline over direct classifier calls
 (agreement ON versus OFF): accuracy 17/29 versus 16/29, one CV helped, none
-harmed. The single win is exactly the case the signal was built for — a
+harmed — a single-case signal observed on this corpus, reported as preliminary
+evidence rather than an effect size. The single win is exactly the case the signal was built for — a
 technical-writer CV (ground truth: no supported role) that the bare classifier
 auto-accepted as *Product Manager* at confidence 75.8 was, with the signal on,
 capped to 50 and routed to the manual picker. We disclose the counter-effect the
@@ -141,6 +156,14 @@ roles × top-10, 191 skills marked, 100% coverage):
 |---|---|
 | **Live model** (retrained) | **97%** |
 | Pre-retrain backup | 96% |
+
+Two clarifications belong next to the number. First, the protocol: "live" is
+the retrained model now in production, "backup" is its pre-retrain predecessor,
+and the annotator saw one merged, shuffled list — blind to which model proposed
+which skill. Second, the metric's scope: precision@10 measures whether a skill
+is *relevant* to the role — not how useful it is to a candidate, how well it
+reflects a trend, or whether the ten together are the best possible ten (§5.3
+returns to this).
 
 Only 8 of 191 skills were rejected, and they split cleanly by model — the
 pre-retrain model's rejects are **cross-role contamination** (`backend` under
@@ -232,6 +255,12 @@ through the ladder versus 55-62% for the strongest single component — supports
 composing cheap components over training one heavy one, at least at our data
 scale, where fine-tuning a transformer end-to-end was never on the table for
 lack of labeled CVs (56% of our own taxonomy has no real training data at all).
+The same comparison clarifies what CareerLens is not: a chat prompt. A
+general-purpose LLM asked to "review my CV" brings no market model, no
+accumulated posting history, no closed role taxonomy, and no per-skill evidence
+contract; its answer shifts with each phrasing and cites no data. CareerLens
+spends LLM judgment only at two guarded points inside a measured pipeline, and
+everything around those points is reproducible.
 
 ## 5.5 Discussion of Findings
 
@@ -249,16 +278,18 @@ weakness is not sampling noise (the band margin is six times the run-to-run
 variance), and the fix — passing posting context into the scoring prompt, then
 re-measuring band separation — is concrete, bounded future work.
 
-**What was deliberately not measured.** Agreement between the scoring agent and
-human judgement (MAE, Spearman ρ, ±2 share) was not measured: the blind
-annotation sheet was built and verified, and the team decided not to run the
-session within the submission timeline. The consequence is stated rather than
-papered over — nothing in this book claims the agent's scores are *correct*,
-only that they are stable (σ = 0.11), weakly job-discriminative (0.66-point
-margin), and materially different from keyword counting (50% disagreement). The
-one comparison that would justify or refute the agent architecture outright —
-LLM versus keyword baseline against a human reference — remains open, and we
-would rather report an open question than a manufactured answer.
+**What was not measured — the evaluation's most significant open item.**
+Agreement between the scoring agent and human judgement (MAE, Spearman ρ, ±2
+share) was not measured: the blind annotation sheet was built and verified (29
+items totaling 290 human ratings — the human-side counterpart of the 240 machine
+ratings in §5.2), but the session did not fit the submission timeline. This is a
+real validity gap, not a footnote: without a human reference we cannot establish
+whether the agent's scores are correct, whether the fit bands match human
+perception, or whether the rewrite suggestions actually improve a CV. What the
+label-free measurements establish — stability (σ = 0.11), structural behavior,
+and material divergence from keyword counting (50% disagreement) — are necessary
+conditions for validity, not proof of it. Running the prepared session is the
+first order of business in future work.
 
 **Limitations.** Seven bounds apply to every number above. (1) Ground truth for
 model 1's relevance was labeled by a single annotator — mitigated by blind,

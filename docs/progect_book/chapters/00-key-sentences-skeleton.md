@@ -1,7 +1,7 @@
 # שלד משפטי המפתח - מה חייב להופיע בכל סקשן
 
 > **מה זה:** מפת החוזה של הספר. לכל סקשן - הטענות/משפטים נושאי-המשקל שחייבים לשרוד כל
-> עריכה עתידית. משפט מפתח שנמחק = חור בהגנה מול המנחה. ציטוטים באנגלית = הנוסח בספר
+> עריכה עתידית. משפט מפתח שנמחק = טענה מרכזית שאבדה - לזהות ולהחזיר. ציטוטים באנגלית = הנוסח בספר
 > (מותר לנסח מחדש, אסור לאבד את הטענה). 🔒 = מספר/עובדה שמקורה `official-metrics.md` בלבד.
 >
 > נלווה: [דוח שיפורים ונקודות חולשה](../../final-sprint/outputs/09-book-improvements-and-weaknesses.md)
@@ -39,7 +39,7 @@
 - ההפרדה: מה הובטח באפיון מול מה שנוסף ("the scope grew").
 - הרשימה שנוספה: auto role detection, personalization, saved-CV comparison, nightly pipeline+gate.
 
-### 1.4 Scope and Limitations - סעיף הכנות; אסור לרכך
+### 1.4 Scope and Limitations - סעיף הגבולות; נשמר במלואו
 - English-only.
 - 🔒 **33 of 59 roles trained on synthetic title strings without real CV bodies** + ההשלכה המדידה.
 - פרטיות: Mongo per-user + נשלח ל-OpenAI + deletion endpoint קיים.
@@ -190,7 +190,7 @@
 - הסגיר: "the honest record of that gap as much a deliverable as the system itself."
 
 ## References
-- **בדיוק [1]-[15]** מהתיק. אפס תוספות בלי אימות.
+- **בדיוק [1]-[15]** מהתיק; כל תוספת עתידית - רק לאחר אימות מקור מלא.
 
 ## Appendix A
 - A.1: דרישת git-lfs + **ערכי ה-env של המדידה** (cap 11 / floor 0.05 / signal 1).
@@ -342,3 +342,33 @@
 (§4.2); badge "AI matched" (§4.3); רגרסיית ה-503 שנתפסה במדידה (§5.1).
 נוסף: **Figure 14** - ציר הזמן - בפתיחת פרק 3.
 מבנה חדש בפרקים סיפוריים: **יעד → דרך → מה השתנה** (הפתרון הסופי פותח כל סקשן).
+
+
+---
+
+# נספח עדכון - סבב האיזון (05/08, ביקורת המשתמשת)
+
+**הכיוון:** פחות פוסט-מורטם, יותר עבודת גמר ממוקדת; שלוש התזות במרכז; טון בטוח ומדעי.
+
+1. **שלוש התזות נקבעו כחוזה-העל** (מופיעות ב-§1.5, ES ופרק 6): (א) מערכת ולא מודל;
+   (ב) מדידת הנתיב האמיתי היא שהפרידה קוד-עובד ממערכת-עובדת; (ג) בחירת סקילז לפי
+   משרה ≠ ניקוד מולה - הגבול המבני של מנוע הניקוד.
+2. **Appendix B חדש** - "Selected Engineering Incidents": Kubernetes/line-wrap,
+   המודל הריק, רגרסיית ה-503, באג האנדפוינט האח. הגוף מפנה; הפירוט שם.
+3. **משפטי מחץ שנשמרו (5):** "a worse number and a far better model" | "'It runs
+   every night' and 'it works' are different claims" | "verify the wiring, not the
+   wiring diagram" | "one witness testifying about itself" | "a score scale is a
+   product statement, not a statistic". השאר שוטחו לניסוח עובדתי.
+4. **דיוק טענות:** 89.7% מנוסח כ"on the full pipeline, over the 29 positive CVs of
+   this evaluation corpus" + הצהרת לא-per-role; מגבלת precision@10 (רלוונטיות בלבד)
+   צמודה למספר; טבלת פירוש 57.6/62.3/55.2/89.7 ב-§5.2; 240 מול 290 הוגדרו; שני סוגי
+   הסינתטי הובחנו; 24→141,897+210,250 מפורש.
+5. **hedging לראיות קטנות:** ablation ההסכמה = "single-case signal... preliminary
+   evidence"; דרגת המסווג n=3 = "too few to support a rate".
+6. **הפער האנושי** מוצג כ"the evaluation's most significant open item" - מגבלת
+   validity רצינית (ציונים, רצועות, והצעות השכתוב - לא מאומתים), לא כהישג שקיפות.
+7. **מפתחות שהוסרו מהחוזה** (שוטחו/הועברו): "The gates we build... also stop us",
+   "graded its own homework", "PDF text is an adversary", "the moment a failed check
+   became an architecture decision", "Ideas outlive their first implementations",
+   "also an integration test" (→ Appendix B). **מפתחות חדשים:** ניסוח ה-89.7 המדויק,
+   שלוש התזות ב-§1.5, "necessary conditions for validity, not proof of it".

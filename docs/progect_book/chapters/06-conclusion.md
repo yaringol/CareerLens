@@ -21,23 +21,25 @@ scrape-train-promote pipeline that keeps the market model current without human
 attention.
 
 The measured headline is architectural, and it is the project's central lesson.
-No single model we built survived contact with real CVs; the shipped system's
-89.7% role-detection accuracy belongs to a *ladder* of three modest mechanisms
-with disjoint failure modes, and the same ladder is what absorbs the fact that
-56% of our taxonomy has no real training CVs at all. We spent much of the project
-discovering that intelligence in this domain is a systems property — and the
-book's research chapter records what each failed single-mechanism attempt taught
-us. The second lesson is about honesty as an engineering practice: a near-perfect
-score revealed label leakage; a documented feature turned out to be unread by the
-serving code; a signal was wired to an endpoint the product never called. In
-every case, measuring the real path — not the documented one — is what moved the
-project forward.
+No single model we built survived contact with real CVs; the 89.7% Top-1
+accuracy measured on our evaluation corpus belongs to a *ladder* of three modest
+mechanisms with disjoint failure modes, and the same ladder is what absorbs the
+fact that 56% of our taxonomy has no real training CVs at all. We spent much of
+the project discovering that intelligence in this domain is a systems property —
+and the book's research chapter records what each single-mechanism attempt
+taught us. The second lesson is methodological: measuring the real execution
+path, rather than the intended one, is what separated working code from a
+working system — it is how the label leakage, the unread features, and the
+unwired signal were found, and how each fix was verified. The third is the
+research finding of Chapter 5: selecting skills by posting is not the same as
+scoring against it, and closing that structural gap is the clearest next step
+this work defines.
 
 The system's open weaknesses belong in this chapter as much as its achievements. The Match Score
 is stable and genuinely evidence-based, but it scores the CV against the skill
 list without ever seeing the posting, and the measured consequence is weak
-fit-discrimination; its agreement with human judgement remains unmeasured by our
-own decision. These bounds define the future-work list, in priority order:
+fit-discrimination; its agreement with human judgement remains unmeasured, with the prepared
+session waiting as the first item below. These bounds define the future-work list, in priority order:
 
 1. **Pass posting context into the scoring prompt**, then re-measure band
    separation — the one bounded change our measurements most directly motivate.
@@ -58,5 +60,9 @@ own decision. These bounds define the future-work list, in priority order:
 
 The specification we started from imagined a simpler system than the one the
 problem required. The gap between the two — measured, explained, and in places
-deliberately left open — is what this project taught us, and we consider the
-honest record of that gap as much a deliverable as the system itself.
+deliberately left open — is what this project taught us. Beyond the working
+product, we consider the project's deepest deliverable to be the working
+*method* that produced it: connecting several kinds of intelligence into one
+system, gating every piece of automation on an end-to-end check, measuring the
+path users actually take, and calibrating every claim to what the measurements
+support.

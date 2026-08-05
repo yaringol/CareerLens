@@ -45,11 +45,11 @@ agents where genuine judgment is required. None of this was the first design.
 The book's central engineering finding is architectural: no single model
 survived contact with real CVs, and the shipped role detector is a ladder of
 three mechanisms with disjoint failure modes, arrived at through a chain of
-measured failures. The result: on a purpose-built corpus of 32 labeled
-authentic-style CVs, the full pipeline identifies the correct role with 89.7%
-Top-1 accuracy — while its strongest individual component reaches only 55-62% —
-and the market model's top-10 skill lists are 97% relevant under blind
-annotation.
+measured failures. The result, on a purpose-built evaluation corpus of 32 labeled
+authentic-style CVs: the full pipeline resolved the correct role for 89.7% of
+the 29 positive cases (Top-1) — where its strongest individual component reaches
+only 55-62% — and the market model's top-10 skill lists were judged 97% relevant
+under blind annotation.
 
 We report weaknesses with the same care: the Match Score is highly stable
 (test-retest σ = 0.11) but only weakly separates matched from mismatched

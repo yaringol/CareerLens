@@ -45,11 +45,11 @@ agents where genuine judgment is required. None of this was the first design.
 The book's central engineering finding is architectural: no single model
 survived contact with real CVs, and the shipped role detector is a ladder of
 three mechanisms with disjoint failure modes, arrived at through a chain of
-measured failures. The result: on a purpose-built corpus of 32 labeled
-authentic-style CVs, the full pipeline identifies the correct role with 89.7%
-Top-1 accuracy — while its strongest individual component reaches only 55-62% —
-and the market model's top-10 skill lists are 97% relevant under blind
-annotation.
+measured failures. The result, on a purpose-built evaluation corpus of 32 labeled
+authentic-style CVs: the full pipeline resolved the correct role for 89.7% of
+the 29 positive cases (Top-1) — where its strongest individual component reaches
+only 55-62% — and the market model's top-10 skill lists were judged 97% relevant
+under blind annotation.
 
 We report weaknesses with the same care: the Match Score is highly stable
 (test-retest σ = 0.11) but only weakly separates matched from mismatched
@@ -157,6 +157,7 @@ every claim.
   - A.1 Running the System
   - A.2 Specification API → Implemented API
   - A.3 Evaluation Corpus Manifest (excerpt)
+- Appendix B — Selected Engineering Incidents
 
 ---
 
@@ -203,6 +204,8 @@ Finally, fetching a job posting by URL works for sites that expose structured me
 We worked iteratively, in a loop we came to think of as build–measure–fix. We began with a proof of concept covering a handful of roles, measured its behavior on real documents, and expanded to the full 59-role system. Then came the step we consider the most valuable of the project: an adversarial self-audit that went looking for the ways we might be fooling ourselves. Eight independent review agents swept the code and raised 74 findings; each finding was then attacked by a dedicated refuter, and the 52 that survived set the agenda for the project's final phase. Among them: a data-leakage problem whose correction lowered our headline numbers while raising our confidence in them, and three features that existed in the code but were dead in practice. The corrections they forced are documented in Chapter 3.
 
 Architecturally, the methodology combines two models with different learning paradigms — one built by statistical aggregation of market data, the other by supervised classification — with LLM agents reserved for the places where semantic judgment is genuinely required. A nightly pipeline retrains on freshly scraped postings, and its promotion gate refuses to deploy any model that regresses against the incumbent. For evaluation we built a purpose-made corpus of 32 labeled, authentic-style CVs, spanning scenario types from straightforward matches to deliberately difficult and out-of-domain cases; Chapter 5 reports our results against it.
+
+Three findings organize this book's contribution, and the chapters that follow build toward them. First, role detection succeeds as a multi-stage decision ladder, not as any single classifier — the system outperforms every one of its components. Second, measuring the real execution path, rather than the intended one, is what separated working code from a working system, and it is the discipline behind every reliable number we report. Third, the evaluation exposed a structural boundary of the scoring engine — selecting skills by posting is not the same as scoring against it — which defines the clearest next step for this work.
 
 ## 1.6 Organization of the Project Book
 
@@ -290,12 +293,11 @@ frequent skills among them — with the entire dataset serialized into a 4.77MB
 artifact. We never measured it; a manual spot check was enough to end it. Asked
 about `python developer`, it returned *python, backend, scalable, computer
 science, best practices* — three of the five generic noise. Three days later it
-was gone. Its replacement's artifact weighed 139KB — thirty-four times smaller
-and better at the same time, because the original had been carrying the whole
-dataset as its "model" — and its training notebook shed over nine and a half
-thousand of its ten thousand lines. What survives of model-zero is a fossil: the
-replacement's noise blacklist still contains, verbatim, the three bad outputs of
-that one spot check — the moment a failed check became an architecture decision.
+was gone. Its replacement's artifact weighed 139KB — thirty-four times smaller,
+because the original had been carrying the whole dataset as its "model" — and
+its training notebook shed over nine and a half thousand of its ten thousand
+lines. One trace of model-zero remains in the codebase: the replacement's noise
+blacklist still contains, verbatim, the three bad outputs of that spot check.
 
 What replaced it was barely a model at all, and that was the point. For each of a
 handful of hand-curated POC roles, we summed the weighted skill matches that
@@ -322,9 +324,9 @@ time machine. A five-month project cannot scrape the multi-year history that
 trend and stability features need, so a verified historical corpus stands in for
 the system's mature future, and the stable-versus-trending personalization
 signals can be demonstrated today over a horizon our own scraping will only
-reach years from now. From twenty-four postings to a corpus of over 180,000
-postings and profiles, the arc taught us one thing above all: data quality, not
-access convenience, sets a market model's ceiling.
+reach years from now. From twenty-four postings to 141,897 postings and
+210,250 candidate profiles, the arc taught us one thing above all: data quality,
+not access convenience, sets a market model's ceiling.
 
 Then, while mapping the project's architecture — establishing what actually
 connects to what — we found something uncomfortable: the nightly scrape-and-train
@@ -453,7 +455,7 @@ Developer*. Spelling similarity, we learned, is not semantic similarity; for job
 titles the two are frequently opposites. Its replacement was chosen by
 measurement, not taste: the sentence-embedding normalizer that ships today
 scored 92.6% on the same held-out split where the character matcher managed
-69.4% — a twenty-three point jump that ended the argument.
+69.4%.
 
 Even the "solved" rung kept teaching. Late in the project we discovered that the
 declared-title rung — the ladder's first and best step — had been *dead code for
@@ -463,17 +465,11 @@ CV-length "line", and every upload silently fell through to the classifier. We
 found it not through a bug report but while recording demo videos, when a
 textbook-clean CV refused to take the path it obviously should. The fix — a
 preserved header window travelling alongside the flattened text (the asymmetry
-Section 4.2 documents) — promptly opened two subtler holes, each caught and
-closed in turn. First, splitting header lines on commas shredded summary
-sentences into fragments, and a bare buzzword like "Kubernetes" could outscore
-the real title against the canonical list and win a silent, confident,
-wrong auto-accept. Then the repair for *that* — folding PDF line-wrap fragments
-back into their sentences — initially folded email addresses onto genuine title
-lines and destroyed them: twenty of twenty regression cases failed at once. The
-regression suite caught it within the hour, and the final fix folds only lines
-that are not independently recognizable as noise. The episode hardened a rule we
-kept for the rest of the project: PDF text is an adversary, and no header
-heuristic changes without the full suite running behind it.
+Section 4.2 documents) — opened two subtler extraction bugs of its own; both
+were caught by the regression suite before reaching users, and both are
+documented in Appendix B. The episode set a rule we kept for the rest of the
+project: no change to a header heuristic ships without the full regression suite
+running behind it.
 
 The regex failure had also planted an idea that took months to mature. If the
 title line cannot be trusted, but the skills we extract from a CV can, then the
@@ -497,7 +493,7 @@ grown undocumented, so we reconstructed it in a notebook and compared the
 rebuild against the live artifact — an exact aggregate tie, eight fixes against
 eight regressions. Our equivalence gate therefore refused the swap, and we
 obeyed it: the live artifact stayed, and the notebook became its specification.
-The gates we build to stop bad models, it turns out, also stop us. The second
+The second
 came from the reverse-direction notebook itself: a classifier predicting the
 role from a CV's extracted skill set alone, trained over the well-covered
 titles. Head-to-head on our authentic-CV corpus it tied the deployed text
@@ -537,8 +533,8 @@ Another change taught us about our own mistakes. When automatic role detection
 replaced the manual role dropdown, the manual override was removed along with
 it, which left an out-of-domain CV — a nurse's, say — with nothing but nonsense
 suggestions and no way to say "my role is not on your list." There was no design
-rationale behind this. It was a misunderstanding of the task, and we would
-rather say that than invent a justification after the fact. The escape hatch was
+rationale behind this. It was a misunderstanding of the task, and we record it
+as such. The escape hatch was
 restored in the final phase: an unsupported CV now routes to "choose the closest
 supported role" with a manual picker, and we verified the behavior live in the
 shipped UI.
@@ -549,8 +545,7 @@ silently disappeared in a later rewrite of the serving code; no one recalls
 choosing to drop it, and only its remnants stayed behind in the repository.
 Months later the same idea resurfaced, properly productized this time, as the
 Personalization screen with its stable, balanced, trending, and custom
-strategies. Ideas outlive their first implementations — provided someone
-eventually notices they were good.
+strategies.
 
 The screens had their own hardest case. The Personalize screen absorbed more
 consecutive fixes in one 48-hour stretch than any other part of the frontend,
@@ -580,16 +575,11 @@ logged success, a trainer that produced artifacts. What it lacked was a single
 end-to-end assertion — *did the serving model actually change, and is it
 better?*
 
-The same lesson kept returning in new costumes. One July morning the product
-was serving a model whose skill arrays were empty for all 269 stored roles — a
-mid-training intermediate artifact had ended up on disk — and every analysis
-request in the product failed until the next day's retrain. Nothing had
-crashed; the model was simply hollow, and nothing between training and serving
-had checked. Our own first test suite turned out to embody the opposite
-failure: it retried each CV up to three times until the score landed inside a
-band the team itself had defined — a test that, in effect, graded its own
-homework. When the audit caught the circularity we demoted the suite from
-evidence to smoke test, and built the labeled corpus of Chapter 5 in its place.
+The same lesson recurred in smaller forms — once, a mid-training intermediate
+artifact briefly served empty skill lists in place of the model until the next
+retrain (Appendix B); and our own first test suite turned out to score the
+system against bands we ourselves had defined, so we demoted it from evidence
+to smoke test and built the labeled corpus of Chapter 5 in its place.
 
 Every piece of automation we built after these discoveries carries an
 end-to-end assertion in some form: the promotion gate for training runs,
@@ -634,7 +624,7 @@ The Node API exposes the full product surface: authentication (`/register`, `/lo
 
 ## 4.2 Data Collection and Preprocessing
 
-The market model learns from two sources. The primary source is LinkedIn job postings collected by our scraper into a raw collection, then annotated at ingest by SkillNer — a phrase-matching extractor over the EMSI skill taxonomy (31,278 skills) running on spaCy — and persisted with their extracted skills. Extraction happens once, when a posting enters the corpus; training and serving never re-run the extractor over old postings, which keeps the nightly pipeline resumable and its cost bounded. The second source is the lang-uk recruitment datasets (Djinni, English): 210,250 candidate profiles and 141,897 job descriptions imported from Hugging Face and passed through the same SkillNer batch extractor, with a mapping layer that projects the Djinni role categories onto our canonical taxonomy. Because the two sources differ in quality and closeness to our taxonomy, training weights them per source (LinkedIn 1.0, lang-uk 0.3 by default). The historical corpus also plays a role beyond volume: its 2020-2023 span simulates what the system's own scraping will only accumulate after years of operation, which is what lets the stable-versus-trending signals of the personalization feature be demonstrated over a realistic time horizon today (Chapter 3 tells the reasoning). Because that span predates the LLM era's skills, training adds a curated 2024-2026 continuation — 10,800 records, every one explicitly marked `source='augmented-2026'` in the database, so synthetic data can never masquerade as observation.
+The market model learns from two sources. The primary source is LinkedIn job postings collected by our scraper into a raw collection, then annotated at ingest by SkillNer — a phrase-matching extractor over the EMSI skill taxonomy (31,278 skills) running on spaCy — and persisted with their extracted skills. Extraction happens once, when a posting enters the corpus; training and serving never re-run the extractor over old postings, which keeps the nightly pipeline resumable and its cost bounded. The second source is the lang-uk recruitment datasets (Djinni, English): 210,250 candidate profiles and 141,897 job descriptions imported from Hugging Face and passed through the same SkillNer batch extractor, with a mapping layer that projects the Djinni role categories onto our canonical taxonomy. Because the two sources differ in quality and closeness to our taxonomy, training weights them per source (LinkedIn 1.0, lang-uk 0.3 by default). The historical corpus also plays a role beyond volume: its 2020-2023 span simulates what the system's own scraping will only accumulate after years of operation, which is what lets the stable-versus-trending signals of the personalization feature be demonstrated over a realistic time horizon today (Chapter 3 tells the reasoning). Because that span predates the LLM era's skills, training adds a curated 2024-2026 continuation — 10,800 records, every one explicitly marked `source='augmented-2026'` in the database, so synthetic data can never masquerade as observation. (This augmentation is distinct from the synthetic title *strings* of Chapter 3, which concern the classifier's label space, not the market model's postings.)
 
 Both sources converge into a unified `role_skill_observations` collection (schema version 2): one row per (posting, skill) observation, already carrying the resolved canonical title, the extractor's confidence score, and an `observed_at` timestamp. That timestamp is what makes every time-aware feature possible — recency weighting, trend labels, and the monthly-bucket stability slope all anchor to when a posting was actually published, not to when we happened to scrape it.
 
@@ -737,8 +727,6 @@ they showed weakness.
 
 ## 5.1 Experimental Setup
 
-The campaign earned its keep before producing a single table: its first end-to-end runs caught a live regression — the freshly wired agreement signal was invoking the skill extractor on every classifier call, pushing response times past the backend's timeout — which was fixed, re-verified, and only then measured. An evaluation harness, it turns out, is also an integration test.
-
 **Corpus.** The evaluation corpus is the 32-file authentic-CV set of Section 4.4:
 29 English CVs with ground-truth labels across nine scenario types, plus three
 negative fixtures (two Hebrew CVs and one scanned image) that a well-behaved
@@ -783,6 +771,12 @@ model.
 | Pipeline errors | 0 |
 | Negative fixtures correctly blocked | 3/3 |
 
+The precise claim matters: on the full pipeline, over the 29 positive CVs of
+this evaluation corpus, Top-1 accuracy was 89.7%. The corpus is authored, labeled
+by a single annotator, and spans nine scenario types without covering all 59
+roles evenly — so this is a corpus result, not a per-role guarantee across the
+taxonomy.
+
 Per scenario, Top-1 was perfect on ambiguous (4/4), career-changer (3/3), hybrid
 (3/3) and niche-core (5/5) CVs; clear-cut profiles scored 8/9, junior CVs 2/3,
 and unsupported-occupation CVs 1/2 — where "correct" for an unsupported CV means
@@ -796,10 +790,20 @@ model — the decomposition by rung makes this concrete:
 | `title_extraction` (declared title → normalizer) | 26 | 92.3% | cosine similarity × 100 |
 | `cv_classifier` (TF-IDF+MLP over the CV body) | 3 | 66.7% | renormalized softmax share |
 
-**26 of the 29 CVs never reach the classifier.** Measured in isolation on this
-corpus, the classifier path alone reaches 55.2% — consistent with its 62.3%
-component-level accuracy on scrubbed held-out data (Chapter 3), and a world apart
-from the 89.7% the user experiences. The system's accuracy *is* its architecture.
+**26 of the 29 CVs never reach the classifier** (the three that do are too few
+to support a rate of their own and are reported for completeness). Measured in
+isolation on this corpus, the classifier path alone reaches 55.2% — consistent
+with its component-level accuracy on scrubbed held-out data (Chapter 3) — a
+world apart from the 89.7% the user experiences on the same corpus. On this
+evidence, the system's accuracy is a property of its architecture. Because
+several nearby percentages measure different things, we fix their meanings once:
+
+| Number | What it measures |
+|---|---|
+| 57.6% | Logistic-regression baseline, scrubbed held-out split (component) |
+| 62.3% | Deployed MLP classifier, same scrubbed held-out split (component) |
+| 55.2% | Classifier path alone, on this 29-CV corpus |
+| **89.7%** | **The full detection ladder, on this 29-CV corpus** |
 
 ### Confidence calibration: one field, two incompatible scales
 
@@ -832,7 +836,8 @@ its correctness — which is precisely why the agreement signal exists.
 
 With the backend's decision rules replayed offline over direct classifier calls
 (agreement ON versus OFF): accuracy 17/29 versus 16/29, one CV helped, none
-harmed. The single win is exactly the case the signal was built for — a
+harmed — a single-case signal observed on this corpus, reported as preliminary
+evidence rather than an effect size. The single win is exactly the case the signal was built for — a
 technical-writer CV (ground truth: no supported role) that the bare classifier
 auto-accepted as *Product Manager* at confidence 75.8 was, with the signal on,
 capped to 50 and routed to the manual picker. We disclose the counter-effect the
@@ -869,6 +874,14 @@ roles × top-10, 191 skills marked, 100% coverage):
 |---|---|
 | **Live model** (retrained) | **97%** |
 | Pre-retrain backup | 96% |
+
+Two clarifications belong next to the number. First, the protocol: "live" is
+the retrained model now in production, "backup" is its pre-retrain predecessor,
+and the annotator saw one merged, shuffled list — blind to which model proposed
+which skill. Second, the metric's scope: precision@10 measures whether a skill
+is *relevant* to the role — not how useful it is to a candidate, how well it
+reflects a trend, or whether the ten together are the best possible ten (§5.3
+returns to this).
 
 Only 8 of 191 skills were rejected, and they split cleanly by model — the
 pre-retrain model's rejects are **cross-role contamination** (`backend` under
@@ -960,6 +973,12 @@ through the ladder versus 55-62% for the strongest single component — supports
 composing cheap components over training one heavy one, at least at our data
 scale, where fine-tuning a transformer end-to-end was never on the table for
 lack of labeled CVs (56% of our own taxonomy has no real training data at all).
+The same comparison clarifies what CareerLens is not: a chat prompt. A
+general-purpose LLM asked to "review my CV" brings no market model, no
+accumulated posting history, no closed role taxonomy, and no per-skill evidence
+contract; its answer shifts with each phrasing and cites no data. CareerLens
+spends LLM judgment only at two guarded points inside a measured pipeline, and
+everything around those points is reproducible.
 
 ## 5.5 Discussion of Findings
 
@@ -977,16 +996,18 @@ weakness is not sampling noise (the band margin is six times the run-to-run
 variance), and the fix — passing posting context into the scoring prompt, then
 re-measuring band separation — is concrete, bounded future work.
 
-**What was deliberately not measured.** Agreement between the scoring agent and
-human judgement (MAE, Spearman ρ, ±2 share) was not measured: the blind
-annotation sheet was built and verified, and the team decided not to run the
-session within the submission timeline. The consequence is stated rather than
-papered over — nothing in this book claims the agent's scores are *correct*,
-only that they are stable (σ = 0.11), weakly job-discriminative (0.66-point
-margin), and materially different from keyword counting (50% disagreement). The
-one comparison that would justify or refute the agent architecture outright —
-LLM versus keyword baseline against a human reference — remains open, and we
-would rather report an open question than a manufactured answer.
+**What was not measured — the evaluation's most significant open item.**
+Agreement between the scoring agent and human judgement (MAE, Spearman ρ, ±2
+share) was not measured: the blind annotation sheet was built and verified (29
+items totaling 290 human ratings — the human-side counterpart of the 240 machine
+ratings in §5.2), but the session did not fit the submission timeline. This is a
+real validity gap, not a footnote: without a human reference we cannot establish
+whether the agent's scores are correct, whether the fit bands match human
+perception, or whether the rewrite suggestions actually improve a CV. What the
+label-free measurements establish — stability (σ = 0.11), structural behavior,
+and material divergence from keyword counting (50% disagreement) — are necessary
+conditions for validity, not proof of it. Running the prepared session is the
+first order of business in future work.
 
 **Limitations.** Seven bounds apply to every number above. (1) Ground truth for
 model 1's relevance was labeled by a single annotator — mitigated by blind,
@@ -1074,23 +1095,25 @@ scrape-train-promote pipeline that keeps the market model current without human
 attention.
 
 The measured headline is architectural, and it is the project's central lesson.
-No single model we built survived contact with real CVs; the shipped system's
-89.7% role-detection accuracy belongs to a *ladder* of three modest mechanisms
-with disjoint failure modes, and the same ladder is what absorbs the fact that
-56% of our taxonomy has no real training CVs at all. We spent much of the project
-discovering that intelligence in this domain is a systems property — and the
-book's research chapter records what each failed single-mechanism attempt taught
-us. The second lesson is about honesty as an engineering practice: a near-perfect
-score revealed label leakage; a documented feature turned out to be unread by the
-serving code; a signal was wired to an endpoint the product never called. In
-every case, measuring the real path — not the documented one — is what moved the
-project forward.
+No single model we built survived contact with real CVs; the 89.7% Top-1
+accuracy measured on our evaluation corpus belongs to a *ladder* of three modest
+mechanisms with disjoint failure modes, and the same ladder is what absorbs the
+fact that 56% of our taxonomy has no real training CVs at all. We spent much of
+the project discovering that intelligence in this domain is a systems property —
+and the book's research chapter records what each single-mechanism attempt
+taught us. The second lesson is methodological: measuring the real execution
+path, rather than the intended one, is what separated working code from a
+working system — it is how the label leakage, the unread features, and the
+unwired signal were found, and how each fix was verified. The third is the
+research finding of Chapter 5: selecting skills by posting is not the same as
+scoring against it, and closing that structural gap is the clearest next step
+this work defines.
 
 The system's open weaknesses belong in this chapter as much as its achievements. The Match Score
 is stable and genuinely evidence-based, but it scores the CV against the skill
 list without ever seeing the posting, and the measured consequence is weak
-fit-discrimination; its agreement with human judgement remains unmeasured by our
-own decision. These bounds define the future-work list, in priority order:
+fit-discrimination; its agreement with human judgement remains unmeasured, with the prepared
+session waiting as the first item below. These bounds define the future-work list, in priority order:
 
 1. **Pass posting context into the scoring prompt**, then re-measure band
    separation — the one bounded change our measurements most directly motivate.
@@ -1111,8 +1134,12 @@ own decision. These bounds define the future-work list, in priority order:
 
 The specification we started from imagined a simpler system than the one the
 problem required. The gap between the two — measured, explained, and in places
-deliberately left open — is what this project taught us, and we consider the
-honest record of that gap as much a deliverable as the system itself.
+deliberately left open — is what this project taught us. Beyond the working
+product, we consider the project's deepest deliverable to be the working
+*method* that produced it: connecting several kinds of intelligence into one
+system, gating every piece of automation on an end-to-end check, measuring the
+path users actually take, and calibrating every claim to what the measurements
+support.
 
 ---
 
@@ -1232,3 +1259,52 @@ The `acceptable_titles` set is what lets Top-3 accuracy be judged fairly on
 ambiguous and hybrid careers; `scenario` drives the per-scenario breakdown of
 Section 5.2; and the three `is_negative_fixture` records define the guard
 behavior the pipeline must show rather than an accuracy denominator.
+
+---
+
+# Appendix B — Selected Engineering Incidents
+
+The body of this book keeps its incident stories short so that the findings stay
+in front. This appendix preserves, for the interested reader, the fuller record
+of four incidents referenced in Chapters 3 and 5 — each one an instance of the
+same methodological pattern: a defect invisible to unit-level checks, exposed
+only by exercising the real path, and closed with a verification that outlived
+the fix.
+
+**B.1 The header-extraction chain (Chapter 3.3).** After the declared-title rung
+was revived with the preserved header window, two follow-on extraction bugs
+appeared and were closed in sequence. First, splitting header lines on commas
+fragmented summary sentences, and a bare buzzword ("Kubernetes", cosine 0.805
+against *Kubernetes Engineer*) could outscore the CV's real title and win a
+confident wrong auto-accept; the fix distinguishes a genuine "Title, Company"
+line (exactly one comma, no sentence punctuation) from a comma-separated
+technology list. Second, the repair for PDF line-wrap fragments initially folded
+email addresses onto genuine title lines and destroyed them — twenty of twenty
+regression cases failed at once. The regression suite caught it within the hour;
+the final merge step folds only lines that are not independently recognizable as
+noise, and the full suite has guarded every header change since.
+
+**B.2 The empty-model incident (Chapter 3.5).** During a July QA pass, the DS
+server was found serving a `model.joblib` whose skill arrays were empty for all
+269 stored roles — a mid-training intermediate artifact had ended up on disk.
+Every analysis request failed cleanly but universally until the next day's
+retrain restored a full model. The incident sharpened the case for promotion
+gating between training artifacts and the serving path.
+
+**B.3 The measurement campaign's own catch (Chapter 5.1).** The evaluation
+harness's first end-to-end runs surfaced a live regression: the freshly wired
+agreement signal invoked the skill extractor on every classifier call, pushing
+response times (1.2–7.4s) past the backend's 5-second timeout. The fix
+short-circuits the signal whenever it provably cannot change the routing
+decision, and makes the timeout environment-configurable. The campaign then
+re-verified the path before taking a single measurement — an evaluation harness
+doubling as an integration test.
+
+**B.4 The sibling-endpoint bug (Chapter 3.4's data-contract family).** The
+header-extraction fix of B.1 was applied to the primary detection endpoint, but
+an equivalent code path on the personalization route still re-ran detection
+without the header text — and preferred its own (wrong) fresh result over the
+correct, already-confirmed title passed to it. The display showed a different
+role than the one actually analyzed; scoring was unaffected. The fix trusts the
+confirmed title and threads the header text through every sibling path — and the
+episode is why "verify the wiring, not the wiring diagram" recurs in this book.
