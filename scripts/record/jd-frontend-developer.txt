@@ -1,0 +1,59 @@
+Job Summary:
+
+Far beyond today’s digital media, the Client users create a whole new social experience where connecting digitally is immersive and interactions feel lifelike. The Client chat room experiences are hyper-personal fostering meaningful friendships rather than amassing a large number of shallow, status-based relationships.
+
+Requirements:
+
+— Minimum 5+ years of testing experience;
+
+— Experience writing test plans, detailed test cases, and other formal test documentation;
+
+— Ability to troubleshoot and analyze issues to root cause, ideally at the code, or log, level;
+
+— Experience with Windows, and Mac operating systems, as well as iOS and Android.
+
+Will be a plus:
+
+— Experience with 3D Modeling software;
+
+— Experience with Electron platform and Chrome Dev Tools;
+
+— Experience with collaboration and productivity tools such as Confluence, TestRail and JIRA;
+
+— Experience working in an agile development environment;
+
+— Strong motivation, high level of commitment, proactive and positive attitude;
+
+— Great problem solving skills and detail-oriented approach;
+
+— Excellent written and verbal communication skills;
+
+— Programming experience with scripting/programming languages.
+
+We offer:
+
+— Challenging work in an international professional environment;
+
+— Supportive team atmosphere on long-term projects;
+
+— Competitive salary;
+
+— Flexible work from home & remote work policy;
+
+— Mastering the English language with a native speaker in individual and group settings;
+
+— 40-hour work week with flexible daily work hours;
+
+— PE accounting and support;
+
+— 20 total paid vacation days per year;
+
+— 14 total paid sick days per year;
+
+— Collaborative, friendly team environment;
+
+— Cozy, fully-equipped office spaces in the city center.
+
+About the project:
+
+Proxet is a full-service Digital Design and Development firm with over a decade of successful product deployments. We specialize in solutions for complex data problems, machine learning, and artificial intelligence techniques. Our full spectrum services offer digital transformation solutions to enterprise clients and mid-size clients, cutting-edge engineering solutions and expertise to startups, and team augmentation services. We specialize in solving complex data problems, associated with high data volumes and velocity. Our solutions are often based on machine learning and artificial intelligence techniques. Whether it’s helping marquee Clients like Roku, Giphy and Apptopia with their advanced data science needs, working with Enterprise clients like Partners Healthcare, IQVIA, IKEA, and Clinique, or getting startups off the ground, we align our teams with Clients to solve challenges and build business value.

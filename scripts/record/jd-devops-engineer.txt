@@ -1,0 +1,52 @@
+**Требования**
+Опыт работы: 3 года
+DevOps - 2 года
+Опыт в Engineering skills
+Опыт в Terraform
+Опыт в Ansible
+Опыт в Git
+Опыт в Docker
+Опыт в Drupal
+Опыт в React
+Опыт в Nginx
+Английский - Средний
+
+**Remote/Kharkiv**
+
+The DevOps Engineer's responsibilities include establishing/optimizing the automation of server processes. Main focus on: AWS, terraform, etc.
+
+Employment form:
+full-time
+
+**Required skills:**
+- Engineering skills
+- Terraform, Ansible
+- Git
+- AWS (RDS, EC2, EFS, S3, SQS)
+- CloudWatch, CloudFront
+- ElasticSearch, ElasticCache
+- Batch
+- VPC, SG, ASG, etc.
+- Nginx
+- Percona Monitoring Tool
+- Docker
+- Solr (good to know)
+
+**Soft Skills:**
+- Responsibility for committed scope of work.
+- Time management skill.
+- Regular communication with a team and client via chat/task (as a comment).
+- Personal activity in a project.
+- Team Player.
+- Person who accepts regular work/code review.
+- Person who is oriented to results.
+
+
+**We offer:**
+- Paid sick leave/vacation days (6/15 working days per year).
+- Possibility to work from office or remotely.
+- A cozy office in the heart of the city (Rymarska str).
+- Friendly experienced team and nice environment.
+- English speaking club, internal courses and other educational activities.
+- Board games, parties, team buildings and corporate events.
+- Delicious coffee / tea / biscuits / fruit / milk in the office.
