@@ -15,6 +15,7 @@ data/processed/*
 
 # OS / IDE
 .DS_Store
+~$*
 .vscode/
 .idea/
 .cursor/
