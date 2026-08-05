@@ -30,6 +30,10 @@ interface OccurrenceEdit {
   isEditing: boolean
   editDraft: string
   requestSeq: number
+  // Set when a generate call errored. Without it the auto-generate effect below
+  // sees candidateText === null, fires again, fails again, and turns one bad
+  // response into an unbounded request storm against the LLM endpoint.
+  failed: boolean
 }
 
 const emptyEdit = (sectionId = ''): OccurrenceEdit => ({
@@ -40,6 +44,7 @@ const emptyEdit = (sectionId = ''): OccurrenceEdit => ({
   isEditing: false,
   editDraft: '',
   requestSeq: 0,
+  failed: false,
 })
 
 interface SkillState extends SkillContext {
@@ -227,6 +232,23 @@ AWS, Linux, Jenkins, Python, Bash, Git, Docker, Kubernetes, MongoDB
 
 EDUCATION
 B.Sc. Computer Science - Tel Aviv University 2019`
+
+// Marks every mention of the skill inside a section, so the reason this section
+// was picked is visible at a glance - and, in the rephrased panel, so it is
+// obvious where the suggestion actually placed the skill.
+function highlightSkill(text: string, skill: string) {
+  const tokens = [...new Set(skill.toLowerCase().split(/[^a-z0-9]+/).filter((t) => t.length >= 2))]
+  if (tokens.length === 0) return text
+  const pattern = tokens
+    .sort((a, b) => b.length - a.length)   // longest first: "javascript" before "java"
+    .map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    .join('|')
+  const parts = text.split(new RegExp(`(?<![a-z0-9])(${pattern})(?![a-z0-9])`, 'gi'))
+  // String.split with one capture group interleaves the matches at odd indices.
+  return parts.map((part, i) =>
+    i % 2 === 1 ? <mark key={i} className="improve-skill-hit">{part}</mark> : part
+  )
+}
 
 function ScoreBar({ score }: { score: number }) {
   const pct = (score / 10) * 100
@@ -423,7 +445,7 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
     // even if the section changes again while the request is in flight.
     const generatedVersion = section.version
     const requestSeq = ++requestSeqRef.current
-    setSkills((prev) => updateOccEdit(prev, skillIdx, occIdx, { isLoading: true, requestSeq }))
+    setSkills((prev) => updateOccEdit(prev, skillIdx, occIdx, { isLoading: true, requestSeq, failed: false }))
 
     try {
       const suggested = await getSuggestion({
@@ -454,6 +476,7 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
           candidateText: null,
           generatedFromSectionVersion: null,
           isLoading: false,
+          failed: true,
         })
       })
     }
@@ -582,6 +605,14 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
     const edit = skill.occurrenceEdits[occIdx]
     if (!edit) return
     if (edit.isLoading) return
+    // Never auto-regenerate over an open editor. Two skills can share a section,
+    // so saving skill B marks skill A's suggestion stale - and if A's textarea is
+    // open, the refetch below would silently discard whatever the user typed.
+    // "Rephrase again" is still there when they want fresh text.
+    if (edit.isEditing) return
+    // A failed generate stays failed until the user hits Retry. Auto-retrying here
+    // would loop forever, because failure leaves candidateText null.
+    if (edit.failed) return
     const section = edit.sectionId ? sectionsById[edit.sectionId] : null
     if (!section) return
 
@@ -635,7 +666,7 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
         sectionUpdates,
       }).catch(() => {/* non-critical */})
     } catch (err) {
-      setMergeError(err instanceof Error ? err.message : 'Merge failed')
+      setMergeError(err instanceof Error ? err.message : 'Could not merge your changes. Please try again.')
     } finally {
       setIsMerging(false)
     }
@@ -660,7 +691,7 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
   }, [mergedCvText])
 
   const handleReanalyze = useCallback(async () => {
-    if (!jobTitle) { reportError(new Error('Job title not found - please analyze a CV first.')); return }
+    if (!jobTitle) { reportError(new Error('No role found - please analyze a CV first.')); return }
 
     const raw = sessionStorage.getItem(RESULT_KEY)
     if (!raw) { reportError(new Error('Analysis result not found. Please analyze from the home screen.')); return }
@@ -715,7 +746,7 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
         navigate('/dashboard')
       }
     } catch (err) {
-      reportError(err instanceof Error ? err : new Error('Re-analysis failed'))
+      reportError(err instanceof Error ? err : new Error('Re-analysis failed. Please try again.'))
     } finally {
       setIsReanalyzing(false)
     }
@@ -864,7 +895,7 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
                   onClick={() => setActiveTab(i)}
                 >
                   {s.skill}
-                  {s.skipped && <span className="improve-tab-skip">skip</span>}
+                  {s.skipped && <span className="improve-tab-skip">Skipped</span>}
                   {s.occurrenceEdits.some(e => e.isLoading) && <span className="improve-tab-dot" />}
                 </button>
               ))}
@@ -932,6 +963,10 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
                   const currentEdit = getActiveEdit(skill)
                   const currentSection = currentEdit.sectionId ? sectionsById[currentEdit.sectionId] : null
                   const candidateSaved = isCandidateSaved(currentEdit, currentSection)
+                  const targetSectionLabel =
+                    currentSection?.label
+                    ?? (skill.targetSectionId ? sectionsById[skill.targetSectionId]?.label : undefined)
+                    ?? 'Skills'
                   return (
                     <div className="improve-compare">
                       {(() => {
@@ -940,7 +975,10 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
                         return (
                           <div className="improve-panel improve-panel--old">
                             <p className="improve-panel-label">
-                              {hasSavedChanges ? 'Current section (saved)' : 'Original'}
+                              {hasSavedChanges ? 'Current section (saved)' : skill.found ? 'Original' : 'Target section'}
+                              {currentSection && (
+                                <span className="improve-section-chip">{currentSection.label}</span>
+                              )}
                               {skill.occurrences.length > 1 && (
                                 <span className="improve-panel-count"> · mention {occIdx + 1} of {skill.occurrences.length}</span>
                               )}
@@ -948,7 +986,9 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
                             {currentSection ? (
                               <div className="improve-panel-content">
                                 {/* Show the latest saved section text - this is what the next rephrase builds on */}
-                                <p className="improve-old-text improve-old-text--primary">{currentSection.currentText}</p>
+                                <p className="improve-old-text improve-old-text--primary">
+                                  {highlightSkill(currentSection.currentText, skill.skill)}
+                                </p>
                                 {hasSavedChanges && (
                                   <details className="improve-original-toggle">
                                     <summary>Show original section</summary>
@@ -960,7 +1000,7 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
                               <p className="improve-panel-empty">
                                 No mention of <strong>{skill.skill}</strong> found in your CV.
                                 {skill.proficiency !== 'no_knowledge' && (
-                                  <span> The improvement will be added to your Skills section.</span>
+                                  <span> The improvement will be added to your <strong>{targetSectionLabel}</strong> section.</span>
                                 )}
                               </p>
                             )}
@@ -995,16 +1035,16 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
                                   autoFocus
                                 />
                                 <div className="improve-inline-actions">
-                                  <button className="improve-edit-btn" onClick={() => fetchSuggestion(activeTab, occIdx, true)}>Rephrase Again</button>
+                                  <button className="improve-edit-btn" onClick={() => fetchSuggestion(activeTab, occIdx, true)}>Rephrase again</button>
                                   <button className="improve-done-btn" onClick={() => handleSaveEdit(activeTab, occIdx)}>Save</button>
                                 </div>
                               </>
                             ) : (
                               <>
-                                <p className="improve-new-text">{currentEdit.candidateText}</p>
+                                <p className="improve-new-text">{highlightSkill(currentEdit.candidateText, skill.skill)}</p>
                                 <div className="improve-inline-actions">
                                   <button className="improve-edit-btn" onClick={() => handleStartEdit(activeTab, occIdx)}>Edit</button>
-                                  <button className="improve-edit-btn" onClick={() => fetchSuggestion(activeTab, occIdx, true)}>Rephrase Again</button>
+                                  <button className="improve-edit-btn" onClick={() => fetchSuggestion(activeTab, occIdx, true)}>Rephrase again</button>
                                   <button
                                     className="improve-done-btn"
                                     onClick={() => handleSaveEdit(activeTab, occIdx)}

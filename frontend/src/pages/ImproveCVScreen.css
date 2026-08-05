@@ -503,6 +503,9 @@
   color: #b91c1c;
   line-height: 1.55;
   margin: 0;
+  /* Sections are multi-line blocks (heading + body). Without this the CV's own
+     line structure collapses into one run-on paragraph. */
+  white-space: pre-wrap;
 }
 .improve-old-text--secondary {
   color: var(--color-secondary);
@@ -540,6 +543,28 @@
   line-height: 1.55;
   margin: 0;
   flex: 1;
+  white-space: pre-wrap;
+}
+
+/* Which section this is, next to the panel label */
+.improve-section-chip {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--color-primary);
+  background: rgba(139, 124, 246, 0.12);
+  border-radius: 6px;
+  padding: 0.1rem 0.4rem;
+}
+
+/* Every mention of the skill inside the section text */
+.improve-skill-hit {
+  background: rgba(139, 124, 246, 0.22);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 0.1rem;
+  font-weight: 600;
 }
 
 .improve-suggestion-loading {

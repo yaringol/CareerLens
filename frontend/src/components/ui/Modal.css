@@ -1,0 +1,148 @@
+/* Follows docs/brand-brief.md: flat surfaces, 12px card radius, barely-there
+   shadow, generous whitespace. The backdrop is the one place a heavier overlay
+   is warranted, since it has to separate two layers of content. */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(30, 27, 110, 0.38);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 1000;
+  animation: modal-fade 180ms ease-out;
+}
+
+.modal-panel {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(30, 27, 110, 0.18);
+  width: min(34rem, 100%);
+  max-height: min(85vh, 44rem);
+  display: flex;
+  flex-direction: column;
+  outline: none;
+  animation: modal-rise 200ms ease-out;
+}
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem 0.75rem;
+  border-bottom: 1px solid rgba(30, 27, 110, 0.10);
+}
+
+.modal-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  line-height: 1.3;
+}
+
+.modal-close {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.modal-close:hover {
+  background: rgba(30, 27, 110, 0.06);
+  color: var(--color-primary);
+}
+
+.modal-close:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.modal-body {
+  padding: 1.25rem 1.5rem 1.5rem;
+  overflow-y: auto;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: #2c2a52;
+}
+
+.modal-body h3 {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-top: 1.25rem;
+  margin-bottom: 0.35rem;
+}
+
+.modal-body h3:first-child { margin-top: 0; }
+
+.modal-body p { margin-bottom: 0.75rem; }
+.modal-body p:last-child { margin-bottom: 0; }
+
+.modal-body dl { margin: 0 0 0.75rem; }
+.modal-body dt {
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-top: 0.5rem;
+}
+.modal-body dd { margin-left: 0; }
+
+@keyframes modal-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modal-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-backdrop, .modal-panel { animation: none; }
+}
+
+/* ─── The "?" trigger that opens an About modal ─────────────────────── */
+.about-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1px solid rgba(30, 27, 110, 0.16);
+  background: #fff;
+  color: var(--color-primary);
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem 0.2rem 0.45rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.about-trigger:hover {
+  background: rgba(139, 124, 246, 0.10);
+  border-color: rgba(139, 124, 246, 0.45);
+}
+
+.about-trigger:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.about-trigger-mark {
+  display: grid;
+  place-items: center;
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 0.7rem;
+  line-height: 1;
+}

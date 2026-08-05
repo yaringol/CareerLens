@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import AppLogo from '../components/ui/AppLogo'
+import AboutButton from '../components/ui/AboutModal'
 import { useToast } from '../contexts/ToastContext'
 import { useError } from '../context/ErrorContext'
 import {
@@ -68,7 +69,7 @@ const MODE_HINTS: Record<RecommendationMode, string> = {
   stable: 'Favor skills that stay in demand over time.',
   balanced: 'An even mix of stability, trends, and personal fit.',
   trending: 'Lean into skills on the rise in recent postings.',
-  custom: 'Set your own balance with the sliders below.',
+  custom: 'Set your own balance with the sliders.',
 }
 
 const WEIGHT_LABELS: Record<WeightKey, string> = {
@@ -497,13 +498,16 @@ export default function PersonalizationScreen() {
 
         <div className="upload-card personalize-card">
           <div className="personalize-intro">
-            <h1 className="personalize-title">Tailor your recommendations</h1>
+            <div className="personalize-title-row">
+              <h1 className="personalize-title">Tailor your recommendations</h1>
+              <AboutButton topic="recommendations" />
+            </div>
             <p className="personalize-detected">
               Detected role: <strong>{detectedTitle}</strong>
               <span className="personalize-detected-note"> · optional step, skip anytime with standard results</span>
               {options?.roleDataLimited && (
                 <span className="personalize-detected-note">
-                  {' '}· limited market data for this role - skill recommendations may be less reliable
+                  {' '}· limited market data for this role — skill recommendations may be less reliable
                 </span>
               )}
             </p>
@@ -578,7 +582,7 @@ export default function PersonalizationScreen() {
 
         {showFocusSkills && (
           <section className="personalize-section">
-            <h2 className="personalize-section-title">Focus Skills</h2>
+            <h2 className="personalize-section-title">Dynamic Skills</h2>
             <p className="personalize-section-sub">
               Top skills extracted from this job posting (up to 10). Pick{' '}
               {MAX_FOCUS_SKILLS} to focus on. Only the selected ones appear in your results.{' '}
@@ -606,7 +610,7 @@ export default function PersonalizationScreen() {
                 })}
               </div>
             ) : (
-              <p className="personalize-loading">No dynamic skills available for this posting.</p>
+              <p className="personalize-loading">No Dynamic Skills available for this posting.</p>
             )}
           </section>
         )}
@@ -652,7 +656,7 @@ export default function PersonalizationScreen() {
               onClick={handleContinue}
               disabled={submitting || loadingOptions}
             >
-              {submitting ? 'Submitting…' : 'Analyse with preferences'}
+              {submitting ? 'Analyzing…' : 'Analyze with preferences'}
             </button>
             <button
               type="button"

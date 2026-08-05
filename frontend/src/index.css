@@ -59,3 +59,57 @@ body {
   width: 100%;
   min-height: 100vh;
 }
+
+/* ─── Tooltip utility ──────────────────────────────────────────────────
+   Any element with [data-tooltip] shows its text on hover/focus.
+
+   Extracted from SkillsMatchDashboard.css, where the rule was scoped to
+   .skill-row and pinned to a single line (white-space: nowrap) - fine for
+   echoing a truncated skill name, unusable for the explanatory tooltips the
+   supervisor asked for. Now unscoped, wraps, and keyboard-reachable: a
+   focusable host (button, [tabindex]) reveals it on focus-visible too.
+
+   The host must establish a positioning context; .has-tooltip does that. */
+.has-tooltip {
+  position: relative;
+}
+
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  width: max-content;
+  max-width: min(20rem, 70vw);
+  white-space: normal;
+  text-align: left;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.4;
+  padding: 0.45rem 0.7rem;
+  border-radius: 6px;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.15s, transform 0.15s;
+  z-index: 30;
+  box-shadow: 0 4px 12px rgba(30, 27, 110, 0.18);
+}
+
+[data-tooltip]:hover::after,
+[data-tooltip]:focus-visible::after {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Anchor to the right edge when the host sits near the viewport edge. */
+[data-tooltip].tooltip-end::after {
+  left: auto;
+  right: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-tooltip]::after { transition: none; }
+}

@@ -17,6 +17,17 @@ interface HalfCircleGaugeProps {
   animate?: boolean
 }
 
+// The badge used to render the raw Strength key ("strong"), which was the only
+// place an internal enum value reached the screen - and it sat directly above
+// skill rows labelled "Excellent". Same vocabulary as SkillsMatchDashboard's
+// LABEL map, which reads its buckets from getStrength above.
+const STRENGTH_LABELS: Record<Strength, string> = {
+  none: '',
+  weak: 'Poor',
+  moderate: 'Good',
+  strong: 'Excellent',
+}
+
 const STRENGTH_COLORS: Record<Strength, string[]> = {
   none:     ['hsl(220,13%,75%)', 'hsl(220,9%,55%)'],
   weak:     ['hsl(0,84%,80%)',   'hsl(0,84%,60%)',   'hsl(0,84%,40%)'],
@@ -110,7 +121,7 @@ export function HalfCircleGauge({ value, max, animate = true }: HalfCircleGaugeP
 
       {strength !== 'none' && (
         <span className={`hcg-badge hcg-badge--${strength}`}>
-          {strength}
+          {STRENGTH_LABELS[strength]}
         </span>
       )}
     </div>

@@ -43,7 +43,7 @@ function formatWeights(weights: Record<string, number>): string {
 }
 
 function formatCount(value: number | null, approximate = false): string {
-  if (value === null) return 'ù'
+  if (value === null) return '‚Äî'
   const formatted = value.toLocaleString()
   return approximate ? `~${formatted}` : formatted
 }
@@ -244,7 +244,7 @@ export default function AdminModelStatusPanel({
               <span className="model-stat-label">lang-uk skills</span>
             </div>
             <div className="model-stat">
-              <span className="model-stat-num">{uk ? formatLangUkProgress(uk) : 'ù'}</span>
+              <span className="model-stat-num">{uk ? formatLangUkProgress(uk) : '‚Äî'}</span>
               <span className="model-stat-label">lang-uk extract{isStatsLoading && uk?.extracted === null ? ' (loading)' : ''}</span>
             </div>
             <div className="model-stat">
@@ -344,7 +344,7 @@ export default function AdminModelStatusPanel({
                   disabled={isLoadingMoreTitles}
                   onClick={handleLoadMoreTitles}
                 >
-                  {isLoadingMoreTitles ? 'Loadingù' : `Load ${TITLES_PAGE_SIZE} more`}
+                  {isLoadingMoreTitles ? 'Loading‚Ä¶' : `Load ${TITLES_PAGE_SIZE} more`}
                 </button>
               </div>
             )}
