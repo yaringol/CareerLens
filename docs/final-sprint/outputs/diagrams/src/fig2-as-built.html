@@ -1,0 +1,37 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<style>body{background:#fff;margin:0;padding:28px;font-family:'Segoe UI',Arial,sans-serif}</style>
+</head><body>
+<pre class="mermaid">
+flowchart LR
+  subgraph Browser
+    SPA["React SPA<br/>(Vite)"]
+  end
+
+  subgraph API["Node / TypeScript API"]
+    ROUTES["REST routes<br/>auth &middot; upload &middot; personalize<br/>analyze &middot; improve &middot; admin"]
+    AGENTS["5 LLM agents<br/>scoring &middot; skill extraction<br/>suggestions &middot; title classification<br/>title extraction"]
+  end
+
+  subgraph DS["Python DS service (FastAPI)"]
+    M1["Model 1: title&rarr;skills<br/>statistical feature matrix"]
+    M2["Model 2: CV&rarr;title<br/>TF-IDF + MLP (59 + other)"]
+    NORM["Title normalizer<br/>SBERT all-MiniLM-L6-v2<br/>+ nearest centroid"]
+  end
+
+  OPENAI(["OpenAI API"])
+  DB1[("MongoDB: careerlens<br/>users &middot; CVs &middot; analyses")]
+  DB2[("MongoDB: jobs<br/>market data &middot; model_runs")]
+  ART["model artifacts<br/>(.joblib, via Git LFS)"]
+
+  SPA -->|"REST /api"| ROUTES
+  ROUTES --> AGENTS
+  AGENTS -->|"JSON-guarded calls"| OPENAI
+  ROUTES -->|"HTTP :8000"| DS
+  ROUTES --> DB1
+  ROUTES -.->|"read-only (admin)"| DB2
+  ART -->|"loaded at startup"| DS
+</pre>
+<script>mermaid.initialize({startOnLoad:true, theme:'neutral', flowchart:{htmlLabels:true, curve:'basis'}, themeVariables:{fontFamily:'Segoe UI, Arial', primaryColor:'#f4f6f8', primaryBorderColor:'#37474f', lineColor:'#455a64', primaryTextColor:'#1c2833'}});</script>
+</body></html>

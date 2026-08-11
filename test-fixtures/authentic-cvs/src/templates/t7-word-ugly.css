@@ -1,0 +1,28 @@
+/* T7 "Word 2010 ugly" - the real-world mediocre CV: table layout, bold-everything,
+   mixed fonts, centered section titles, cramped. Deliberately unlovely (but sincere).
+   Markup: table.layout with rows; .name .contact centered; section h2 centered. */
+@page { size: A4; margin: 15mm 18mm; }
+* { margin: 0; padding: 0; }
+body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; color: #000; line-height: 1.15; }
+
+.name { text-align: center; font-size: 18pt; font-weight: bold; font-family: Cambria, Georgia, serif; }
+.title { text-align: center; font-weight: bold; font-size: 12pt; }
+.contact { text-align: center; font-size: 10pt; margin: 2pt 0 6pt; font-family: Arial, sans-serif; }
+
+section { margin-bottom: 6pt; }
+section > h2 { text-align: center; font-size: 13pt; font-weight: bold; text-transform: uppercase;
+               background: #d9d9d9; padding: 2pt; margin-bottom: 4pt;
+               font-family: Cambria, Georgia, serif; }
+
+table.layout { width: 100%; border-collapse: collapse; }
+table.layout td { border: 1px solid #808080; padding: 3pt 5pt; vertical-align: top; font-size: 10.5pt; }
+table.layout td.c1 { width: 26%; font-weight: bold; }
+
+.job { margin-bottom: 5pt; }
+.job b { font-size: 11pt; }
+.job .dates { font-weight: bold; }
+.job ul { margin: 1pt 0 0 20pt; }
+li { margin-bottom: 1pt; }
+
+.skills p { font-weight: bold; }
+p.center { text-align: center; }

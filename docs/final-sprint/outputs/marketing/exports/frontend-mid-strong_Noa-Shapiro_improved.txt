@@ -1,0 +1,56 @@
+Noa Shapiro
+Frontend Developer
+Tel Aviv
+054-7284913
+noa.shapiro@gmail.com
+linkedin.com/in/noa-shapiro-b71a42
+github.com/noashapiro-fe
+
+S K I L L S  
+React 18/19 TypeScript Next.js  
+Redux Toolkit RTK Query Vite  
+Playwright Storybook  
+Tailwind CSS HTML/CSS (expert level)  
+Web Vitals Node.js (expert level)  
+Intermediate working knowledge of JavaScript applied in projects.  
+Possesses intermediate knowledge of Object-Oriented Programming (OOP) applied in projects.
+
+E D U C AT I O N
+B.Sc. Computer Science
+Afeka College of Engineering
+2017 - 2021
+
+L A N G UA G E S
+Hebrew 	Native
+English 	Fluent
+
+Summary
+Frontend developer, 5 years building React applications at scale. Owns
+performance, build tooling and design-system work end to end.
+TypeScript-first; measures before and after every change.
+
+Experience  
+Frontend Developer · Cloudrise, Tel Aviv 	Mar 2023 - Present  
+Led migration of the core dashboard from CRA/Webpack to Vite +  
+React 18; cold build 210s → 24s, HMR under 300ms.  
+Cut main bundle 38% (1.4MB → 870KB gzip) via route-level code  
+splitting and a dependency audit.  
+Improved LCP on the customer portal from 4.1s to 1.9s (p75, CrUX);  
+INP under 200ms on top 10 routes.  
+Built shared design system: 42 components, Storybook, design  
+tokens. Adopted by 3 product teams; UI PR review time down ~30%.  
+Introduced Playwright E2E suite (140 specs, 6 min in CI); release  
+regressions from ~3/quarter to near zero.  
+Upgraded to React 19: migrated forms to Actions + useOptimistic,  
+removed two legacy state libraries.  
+Implemented comprehensive unit testing strategies to ensure  
+robustness and reliability of frontend components.  
+Frontend Developer · BitSage, Tel Aviv 	Jul 2021 - Feb 2023  
+Built trading dashboard in React 18 + Redux Toolkit; real-time  
+WebSocket updates at 20 msg/s with no dropped frames.  
+Implemented RTK Query data layer; deleted ~4K lines of hand-  
+written thunks and cache logic.  
+Delivered dark mode and full RTL support across the product in one  
+quarter.  
+Wrote the team's frontend conventions doc (naming, folder  
+structure, testing policy) still in use today.

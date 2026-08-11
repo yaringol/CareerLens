@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import AppLogo from '../ui/AppLogo'
+import AboutButton from '../ui/AboutModal'
 import { useError } from '../../context/ErrorContext'
 import {
   ApiError,
@@ -121,6 +122,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
   const [savedCVs, setSavedCVs] = useState<SavedCv[]>([])
   const [selectedCvId, setSelectedCvId] = useState<string | null>(null)
   const [selectedCvText, setSelectedCvText] = useState<string | null>(null)
+  const [selectedCvRawText, setSelectedCvRawText] = useState<string | null>(null)
   const [selectedCvName, setSelectedCvName] = useState<string | null>(null)
   const [cvsLoading, setCvsLoading] = useState(false)
   const [saveToLibrary, setSaveToLibrary] = useState(true)
@@ -137,6 +139,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
       selectedCvId,
       selectedCvName,
       cvText: selectedCvText,
+      rawText: selectedCvRawText,
       roleDetection: roleDetection as CachedRoleDetection,
       manualTitleQuery,
       showManualOverride,
@@ -162,6 +165,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
     setSelectedCvId(draft.selectedCvId)
     setSelectedCvName(draft.selectedCvName)
     setSelectedCvText(draft.cvText)
+    setSelectedCvRawText(draft.rawText ?? null)
     setManualTitleQuery(draft.manualTitleQuery ?? '')
     setShowManualOverride(draft.showManualOverride ?? false)
 
@@ -293,13 +297,16 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
 
   // An LLM-fallback pick is a single constrained answer, not a similarity
   // score - showing "70% match" would misread as a real confidence number.
+  // "confidence" rather than "match": this number is how sure we are of the
+  // detected ROLE. The Match Score on the results screen is a different metric,
+  // and using one word for both was measured as a real source of confusion.
   function matchLabel(suggestion: TitleMatchSuggestion) {
     return suggestion.source === 'llm_fallback' ? (
-      <span className="badge-ai" title="AI matched this from your CV (no similarity score to show)">
+      <span className="badge-ai" title="Selected by AI from your CV. No similarity score applies here.">
         AI matched
       </span>
     ) : (
-      `${suggestion.confidence}% match`
+      `${suggestion.confidence}% confidence`
     )
   }
 
@@ -324,8 +331,9 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
 
   async function detectRoleFromFile(file: File) {
     try {
-      const { cvText, headerText } = await uploadPdf(file, false)
+      const { cvText, headerText, rawText } = await uploadPdf(file, false)
       setSelectedCvText(cvText)
+      setSelectedCvRawText(rawText ?? null)
       await detectRole(cvText, headerText)
     } catch (err) {
       setRoleDetection({ status: 'error' })
@@ -374,9 +382,10 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
 
   async function handleSelectSavedCv(cv: SavedCv) {
     try {
-      const { cvText, headerText } = await getCvText(cv.cvId)
+      const { cvText, headerText, rawText } = await getCvText(cv.cvId)
       setSelectedCvId(cv.cvId)
       setSelectedCvText(cvText)
+      setSelectedCvRawText(rawText ?? null)
       setSelectedCvName(cv.fileName)
       setCvFile(null)
       resetRoleDetection()
@@ -448,23 +457,27 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
 
   async function resolveCvPayload(): Promise<{
     cvText: string
+    rawText: string | null
     cvFileName: string
     excludeCvId: string
   }> {
     let cvText: string
+    let rawText: string | null
     let excludeCvId = selectedCvId ?? ''
     if (cvFile) {
       const upload = await uploadPdf(cvFile, saveToLibrary)
       cvText = upload.cvText
+      rawText = upload.rawText ?? null
       if (saveToLibrary && upload.cvId) {
         excludeCvId = upload.cvId
       }
       if (saveToLibrary) getMyCVs().then(setSavedCVs).catch(() => { /* silent */ })
     } else {
       cvText = selectedCvText!
+      rawText = selectedCvRawText
     }
     const cvFileName = cvFile ? cvFile.name : (selectedCvName ?? 'cv.pdf')
-    return { cvText, cvFileName, excludeCvId }
+    return { cvText, rawText, cvFileName, excludeCvId }
   }
 
   function handleAnalysisError(err: unknown) {
@@ -498,7 +511,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
       const payload = await resolveCvPayload()
       if (roleDetection.status !== 'ready') return
 
-      const { cvText, cvFileName, excludeCvId } = payload
+      const { cvText, rawText, cvFileName, excludeCvId } = payload
       persistUploadDraft({
         cvText,
         selectedCvName: cvFileName,
@@ -514,7 +527,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
       )
       sessionStorage.setItem(
         RESULT_KEY,
-        JSON.stringify({ ...result, cvText, cvFileName }),
+        JSON.stringify({ ...result, cvText, rawText: rawText ?? cvText, cvFileName }),
       )
       sessionStorage.setItem('jobDescription', isPostingMode ? trimmedJobDescription : '')
       sessionStorage.setItem('cvFileName', cvFileName)
@@ -538,7 +551,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
       const payload = await resolveCvPayload()
       if (roleDetection.status !== 'ready') return
 
-      const { cvText, cvFileName, excludeCvId } = payload
+      const { cvText, rawText, cvFileName, excludeCvId } = payload
       sessionStorage.removeItem('personalizationPreferences')
       sessionStorage.removeItem('previousAnalysisResult')
       persistUploadDraft({
@@ -553,6 +566,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
           canonicalTitle: roleDetection.canonicalTitle,
           detectedTitle: roleDetection.detectedTitle,
           cvText,
+          rawText: rawText ?? cvText,
           cvFileName,
           jobDescription: isPostingMode ? trimmedJobDescription : '',
           isPostingMode,
@@ -623,7 +637,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
             <div className="upload-col">
               <div className="col-header">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                <h2>Resume <span className="field-required" aria-hidden="true">*</span></h2>
+                <h2>CV <span className="field-required" aria-hidden="true">*</span></h2>
               </div>
 
               <div className="cv-tabs">
@@ -656,7 +670,10 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                         <p className="dropzone-meta">{formatFileSize(cvFile.size)} &middot; PDF</p>
                         <button type="button" className="btn-ghost" onClick={() => fileInputRef.current?.click()} disabled={isLoading}>Change file</button>
                       </div>
-                      <label className="save-toggle">
+                      <label
+                        className="save-toggle has-tooltip"
+                        data-tooltip="Keeps this CV in your account so you can reuse it, and lets us compare your starred CVs automatically on future analyses."
+                      >
                         <input
                           type="checkbox"
                           checked={saveToLibrary}
@@ -664,7 +681,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                           disabled={isLoading}
                         />
                         <span className="save-toggle-track" />
-                        <span className="save-toggle-label">Save to My CV library</span>
+                        <span className="save-toggle-label">Save to my CV library</span>
                       </label>
                     </>
                   ) : (
@@ -743,7 +760,10 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
               </div>
 
               <div className="field-group">
-                <span className="field-label">Detected role</span>
+                <span className="field-label field-label--with-about">
+                  Detected role
+                  <AboutButton topic="role-detection" />
+                </span>
                 {roleDetection.status === 'idle' && (
                   <p className="detected-role detected-role--idle">Choose a CV to detect your role.</p>
                 )}
@@ -751,7 +771,10 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                   <p className="detected-role detected-role--loading">Detecting role from your CV...</p>
                 )}
                 {roleDetection.status === 'ready' && (
-                  <div className="detected-role detected-role--ready">
+                  <div
+                    className="detected-role detected-role--ready has-tooltip"
+                    data-tooltip="We read the role from your CV and matched it to one of 59 supported roles. Not right? Choose it manually below."
+                  >
                     <strong>{roleDetection.canonicalTitle}</strong>
                     <span>
                       {roleDetection.detectedTitle &&
@@ -759,11 +782,11 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                         ? `Detected as ${roleDetection.detectedTitle} · `
                         : ''}
                       {roleDetection.source === 'llm_fallback' ? (
-                        <span className="badge-ai" title="AI matched this from your CV (no similarity score to show)">
+                        <span className="badge-ai" title="Selected by AI from your CV. No similarity score applies here.">
                           AI matched
                         </span>
                       ) : (
-                        `${roleDetection.confidence}% match`
+                        `${roleDetection.confidence}% confidence`
                       )}
                     </span>
                   </div>
@@ -888,7 +911,8 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                   type="button"
                   role="tab"
                   aria-selected={isPostingMode}
-                  className={`jd-mode-tab${isPostingMode ? ' jd-mode-tab--active' : ''}`}
+                  className={`jd-mode-tab has-tooltip${isPostingMode ? ' jd-mode-tab--active' : ''}`}
+                  data-tooltip="Scores your CV against 10 skills: 5 the market expects for this role, plus 5 taken from the posting you paste."
                   onClick={() => switchJobInputMode('posting')}
                   disabled={isLoading}
                 >
@@ -898,7 +922,8 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                   type="button"
                   role="tab"
                   aria-selected={!isPostingMode}
-                  className={`jd-mode-tab${!isPostingMode ? ' jd-mode-tab--active' : ''}`}
+                  className={`jd-mode-tab has-tooltip${!isPostingMode ? ' jd-mode-tab--active' : ''}`}
+                  data-tooltip="No posting needed. Scores your CV against the 5 skills the market expects for the detected role."
                   onClick={() => switchJobInputMode('cv-only')}
                   disabled={isLoading}
                 >
@@ -913,7 +938,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                       Your Dream Job Posting <span className="field-required" aria-hidden="true">*</span>
                     </span>
                     <span className="field-hint">
-                      Paste the full description or a job link. The backend fetches the posting when you analyze.
+                      Paste the full description, or a link — we'll fetch the posting for you.
                     </span>
                   </label>
                   <textarea
@@ -949,7 +974,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                     }
                   />
                   <span className={`char-counter${jdError || gibberishWarning ? ' char-counter--warn' : ''}`}>
-                    {isJobUrlInput ? 'Job link  will import on analyze' : `${jobDescription.length} / ${MAX_JOB_DESCRIPTION_CHARS}`}
+                    {isJobUrlInput ? 'Job link · will import on analyze' : `${jobDescription.length} / ${MAX_JOB_DESCRIPTION_CHARS}`}
                   </span>
                   {jdError && (
                     <span id="job-description-error" className="field-inline-error" role="alert">
@@ -979,7 +1004,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
           <div className="upload-cta">
             <div className="upload-cta-actions">
               <button type="submit" className="btn-primary" disabled={!canSubmit || isLoading}>
-                <span>{isLoading ? 'Analyzing…' : 'Analyse Match'}</span>
+                <span>{isLoading ? 'Analyzing…' : 'Analyze Match'}</span>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
               </button>
               <button
@@ -1000,7 +1025,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                       ? 'Detecting your role'
                       : roleDetection.status === 'uncertain'
                         ? 'Choose a suggested role to continue'
-                      : 'A detected role is required to continue'
+                      : 'Choose a role to continue'
                     : isPostingMode && hasGibberishDescription
                       ? 'Enter a readable English job description to continue'
                       : isPostingMode && !hasEnoughDescription

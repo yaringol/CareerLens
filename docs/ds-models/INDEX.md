@@ -17,6 +17,8 @@
 | [09-missing-tasks-checklist.md](09-missing-tasks-checklist.md) | תוכנן ע"י Claude (חדש) | **צ'קליסט משימות חסרות** מזוקק מ-08, ממוין תחת 2 אבני דרך בלבד (Model 1: skill→title→trend, Model 2: CV→title), כולל כפתורי "הרץ עכשיו" נפרדים לכל ג'וב |
 | [09-pipeline-fix-plan.md](09-pipeline-fix-plan.md) | מסמך עבודה חי (2026-07) | **תוכנית תיקון + סטטוס מימוש** - פערים, A1-A4, קונטרקט API, יומן שלבים |
 | [10-model-runs-mongo.md](10-model-runs-mongo.md) | מסמך עבודה חי (2026-07) | **`model_runs` ב-Mongo** - שדות, שער promotion, והשוואת 3 הרצות live |
+| [12-meeting-summary-2026-07-05.md](12-meeting-summary-2026-07-05.md) | סיכום פגישה (05.07.26) | **סיכום פגישת פרויקט הגמר** - הערות UI/UX, בדיקות איכות, החלטה על Titles + Embedding fallback, וסיכום ההתקדמות (8 סעיפים) |
+| [Final project design.md](Final%20project%20design.md) | `Final project design.docx` | **הגדרת פרויקט הגמר הרשמית** - תיאור הבעיה/פתרון, related work, דרישות פונקציונליות, ארכיטקטורה, תוכנית עבודה (milestones), מסכי UI (עם תמונות ב-`assets/final-project-design/`), ו-API endpoints |
 
 ---
 

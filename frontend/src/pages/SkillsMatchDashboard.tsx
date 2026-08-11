@@ -4,7 +4,7 @@ import HalfCircleGauge, { getStrength } from '../components/ui/HalfCircleGauge'
 import AppLogo from '../components/ui/AppLogo'
 import AdminNavLink from '../components/admin/AdminNavLink'
 import { useError } from '../context/ErrorContext'
-import type { AnalyzeResponse, CompareSavedResponse } from '../services/api'
+import type { AnalyzeResponse, CompareSavedResponse, SkillScoreDetail } from '../services/api'
 import { getCvText } from '../services/api'
 import './SkillsMatchDashboard.css'
 
@@ -72,7 +72,21 @@ function ScoreCard({ children, className = '' }: { children: React.ReactNode; cl
 }
 
 // ─── Skill row ───────────────────────────────────────────────────────
-function SkillRow({ name, score, max, delay }: { name: string; score: number; max: number; delay: number }) {
+interface SkillRowProps {
+  name: string
+  score: number
+  max: number
+  delay: number
+}
+
+/**
+ * A skill row is a bar and a score, nothing more. The per-skill expand panel
+ * (Strengths / Missing elements) and its "Improve this skill" button were
+ * removed by user decision (2026-08-05): the same evidence/missing text is
+ * already in the Gap Analysis table, and improving is a single action at the
+ * bottom of the screen rather than one per row.
+ */
+function SkillRow({ name, score, max, delay }: SkillRowProps) {
   const [width, setWidth] = useState(0)
   const strength = getStrength(score, max)
   const pct = (score / max) * 100
@@ -113,6 +127,98 @@ function SkillRow({ name, score, max, delay }: { name: string; score: number; ma
         />
       </div>
     </div>
+  )
+}
+
+// ─── Gap analysis table ──────────────────────────────────────────────
+// The "comparison table showing the gap between the requirement and the
+// current CV status" from the original design (Functional Requirements).
+const TREND_ARROW: Record<string, string> = { rising: '↗', stable: '→', falling: '↘' }
+
+function GapAnalysisTable({ skills, cvOnlyMode }: { skills: SkillScoreDetail[]; cvOnlyMode: boolean }) {
+  // Collapsed by default (user decision, 2026-08-05): the detail is valuable but
+  // it is a second read, not the headline. The card announces what is inside and
+  // how many rows, so opening it is an informed click.
+  const [open, setOpen] = useState(false)
+  const gapCount = skills.filter((s) => s.missing?.trim()).length
+
+  return (
+    <ScoreCard className="score-card--gap">
+      <button
+        type="button"
+        className="gap-toggle"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls="gap-analysis-body"
+      >
+        <span className="card-eyebrow">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Gap Analysis
+        </span>
+        <span className="gap-toggle-right">
+          <span className="gap-toggle-summary">
+            {gapCount > 0
+              ? `${gapCount} skill${gapCount === 1 ? '' : 's'} to improve`
+              : 'No gaps found'}
+          </span>
+          <svg
+            className={`gap-toggle-chevron${open ? ' gap-toggle-chevron--open' : ''}`}
+            width="14" height="14" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </span>
+      </button>
+
+      {!open && (
+        <p className="card-lede gap-collapsed-lede">
+          Expand to see every requirement side by side with what your CV shows for it.
+        </p>
+      )}
+
+      {open && (
+      <div id="gap-analysis-body">
+      <p className="card-lede">
+        Every requirement, and what the analysis actually found for it in your CV.
+      </p>
+      <div className="gap-table-wrap">
+        <table className="gap-table">
+          <thead>
+            <tr>
+              <th>Skill</th>
+              <th>Required</th>
+              <th>In your CV</th>
+              <th>Gap</th>
+            </tr>
+          </thead>
+          <tbody>
+            {skills.map((s, i) => (
+              <tr key={s.name}>
+                <td className="gap-table-skill">
+                  {s.name}
+                  <span className="gap-table-score">{s.score}/10</span>
+                </td>
+                <td className="gap-table-required">
+                  {i < 5 || cvOnlyMode
+                    ? <>Core Skill {s.trend ? TREND_ARROW[s.trend] : ''}</>
+                    : 'Dynamic Skill'}
+                </td>
+                <td className={`gap-table-cv${!s.evidence?.trim() && s.score === 0 ? ' gap-table-cv--absent' : ''}`}>
+                  {s.evidence?.trim() || (s.score === 0 ? '✗ Not found' : '—')}
+                </td>
+                <td className="gap-table-gap">
+                  {s.missing?.trim() || '—'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      </div>
+      )}
+    </ScoreCard>
   )
 }
 
@@ -370,11 +476,15 @@ const SkillsMatchDashboard = () => {
 
   useEffect(() => {
     if (leavingRef.current) return
-    const mock = params.get('mock')
-    if (mock && MOCK_DATA[mock]) {
-      setResult(MOCK_DATA[mock] as AnalyzeResponse)
-      setDisplayedCvFileName(null)
-      return
+    // Dev-only QA hook: ?mock=<key> loads a canned result. Statically disabled
+    // (and MOCK_DATA tree-shaken away) in the production build.
+    if (import.meta.env.DEV) {
+      const mock = params.get('mock')
+      if (mock && MOCK_DATA[mock]) {
+        setResult(MOCK_DATA[mock] as AnalyzeResponse)
+        setDisplayedCvFileName(null)
+        return
+      }
     }
     const raw = sessionStorage.getItem(RESULT_KEY)
     if (!raw) {
@@ -391,7 +501,7 @@ const SkillsMatchDashboard = () => {
         ?? 'cv.pdf',
       )
     }
-    catch { setParseError('Invalid results data') }
+    catch { setParseError('We could not load these results. Please analyze again.') }
   }, [navigate, params])
 
   const handleGoHome = () => {
@@ -481,6 +591,8 @@ const SkillsMatchDashboard = () => {
   const coreSkills    = result.skills.slice(0, 5)
   const dynamicSkills = result.skills.slice(5, 10)
   const matchPercent  = Math.round((result.matchScore / 10) * 100)
+  const hasGapDetails = result.skills.some((s) => s.evidence?.trim() || s.missing?.trim())
+
   const analyzedSkillCount = result.cvOnlyMode ? 5 : 10
   const storedForCustomize = (() => {
     try {
@@ -537,14 +649,24 @@ const SkillsMatchDashboard = () => {
           {/* ── Overall score card ── */}
           <ScoreCard className="score-card--main">
             <div className="card-eyebrow-row">
-              <p className="card-eyebrow">Overall match</p>
+              <p
+                className="card-eyebrow has-tooltip"
+                data-tooltip="The average of your scores across every analyzed skill. Each skill is graded 0-10 on the evidence found in your CV."
+              >
+                Match Score
+              </p>
               {result.cvOnlyMode && (
-                <span className="cv-only-badge">CV-only analysis (5 skills)</span>
+                <span
+                  className="cv-only-badge has-tooltip"
+                  data-tooltip="Scored without a job posting, against the 5 skills the market expects for this role."
+                >
+                  CV-only analysis (5 skills)
+                </span>
               )}
               {result.isEstimated && !result.cvOnlyMode && (
                 <span
-                  className="estimated-badge"
-                  title="Scores were computed with keyword matching because the AI service was unavailable"
+                  className="estimated-badge has-tooltip"
+                  data-tooltip="The AI scorer was unavailable, so these scores come from keyword matching. Treat them as approximate."
                 >
                   Estimated score (AI unavailable)
                 </span>
@@ -602,12 +724,22 @@ const SkillsMatchDashboard = () => {
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
               Core Skills
             </p>
+            {/* Supervisor note (05/07): explanations belong next to the heading,
+                where they are read, not stranded under the list. */}
+            <p className="card-lede">
+              The 5 skills the market expects for this role, from job postings we collect continuously.
+            </p>
             <div className="skills-list">
               {coreSkills.map((s, i) => (
-                <SkillRow key={s.name} name={s.name} score={s.score} max={10} delay={300 + i * 80} />
+                <SkillRow
+                  key={s.name}
+                  name={s.name}
+                  score={s.score}
+                  max={10}
+                  delay={300 + i * 80}
+                />
               ))}
             </div>
-            <p className="card-hint">Based on continuously scraped job market data for this role.</p>
           </ScoreCard>
 
           {/* ── Dynamic skills card ── */}
@@ -622,17 +754,30 @@ const SkillsMatchDashboard = () => {
                     className="btn-card-mini btn-card-mini--inline"
                     onClick={handleBackToPersonalize}
                   >
-                    ← personalize
+                    ← Personalize
                   </button>
                 )}
               </div>
+              <p className="card-lede">
+                The 5 skills we extracted from the job posting you provided.
+              </p>
               <div className="skills-list">
                 {dynamicSkills.map((s, i) => (
-                  <SkillRow key={s.name} name={s.name} score={s.score} max={10} delay={500 + i * 80} />
+                  <SkillRow
+                    key={s.name}
+                    name={s.name}
+                    score={s.score}
+                    max={10}
+                    delay={500 + i * 80}
+                  />
                 ))}
               </div>
-              <p className="card-hint">Extracted from the job description you provided.</p>
             </ScoreCard>
+          )}
+
+          {/* ── Gap analysis table ── */}
+          {hasGapDetails && (
+            <GapAnalysisTable skills={result.skills} cvOnlyMode={result.cvOnlyMode ?? false} />
           )}
 
         </div>

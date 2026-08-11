@@ -1,0 +1,49 @@
+﻿[Script Info]
+; CareerLens booth ad - English captions (M08 part C)
+; Timed against ad-raw.mp4 (64.5s, 1920x1080, 30fps)
+; Segment boundaries: 0 / 7 / 12 / 18 / 23 / 30.5 / 40.5 / 50.5 / 56.5 / 64.5
+;
+; The ad runs on loop at the stand WITHOUT SOUND - these captions carry the whole message.
+; Large, short, high contrast, readable from several metres away.
+ScriptType: v4.00+
+PlayResX: 1920
+PlayResY: 1080
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+YCbCr Matrix: TV.601
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Light,Inter,62,&H006E1B1E,&H000000FF,&H00F8F5F0,&H00F8F5F0,-1,0,0,0,100,100,0,0,3,18,0,2,140,140,74,1
+Style: Dark,Inter,62,&H00FFFFFF,&H000000FF,&H006E1B1E,&HA0000000,-1,0,0,0,100,100,0,0,1,4,3,2,140,140,74,1
+Style: Hero,Inter,74,&H00FFFFFF,&H000000FF,&H006E1B1E,&HA0000000,-1,0,0,0,100,100,0,0,1,4,3,2,140,140,74,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+
+; --- 1. crumple, night (0-7) ---
+Dialogue: 0,0:00:00.80,0:00:05.60,Dark,,0,0,0,,Rejected again?
+
+; --- 2. into the bin (7-12) : deliberately no text, this is the silent beat ---
+
+; --- 3. logo emerges from the data (12-18) ---
+Dialogue: 0,0:00:13.60,0:00:17.60,Dark,,0,0,0,,Your CV isn't weak. It's just not readable to them.
+
+; --- 4. upload + automatic role detection (18-23) ---
+Dialogue: 0,0:00:18.40,0:00:22.70,Light,,0,0,0,,Upload your CV. The role is detected automatically.
+
+; --- 5. dashboard: score + skill columns (23-30.5) ---
+Dialogue: 0,0:00:23.40,0:00:30.20,Light,,0,0,0,,A score for every skill the role actually requires.
+
+; --- 6. gap analysis (30.5-40.5) ---
+Dialogue: 0,0:00:30.90,0:00:35.40,Light,,0,0,0,,Exactly what's missing.
+Dialogue: 0,0:00:35.60,0:00:40.20,Light,,0,0,0,,Measured against real job-market data.
+
+; --- 7. improve (40.5-50.5) ---
+Dialogue: 0,0:00:40.90,0:00:45.40,Light,,0,0,0,,Rewrite it, skill by skill.
+Dialogue: 0,0:00:45.60,0:00:50.20,Light,,0,0,0,,You approve every single change.
+
+; --- 8. relief, daylight (50.5-56.5) ---
+Dialogue: 0,0:00:50.90,0:00:56.20,Hero,,0,0,0,,Same person. Same experience. Finally readable.
+
+; --- 9. end card (56.5-64.5) : the card carries its own text, no caption ---

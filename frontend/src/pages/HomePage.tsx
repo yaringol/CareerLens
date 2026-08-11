@@ -37,7 +37,7 @@ const HomePage = () => {
         <ShaderBackground />
 
         <div className="hero-content">
-          <div className="hero-badge">DS-Powered Resume Analysis</div>
+          <div className="hero-badge">Data-Science-Powered CV Analysis</div>
           <div className="hero-logo">
             <svg className="hero-logo-icon" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <rect x="8" y="4" width="28" height="36" rx="4" fill="none" stroke="white" strokeWidth="3"/>
@@ -73,17 +73,12 @@ const HomePage = () => {
           <div className="hero-stats">
             <div className="hero-stat">
               <span className="hero-stat-value">5</span>
-              <span className="hero-stat-label">Global skills</span>
+              <span className="hero-stat-label">Core Skills</span>
             </div>
             <div className="hero-stat-divider" />
             <div className="hero-stat">
               <span className="hero-stat-value">5</span>
-              <span className="hero-stat-label">Your job skills</span>
-            </div>
-            <div className="hero-stat-divider" />
-            <div className="hero-stat">
-              <span className="hero-stat-value">DS</span>
-              <span className="hero-stat-label">Powered</span>
+              <span className="hero-stat-label">Dynamic Skills</span>
             </div>
           </div>
 
@@ -92,7 +87,7 @@ const HomePage = () => {
           )}
         </div>
 
-        <button className="scroll-indicator" onClick={scrollToUpload} aria-label="Scroll to upload form">
+        <button className="scroll-indicator" onClick={scrollToUpload} aria-label="Analyze your CV">
           <span className="scroll-indicator-text">Analyze your CV</span>
           <div className="scroll-chevron">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -112,7 +107,7 @@ const HomePage = () => {
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
             </div>
             <h3 className="hiw-step-title">Upload CV</h3>
-            <p className="hiw-step-desc">Drop your resume PDF. We extract the text and build your skill profile.</p>
+            <p className="hiw-step-desc">Drop your CV PDF. We extract the text and build your skill profile.</p>
           </div>
           <div className="hiw-connector">→</div>
           <div className="hiw-step">
@@ -130,7 +125,7 @@ const HomePage = () => {
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </div>
             <h3 className="hiw-step-title">Get Score</h3>
-            <p className="hiw-step-desc">See your match percentage per skill and know exactly what to add to your CV.</p>
+            <p className="hiw-step-desc">See your Match Score per skill and know exactly what to add to your CV.</p>
           </div>
         </div>
       </section>
@@ -149,7 +144,7 @@ const HomePage = () => {
           </div>
           <div className="why-card">
             <div className="why-pain">Not sure which skills to highlight or add?</div>
-            <div className="why-solution">Get a per-skill breakdown so you can prioritise exactly what to improve.</div>
+            <div className="why-solution">Get a per-skill breakdown so you can prioritize exactly what to improve.</div>
           </div>
         </div>
       </section>

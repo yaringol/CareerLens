@@ -13,6 +13,15 @@ export async function parseJsonSafe<T>(raw: string, agentName: string): Promise<
   let result = tryParse(raw);
   if (result !== null) return result;
 
+  // Models routinely wrap valid JSON in ```json fences or a sentence of
+  // preamble. Extract the outermost JSON object/array locally before paying
+  // for a second LLM round-trip.
+  const embedded = raw.match(/[{[][\s\S]*[}\]]/);
+  if (embedded) {
+    result = tryParse(embedded[0]);
+    if (result !== null) return result;
+  }
+
   const repaired = await llmCall(agentName, [
     {
       role: 'user',

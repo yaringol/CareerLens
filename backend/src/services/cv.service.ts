@@ -37,7 +37,7 @@ function extractHeaderText(raw: string, maxLines = HEADER_TEXT_MAX_LINES): strin
 export async function processUpload(
   buffer: Buffer,
   originalName: string
-): Promise<{ cvText: string; headerText: string }> {
+): Promise<{ cvText: string; headerText: string; rawText: string }> {
   let raw: string;
   let parser: PDFParse | undefined;
   try {
@@ -55,6 +55,20 @@ export async function processUpload(
     throw new ValidationError('No extractable text from PDF');
   }
   logDebugText('CV raw (pre-normalize)', raw);
+  // English-only by design (see the project specification): normalization strips
+  // every non-Latin character, so a Hebrew/other-script CV would silently survive
+  // on its few Latin fragments (emails, tech names) and be scored as if it were
+  // English. Reject it here, on the raw text, with an actionable message.
+  const letters = raw.match(/\p{L}/gu) ?? [];
+  if (letters.length >= 40) {
+    const latin = raw.match(/[A-Za-z]/g) ?? [];
+    if (latin.length / letters.length < 0.7) {
+      logUploadWarn(`non-English CV rejected (${latin.length}/${letters.length} Latin letters)`);
+      throw new ValidationError(
+        'CareerLens analyzes English CVs only. Please upload an English version of your CV.'
+      );
+    }
+  }
   const cvText = normalizeCvText(raw);
   logDebugText('CV normalized', cvText);
   if (cvText.length < 50) {
@@ -63,5 +77,9 @@ export async function processUpload(
   }
   logUploadOk(originalName, cvText.length);
   const headerText = extractHeaderText(raw);
-  return { cvText, headerText };
+  // rawText keeps the original casing, punctuation and line breaks. Scoring and
+  // keyword matching stay on the normalized cvText they were built around; the
+  // improve/export flow needs the real document (normalization flattens it into
+  // one lowercase run-on paragraph, which is unusable as an exported CV).
+  return { cvText, headerText, rawText: raw };
 }

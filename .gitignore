@@ -15,29 +15,58 @@ data/processed/*
 
 # OS / IDE
 .DS_Store
+~$*
 .vscode/
 .idea/
 .cursor/
 github-helper.sh
-CVs/
 
-# Frontend
-frontend/node_modules/
+# Build artifacts
+*node_modules*
+frontend/dist/
+backend/dist/
+*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
 
 # Playwright MCP - generated session logs/snapshots/screenshots
 .playwright-mcp/
 qa-*.png
 
-# DS model - keep timestamped snapshots in git; ignore the mutable production copy
-ds/model/model.joblib
+# DS model - the production artifacts are tracked (via LFS) so a clone can run the
+# server; the dated training snapshots are local backups only
+ds/model/*_20*.joblib
+ds/model/NEW.ipynb
 ds/model/logs/
 ds/model/token_dist.json
 ds/model/tsne_map.html
 ds/model/.ipynb_checkpoints/
 ds/model/skill_db_relax_*.json
+ds/model/model.joblib.bak-*
 
-*.md
-!README.md
-!docs/TESTING.md
-!docs/ds-models/*.md
-*node_modules*
+# Internal working docs - historical plans, task boards and QA scratch, local only
+/LOGIN_QA_REPORT.md
+/QA_TEST_PLAN.md
+backend/TASKS.md
+backend/docs/
+docs/TASKS.md
+docs/JIRA_TASKS.md
+docs/JIRA_TASKS_DS.md
+docs/IMPLEMENTATION_PLAN.md
+docs/milestone1-*.md
+docs/ds_model_plan.md
+docs/ds_progress.md
+docs/brand-brief.md
+docs/design-todo.md
+docs/mcp-prompts.md
+ds/model/SKILLS_MODEL.md
+ds/model/TITLE_DETECTION_METHODOLOGY.md
+ds/model/lang_uk_dataset_report.md
+
+# Heavy media - stays local; docs, scripts and small images are tracked
+*.mp4
+*.webm
+*.mov
+docs/final-sprint/promo/clips/
+docs/final-sprint/promo/final/
+docs/final-sprint/promo/_archive/

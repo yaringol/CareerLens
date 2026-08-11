@@ -11,7 +11,11 @@ import {
 } from '../utils/logger';
 
 const DS_MODEL_URL = process.env.DS_MODEL_URL ?? 'http://localhost:8000';
-const DS_MODEL_TIMEOUT_MS = 5000;
+// 5s was sized for the pure-sklearn classifier. Since the M19 agreement signal
+// landed on /cv/role, a headerless CV also pays a SkillNer pass (measured
+// 1.2-7.4s), so the old ceiling turned a slow-but-correct detection into a
+// user-facing 503. Env-overridable so the demo box can tune it without a build.
+const DS_MODEL_TIMEOUT_MS = Number(process.env.DS_MODEL_TIMEOUT_MS ?? '15000');
 
 // Below this normalised confidence (0-100) for ALL classifier candidates, the CV
 // is routed to the closed-list LLM fallback - typically roles the classifier has
@@ -45,7 +49,17 @@ interface CVTitleDetectionResponse {
   job_title: string;
   canonical_title?: string;
   confidence: number;
+  // M19 agreement signal (see ExtractTitleResult below): /cv/role attaches the
+  // same three fields to every candidate item to keep the list shape compatible.
+  agreement?: 'agree' | 'disagree' | 'rejects' | 'not_covered' | 'no_skills' | 'skipped_high_confidence';
+  skills_model_title?: string | null;
+  skills_model_confidence?: number;
 }
+
+type AgreementSignalFields = Pick<
+  ExtractTitleResult,
+  'agreement' | 'skills_model_title' | 'skills_model_confidence'
+>;
 
 export type RoleDetectionSource = 'title_extraction' | 'classifier' | 'llm_fallback';
 
@@ -60,7 +74,9 @@ export interface DetectedRole {
  * Calls /cv/role - the classifier maps free text (CV body or a typed title)
  * to the nearest supported canonical job titles, ranked by confidence.
  */
-async function classifyRoles(text: string): Promise<DetectedRole[]> {
+async function classifyRoles(
+  text: string
+): Promise<{ roles: DetectedRole[]; signal?: AgreementSignalFields }> {
   try {
     const response = await axios.get<CVTitleDetectionResponse[]>(
       `${DS_MODEL_URL}/cv/role`,
@@ -69,7 +85,15 @@ async function classifyRoles(text: string): Promise<DetectedRole[]> {
         timeout: DS_MODEL_TIMEOUT_MS,
       }
     );
-    return (response.data ?? [])
+    const first = (response.data ?? [])[0];
+    const signal: AgreementSignalFields | undefined = first?.agreement
+      ? {
+          agreement: first.agreement,
+          skills_model_title: first.skills_model_title ?? null,
+          skills_model_confidence: first.skills_model_confidence,
+        }
+      : undefined;
+    const roles = (response.data ?? [])
       .map((item) => {
         const jobTitle = typeof item.job_title === 'string' ? item.job_title.trim() : '';
         const canonicalTitle =
@@ -84,6 +108,7 @@ async function classifyRoles(text: string): Promise<DetectedRole[]> {
         };
       })
       .filter((role) => role.jobTitle);
+    return { roles, signal };
   } catch (err) {
     if (axios.isAxiosError(err)) {
       if (err.code === 'ECONNREFUSED' || err.code === 'ECONNABORTED') {
@@ -140,7 +165,7 @@ export async function detectTitleFromCv(text: string, headerText?: string): Prom
   try {
     const llmTitle = await classifyTitleWithLlm(text);
     if (llmTitle) {
-      logTitleLlmFallbackUsed(llmTitle);
+      logTitleLlmFallbackUsed(llmTitle, ladder.agreement);
       const fallbackRole: DetectedRole = {
         jobTitle: llmTitle,
         canonicalTitle: llmTitle,
@@ -267,6 +292,20 @@ export interface TrendingSkill {
  * rising/stable/falling trend plus a stability score. Intended to run before analyze so
  * the dynamic skill slots favour what is currently in demand.
  */
+/** True when the DS model marks this role's skill data as too thin to trust
+ *  (fewer postings than its minimum-records floor). Fails open to false. */
+export async function isRoleDataLimited(title: string): Promise<boolean> {
+  try {
+    const response = await axios.get<{ limited_data?: unknown }>(
+      `${DS_MODEL_URL}/title/skills`,
+      { params: { title, top_n: 1 }, timeout: DS_MODEL_TIMEOUT_MS }
+    );
+    return response.data.limited_data === true;
+  } catch {
+    return false;
+  }
+}
+
 export async function getTrendingSkills(title: string, n = 5): Promise<TrendingSkill[]> {
   try {
     const response = await axios.get<{
@@ -316,6 +355,13 @@ export interface ExtractTitleResult {
   low_confidence: boolean;
   source: 'title_extraction' | 'cv_classifier';
   candidates: CVTitleDetectionResponse[];
+  // M19 agreement signal (optional - absent when AGREEMENT_SIGNAL_ENABLED is off
+  // on the DS side): whether the skills->title router concurred with the ladder's
+  // answer. 'disagree'/'rejects' arrive with confidences already capped below the
+  // LLM threshold, so no routing logic is needed here - logged for analysis only.
+  agreement?: 'agree' | 'disagree' | 'rejects' | 'not_covered' | 'no_skills' | 'skipped_high_confidence';
+  skills_model_title?: string | null;
+  skills_model_confidence?: number;
 }
 
 // Below this normalised confidence (0-100), an extraction/classifier result is
@@ -375,8 +421,11 @@ export async function extractTitleFromCv(cvText: string, headerText?: string): P
   }
 
   // No self-declared title found (or normalize returned nothing usable) -
-  // fall back to the full-CV-body classifier, same as before.
-  const roles = await classifyRoles(cvText);
+  // fall back to the full-CV-body classifier, same as before. This is the rung
+  // where the DS-side agreement signal lives (/cv/role): boosted/capped
+  // confidences arrive already applied; the signal fields are passed through
+  // so the LLM-fallback log can name which signal triggered it.
+  const { roles, signal } = await classifyRoles(cvText);
   const top = roles[0];
   return {
     extracted_title: selfDeclaredTitle,
@@ -391,6 +440,7 @@ export async function extractTitleFromCv(cvText: string, headerText?: string): P
       canonical_title: r.canonicalTitle,
       confidence: r.confidence,
     })),
+    ...(signal ?? {}),
   };
 }
 

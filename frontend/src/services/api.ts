@@ -83,8 +83,30 @@ async function handleUnauthorized(res: Response): Promise<void> {
   }
 }
 
-async function apiFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-  const res = await fetch(input, init)
+// LLM-backed endpoints legitimately take tens of seconds; everything else
+// should answer fast. Both get a hard ceiling so the UI can never hang on a
+// spinner forever, and pure network failures become a human-readable error
+// instead of the browser's raw "Failed to fetch".
+const DEFAULT_TIMEOUT_MS = 20_000
+export const LLM_TIMEOUT_MS = 90_000
+
+async function apiFetch(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+  timeoutMs: number = DEFAULT_TIMEOUT_MS,
+): Promise<Response> {
+  let res: Response
+  try {
+    res = await fetch(input, { ...init, signal: init?.signal ?? AbortSignal.timeout(timeoutMs) })
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'TimeoutError') {
+      throw new ApiError('The server is taking too long to respond. Please try again.', 0)
+    }
+    throw new ApiError(
+      'Cannot reach the CareerLens server. Check that the application services are running.',
+      0,
+    )
+  }
   await handleUnauthorized(res)
   if (!res.ok) {
     throw await parseErrorResponse(res)
@@ -102,6 +124,8 @@ export interface UploadPdfResponse {
   cvId: string
   cvText: string
   headerText?: string
+  /** Original extracted text (casing/punctuation/line breaks intact) - feeds improve/export. */
+  rawText?: string
   fileName: string
 }
 
@@ -119,9 +143,19 @@ export interface TitleMatchSuggestion {
   source?: 'title_extraction' | 'classifier' | 'llm_fallback'
 }
 
+export interface SkillScoreDetail {
+  name: string
+  score: number
+  trend?: 'rising' | 'stable' | 'falling'
+  /** What the CV shows for this skill; absent on old analyses and keyword fallback. */
+  evidence?: string
+  /** What is missing for a higher score. */
+  missing?: string
+}
+
 export interface AnalyzeResponse {
   jobTitle: string
-  skills: Array<{ name: string; score: number; trend?: 'rising' | 'stable' | 'falling' }>
+  skills: SkillScoreDetail[]
   matchScore: number
   id: string
   cvOnlyMode?: boolean
@@ -145,6 +179,8 @@ export interface PersonalizationOptions {
   detectedTitle: string
   extractedCvSkills: string[]
   roleDerivedSkills: SkillOption[]
+  /** DS model has too few postings for this role to trust its skill list. */
+  roleDataLimited?: boolean
 }
 
 export type RecommendationMode = 'stable' | 'balanced' | 'trending' | 'custom'
@@ -208,7 +244,7 @@ export async function uploadPdf(file: File, saveToLibrary = true): Promise<Uploa
     method: 'POST',
     headers: { ...authHeaders() },
     body: formData,
-  })
+  }, LLM_TIMEOUT_MS)
   return res.json() as Promise<UploadPdfResponse>
 }
 
@@ -217,7 +253,7 @@ export async function detectCvTitle(cvText: string, headerText?: string): Promis
     method: 'POST',
     headers: { ...jsonHeaders, ...authHeaders() },
     body: JSON.stringify({ cvText, headerText }),
-  })
+  }, LLM_TIMEOUT_MS)
   return res.json()
 }
 
@@ -258,7 +294,7 @@ export async function compareSavedCvs(payload: {
     method: 'POST',
     headers: { ...jsonHeaders, ...authHeaders() },
     body: JSON.stringify(payload),
-  })
+  }, LLM_TIMEOUT_MS)
   return res.json() as Promise<CompareSavedResponse>
 }
 
@@ -278,7 +314,7 @@ export async function getMyCVs(): Promise<SavedCv[]> {
   return rows.map((row) => ({ ...row, isFavorite: row.isFavorite ?? false }))
 }
 
-export async function getCvText(cvId: string): Promise<{ cvId: string; cvText: string; headerText?: string; fileName: string }> {
+export async function getCvText(cvId: string): Promise<{ cvId: string; cvText: string; headerText?: string; rawText?: string; fileName: string }> {
   const res = await apiFetch(`${base()}/cv/${cvId}`, {
     headers: { ...authHeaders() },
   })
@@ -331,7 +367,7 @@ export async function analyzeCv(
       titleMatch,
       ...(options.excludeCvId ? { excludeCvId: options.excludeCvId } : {}),
     }),
-  })
+  }, LLM_TIMEOUT_MS)
   return res.json() as Promise<AnalyzeResponse>
 }
 
@@ -349,7 +385,7 @@ export async function getPersonalizationOptions(payload: {
     method: 'POST',
     headers: { ...jsonHeaders, ...authHeaders() },
     body: JSON.stringify(payload),
-  })
+  }, LLM_TIMEOUT_MS)
   return res.json() as Promise<PersonalizationOptions>
 }
 
@@ -363,7 +399,7 @@ export async function analyzePersonalized(contract: PersonalizationContract): Pr
     method: 'POST',
     headers: { ...jsonHeaders, ...authHeaders() },
     body: JSON.stringify(contract),
-  })
+  }, LLM_TIMEOUT_MS)
   return res.json() as Promise<AnalyzeResponse>
 }
 
@@ -456,11 +492,11 @@ export async function prepareImprovement(
   cvText: string,
   weakSkills: Array<{ skill: string; score: number }>
 ): Promise<PrepareResponse> {
-  const res = await fetch(`${base()}/cv-improve/prepare`, {
+  const res = await apiFetch(`${base()}/cv-improve/prepare`, {
     method: 'POST',
     headers: { ...jsonHeaders, ...authHeaders() },
     body: JSON.stringify({ cvText, weakSkills }),
-  })
+  }, LLM_TIMEOUT_MS)
   await handleUnauthorized(res)
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
@@ -480,11 +516,11 @@ export async function getSuggestion(
     found: boolean
   }
 ): Promise<string> {
-  const res = await fetch(`${base()}/cv-improve/suggest`, {
+  const res = await apiFetch(`${base()}/cv-improve/suggest`, {
     method: 'POST',
     headers: { ...jsonHeaders, ...authHeaders() },
     body: JSON.stringify(payload),
-  })
+  }, LLM_TIMEOUT_MS)
   await handleUnauthorized(res)
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
@@ -500,7 +536,7 @@ export async function reanalyzeCv(
   skills: string[],
   options: { cvOnlyMode?: boolean; excludeCvId?: string } = {}
 ): Promise<AnalyzeResponse> {
-  const res = await fetch(`${base()}/analyze/rescore`, {
+  const res = await apiFetch(`${base()}/analyze/rescore`, {
     method: 'POST',
     headers: { ...jsonHeaders, ...authHeaders() },
     body: JSON.stringify({
@@ -510,7 +546,7 @@ export async function reanalyzeCv(
       cvOnlyMode: options.cvOnlyMode ?? false,
       excludeCvId: options.excludeCvId,
     }),
-  })
+  }, LLM_TIMEOUT_MS)
   await handleUnauthorized(res)
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
@@ -522,11 +558,11 @@ export async function reanalyzeCv(
 export async function mergeCv(
   sections: CvSection[]
 ): Promise<string> {
-  const res = await fetch(`${base()}/cv-improve/merge`, {
+  const res = await apiFetch(`${base()}/cv-improve/merge`, {
     method: 'POST',
     headers: { ...jsonHeaders, ...authHeaders() },
     body: JSON.stringify({ sections }),
-  })
+  }, LLM_TIMEOUT_MS)
   await handleUnauthorized(res)
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
@@ -545,7 +581,7 @@ export async function saveImprovementSession(payload: {
   improvements: unknown[]
   sectionUpdates?: unknown[]
 }): Promise<{ id: string }> {
-  const res = await fetch(`${base()}/cv-improve/sessions`, {
+  const res = await apiFetch(`${base()}/cv-improve/sessions`, {
     method: 'POST',
     headers: { ...jsonHeaders, ...authHeaders() },
     body: JSON.stringify(payload),
@@ -559,7 +595,7 @@ export async function saveImprovementSession(payload: {
 }
 
 export async function getImprovementSessions(): Promise<ImprovementSession[]> {
-  const res = await fetch(`${base()}/cv-improve/sessions`, {
+  const res = await apiFetch(`${base()}/cv-improve/sessions`, {
     headers: { ...authHeaders() },
   })
   await handleUnauthorized(res)
@@ -571,7 +607,7 @@ export async function getImprovementSessions(): Promise<ImprovementSession[]> {
 }
 
 export async function getImprovementSession(id: string): Promise<ImprovementSessionDetail> {
-  const res = await fetch(`${base()}/cv-improve/sessions/${id}`, {
+  const res = await apiFetch(`${base()}/cv-improve/sessions/${id}`, {
     headers: { ...authHeaders() },
   })
   await handleUnauthorized(res)
@@ -583,7 +619,7 @@ export async function getImprovementSession(id: string): Promise<ImprovementSess
 }
 
 export async function deleteImprovementSession(id: string): Promise<void> {
-  const res = await fetch(`${base()}/cv-improve/sessions/${id}`, {
+  const res = await apiFetch(`${base()}/cv-improve/sessions/${id}`, {
     method: 'DELETE',
     headers: { ...authHeaders() },
   })

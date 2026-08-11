@@ -1,0 +1,63 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+html,body{overflow:hidden;background:#fff}
+body{background:#fff;margin:0;padding:26px 30px;font-family:'Segoe UI',Arial,sans-serif;width:880px}
+h1{font-size:24px;margin:0 0 4px;color:#1c2833}
+h1 span{color:#0b6e4f}
+.sub{font-size:14px;color:#5d6d7e;margin:0 0 10px}
+text{font-family:'Segoe UI',Arial,sans-serif}
+</style></head><body>
+<h1><span>Seven months in one line</span> — how CareerLens took shape</h1>
+<p class="sub">Each stop is told in full in this chapter. Above the line: what was built. Below it: what failed or changed course.</p>
+<svg width="820" height="340" viewBox="0 0 820 340">
+  <!-- spine -->
+  <line x1="30" y1="170" x2="790" y2="170" stroke="#b0bec5" stroke-width="2"/>
+  <!-- nodes at x = 60, 175, 290, 405, 520, 635, 750 -->
+  <g>
+    <circle cx="60"  cy="170" r="7" fill="#0b6e4f"/>
+    <circle cx="175" cy="170" r="7" fill="#eb6834"/>
+    <circle cx="290" cy="170" r="7" fill="#eb6834"/>
+    <circle cx="405" cy="170" r="7" fill="#0b6e4f"/>
+    <circle cx="520" cy="170" r="7" fill="#eb6834"/>
+    <circle cx="635" cy="170" r="7" fill="#0b6e4f"/>
+    <circle cx="750" cy="170" r="7" fill="#2a78d6"/>
+  </g>
+  <!-- month labels on the spine -->
+  <g font-size="13" fill="#78909c" text-anchor="middle" font-weight="600">
+    <text x="60"  y="196">Jan</text>
+    <text x="175" y="196">Feb</text>
+    <text x="290" y="196">Apr</text>
+    <text x="405" y="196">May–Jun</text>
+    <text x="520" y="196">Late Jun</text>
+    <text x="635" y="196">Jul</text>
+    <text x="750" y="196">Aug</text>
+  </g>
+  <!-- ABOVE the line: built -->
+  <g font-size="12.5" fill="#1c2833" text-anchor="middle">
+    <g transform="translate(60 0)"><text y="120">First frontend;</text><text y="136">scraper #1: one</text><text y="152">company, 24 jobs</text></g>
+    <g transform="translate(175 0)"><text y="136">5-role POC</text><text y="152">becomes the plan</text></g>
+    <g transform="translate(290 0)"><text y="120">Aggregation model;</text><text y="136">full UI redesign</text><text y="152">for clarity</text></g>
+    <g transform="translate(405 0)"><text y="120">Auth; improve flow;</text><text y="136">growth to 59 roles;</text><text y="152">score scale re-anchored</text></g>
+    <g transform="translate(520 0)"><text y="136">Docker;</text><text y="152">CV classifier built</text></g>
+    <g transform="translate(635 0)"><text y="120">Detection ladder;</text><text y="136">promotion gate;</text><text y="152">gap analysis</text></g>
+    <g transform="translate(750 0)"><text y="120">Measurement</text><text y="136">campaign;</text><text y="152">agreement signal</text></g>
+  </g>
+  <!-- BELOW the line: failed / changed course -->
+  <g font-size="12.5" fill="#c0492c" text-anchor="middle">
+    <g transform="translate(60 0)"><text y="230">9-week plan</text><text y="246">already slipping</text></g>
+    <g transform="translate(175 0)"><text y="230">original work plan</text><text y="246">quietly retired</text></g>
+    <g transform="translate(290 0)"><text y="230">model-zero lives</text><text y="246">exactly 3 days</text></g>
+    <g transform="translate(405 0)"><text y="230">AllJobs source</text><text y="246">retired for quality</text></g>
+    <g transform="translate(520 0)"><text y="230">regex title detection</text><text y="246">tried and retired</text></g>
+    <g transform="translate(635 0)"><text y="230">adversarial audit:</text><text y="246">74 findings, 52 real</text></g>
+    <g transform="translate(750 0)"><text y="230">weak fit-separation</text><text y="246">found and explained</text></g>
+  </g>
+  <!-- legend -->
+  <g font-size="12" text-anchor="start">
+    <circle cx="255" cy="315" r="6" fill="#0b6e4f"/><text x="267" y="319" fill="#1c2833">built / shipped</text>
+    <circle cx="375" cy="315" r="6" fill="#eb6834"/><text x="387" y="319" fill="#1c2833">pivot / retired attempt</text>
+    <circle cx="530" cy="315" r="6" fill="#2a78d6"/><text x="542" y="319" fill="#1c2833">measured</text>
+  </g>
+</svg>
+</body></html>

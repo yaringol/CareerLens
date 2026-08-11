@@ -23,6 +23,7 @@ export interface UploadDraft {
   selectedCvId: string | null
   selectedCvName: string | null
   cvText: string | null
+  rawText?: string | null
   roleDetection: CachedRoleDetection
   manualTitleQuery?: string
   showManualOverride?: boolean

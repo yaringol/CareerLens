@@ -41,8 +41,65 @@ model_trained_at = artifacts.get('trained_at')
 # non-engineering CVs that is never returned to callers.
 cv_to_title_model = joblib.load(f'{os.path.dirname(__file__)}/text_to_job_title_classifier.joblib')
 
-from taxonomy import OTHER_LABEL
-from skill_schema import select_display_skills
+from taxonomy import OTHER_LABEL, CANONICAL_TITLES
+from skill_schema import select_display_skills, compute_role_counts
+from skillner_utils import annotate_with_fallback
+
+# Ubiquity map: how many of the 59 roles carry each skill. Skills present in
+# almost every role (e.g. "backend" in 52/59) are generic posting language, not
+# role signals, and are excluded from ranking by select_display_skills.
+UBIQUITY_CAP = int(os.getenv('SKILL_UBIQUITY_CAP', '48'))
+# On dense corpora presence-only counts saturate (every skill somewhere in every
+# role); a prevalence floor keeps the ubiquity signal meaningful. 0.0 = legacy.
+ROLE_COUNT_MIN_PREVALENCE = float(os.getenv('ROLE_COUNT_MIN_PREVALENCE', '0.0'))
+skill_role_counts = compute_role_counts(
+    feature_matrix, min_prevalence=ROLE_COUNT_MIN_PREVALENCE,
+)
+
+
+def recalibrate_trend_labels(matrix: dict) -> dict:
+    """Re-label skill trends from the stored prevalence ratios, in memory.
+
+    train.py labels trends with fixed ratio thresholds (rise >= 1.25,
+    fall <= 0.80). On the served corpus the entire recent/overall ratio
+    range sits inside (0.84, 1.23), so every one of the 60k skills was
+    labeled 'stable' and /title/trending-skills could never answer. The
+    artifact already stores both prevalences, so the labels can be
+    recomputed at load time against the distribution that actually
+    exists: rising = top quintile of ratios (and at least +5% movement),
+    falling = bottom quintile (and at least -5%). The .joblib on disk is
+    never modified.
+    """
+    ratios = []
+    for skills in matrix.values():
+        for f in skills.values():
+            p, rp = f.get('prevalence') or 0, f.get('recent_prevalence')
+            if p > 0 and rp is not None and rp > 0:
+                ratios.append(rp / p)
+    if len(ratios) < 100:
+        return {'relabeled': False, 'reason': f'only {len(ratios)} usable ratios'}
+
+    ratios.sort()
+    rise_cut = max(ratios[int(len(ratios) * 0.80)], 1.05)
+    fall_cut = min(ratios[int(len(ratios) * 0.20)], 0.95)
+
+    counts = {'rising': 0, 'stable': 0, 'falling': 0}
+    for skills in matrix.values():
+        for f in skills.values():
+            p, rp = f.get('prevalence') or 0, f.get('recent_prevalence')
+            if p > 0 and rp is not None and rp > 0:
+                ratio = rp / p
+                label = 'rising' if ratio >= rise_cut else 'falling' if ratio <= fall_cut else 'stable'
+            else:
+                label = 'stable'
+            f['trend'] = label
+            counts[label] += 1
+    return {'relabeled': True, 'rise_cut': round(rise_cut, 4),
+            'fall_cut': round(fall_cut, 4), 'counts': counts}
+
+
+TREND_RECALIBRATION = recalibrate_trend_labels(feature_matrix)
+print(f"[server] trend recalibration: {TREND_RECALIBRATION}")
 
 SKILL_TOP_POOL = int(os.getenv('SKILL_TOP_POOL', '10'))
 SKILL_TOP_DISPLAY = int(os.getenv('SKILL_TOP_DISPLAY', '5'))
@@ -64,6 +121,175 @@ title_labels = title_normalizer['labels']
 # showed accuracy dropping into the 60-80% range with too little data to trust
 # further - treat the extracted phrase as unresolved rather than guess.
 TITLE_NORMALIZER_ACCEPT_SIM = 0.55
+
+# ── Agreement signal (M19): skills->title router as a second opinion ───────────
+# Measured on the authentic-CV set: when the text path and the skills path agree
+# the joint accuracy is ~87%, on disagreement ~50% - so agreement boosts
+# confidence past the LLM-fallback threshold and disagreement (or an __other__
+# rejection) caps it below, routing the CV to the existing closed-list LLM rung.
+# A declared-title hit above DISAGREEMENT_OVERRIDE_MAX is never overridden: the
+# router only covers 24 of 59 roles and must not out-vote a confident header.
+AGREEMENT_SIGNAL_ENABLED = os.getenv('AGREEMENT_SIGNAL_ENABLED', '0').lower() in ('1', 'true', 'yes')
+AGREEMENT_BOOST_CONFIDENCE = float(os.getenv('AGREEMENT_BOOST_CONFIDENCE', '87'))
+DISAGREEMENT_OVERRIDE_MAX = float(os.getenv('DISAGREEMENT_OVERRIDE_MAX', '85'))
+DISAGREEMENT_CONFIDENCE_CAP = float(os.getenv('DISAGREEMENT_CONFIDENCE_CAP', '50'))
+# Above this confidence the signal is provably a no-op: the agree branch only
+# lifts to AGREEMENT_BOOST_CONFIDENCE (max() leaves a higher value alone) and the
+# disagree/rejects branch is gated on base < DISAGREEMENT_OVERRIDE_MAX. Running
+# the check anyway costs a full SkillNer pass (measured 1.2-7.4s, M05 step 3),
+# which pushed /cv/role past the backend's DS timeout and returned 503s on the
+# headerless path. Short-circuiting here is behaviour-preserving by construction.
+SIGNAL_NO_OP_ABOVE = max(AGREEMENT_BOOST_CONFIDENCE, DISAGREEMENT_OVERRIDE_MAX)
+SIGNAL_SKIPPED = {
+    'agreement': 'skipped_high_confidence',
+    'skills_model_title': None,
+    'skills_model_confidence': None,
+}
+SKILLS_ROUTER_PATH = os.getenv(
+    'SKILLS_ROUTER_PATH', f'{os.path.dirname(__file__)}/skills_to_24_plus_other.joblib'
+)
+skills_router = None
+if AGREEMENT_SIGNAL_ENABLED:
+    try:
+        skills_router = joblib.load(SKILLS_ROUTER_PATH)
+        print(f"[server] agreement signal ON: router "
+              f"{skills_router.get('trained_at')} "
+              f"({len(skills_router['label_encoder'].classes_)} classes)")
+    except Exception as exc:  # missing/corrupt artifact must never block startup
+        print(f"[server] agreement signal DISABLED (router load failed: {exc})")
+        skills_router = None
+else:
+    print("[server] agreement signal off (AGREEMENT_SIGNAL_ENABLED != 1)")
+
+# The router was trained on skills with canonical-title names removed (leakage
+# guard); serving must filter identically or the feature distribution drifts.
+_LEAK_SKILLS = {t.lower() for t in CANONICAL_TITLES} | {t.lower() + 's' for t in CANONICAL_TITLES}
+
+
+def agreement_check(base_canonical, cv_text: str):
+    """Second opinion from the skills router. Returns None when the signal is
+    off/unavailable (callers treat None as fully neutral)."""
+    if skills_router is None or not cv_text:
+        return None
+    try:
+        raw = annotate_with_fallback(skill_extractor, cv_text[:20000])
+        skills = set()
+        for m in raw.get('full_matches', []):
+            v = (m.get('doc_node_value') or '').lower().strip()
+            if len(v) >= 3 and v not in _LEAK_SKILLS:
+                skills.add(v)
+        for m in raw.get('ngram_matches', []):
+            v = (m.get('doc_node_value') or '').lower().strip()
+            if len(v) >= 3 and float(m.get('score', 0)) >= 0.9 and v not in _LEAK_SKILLS:
+                skills.add(v)
+        if len(skills) < 3:
+            return {'agreement': 'no_skills', 'skills_model_title': None,
+                    'skills_model_confidence': 0.0}
+        le = skills_router['label_encoder']
+        proba = skills_router['model'].predict_proba(
+            skills_router['vectorizer'].transform([skills]))[0]
+        idx = int(proba.argmax())
+        pred, conf = str(le.classes_[idx]), float(proba[idx])
+        covered = {str(c) for c in le.classes_} - {OTHER_LABEL}
+        # Soft agreement: the ladder's answer counting anywhere in the router's
+        # top-3 counts as concurrence - adjacent role families (Data Scientist /
+        # ML Engineer, Cyber Security / Penetration Tester) collapse into each
+        # other in skill space, and a top-1-only rule punishes exactly those
+        # legitimate neighbors. Same top-3 semantics as the UI candidate list.
+        top3 = {str(le.classes_[i]) for i in proba.argsort()[::-1][:3]}
+        if pred == OTHER_LABEL:
+            status = 'rejects'
+        elif base_canonical not in covered:
+            status = 'not_covered'
+        elif base_canonical in top3:
+            status = 'agree'
+        else:
+            status = 'disagree'
+        return {'agreement': status,
+                'skills_model_title': None if pred == OTHER_LABEL else pred,
+                'skills_model_confidence': round(conf * 100, 2)}
+    except Exception as exc:
+        print(f"  agreement check failed ({exc.__class__.__name__}) - neutral")
+        return None
+
+
+def apply_agreement_signal(resp: dict, cv_text: str) -> dict:
+    """Fold the second opinion into a /cv/title response.
+
+    agree            -> lift confidence to >= AGREEMENT_BOOST_CONFIDENCE (skips
+                        the LLM rung the backend triggers below 55)
+    disagree/rejects -> when the base answer isn't a confident declared title
+                        (< DISAGREEMENT_OVERRIDE_MAX), cap every candidate below
+                        the LLM threshold so the existing fallback fires; the
+                        router's own pick joins the candidate list for the UI
+    not_covered / no_skills / signal-off -> untouched
+    """
+    if skills_router is not None and float(resp.get('confidence') or 0.0) >= SIGNAL_NO_OP_ABOVE:
+        return {**resp, **SIGNAL_SKIPPED}
+    signal = agreement_check(resp.get('canonical_title'), cv_text)
+    if signal is None:
+        return resp
+    resp.update(signal)
+    base_conf = float(resp.get('confidence') or 0.0)
+    if signal['agreement'] == 'agree':
+        boosted = round(max(base_conf, AGREEMENT_BOOST_CONFIDENCE), 2)
+        resp['confidence'] = boosted
+        resp['low_confidence'] = boosted < CLASSIFIER_FALLBACK_LOW_CONFIDENCE
+        if resp.get('candidates'):
+            resp['candidates'][0] = {**resp['candidates'][0], 'confidence': boosted}
+    elif signal['agreement'] in ('disagree', 'rejects') and base_conf < DISAGREEMENT_OVERRIDE_MAX:
+        resp['low_confidence'] = True
+        resp['confidence'] = round(min(base_conf, DISAGREEMENT_CONFIDENCE_CAP), 2)
+        capped = []
+        for cand in resp.get('candidates') or []:
+            capped.append({**cand,
+                           'raw_confidence': cand.get('raw_confidence', cand.get('confidence')),
+                           'confidence': round(min(float(cand.get('confidence') or 0.0),
+                                                   DISAGREEMENT_CONFIDENCE_CAP), 2)})
+        if signal['skills_model_title'] and all(
+                c.get('canonical_title') != signal['skills_model_title'] for c in capped):
+            capped.append({'job_title': signal['skills_model_title'],
+                           'canonical_title': signal['skills_model_title'],
+                           'confidence': round(min(signal['skills_model_confidence'],
+                                                   DISAGREEMENT_CONFIDENCE_CAP), 2)})
+        resp['candidates'] = capped
+    return resp
+
+def apply_agreement_signal_to_roles(candidates: list, cv_text: str) -> list:
+    """/cv/role variant of apply_agreement_signal - same policy, list shape.
+
+    /cv/role is the rung the PRODUCT actually calls (the backend's ladder in
+    dsModel.ts runs LLM header extraction -> /title/normalize, then falls back
+    here for headerless CVs; it never calls POST /cv/title). This is exactly
+    the signal's active zone - the classifier-only path where agreement
+    measured 87% vs ~50% on disagreement. The signal fields are attached to
+    every candidate item so the list response shape stays backward compatible.
+    """
+    top = candidates[0] if candidates else None
+    if (top is not None and skills_router is not None
+            and float(top.get('confidence') or 0.0) >= SIGNAL_NO_OP_ABOVE):
+        return [{**c, **SIGNAL_SKIPPED} for c in candidates]
+    signal = agreement_check(top.get('canonical_title') if top else None, cv_text)
+    if signal is None or top is None:
+        return candidates
+    base_conf = float(top.get('confidence') or 0.0)
+    if signal['agreement'] == 'agree':
+        boosted = round(max(base_conf, AGREEMENT_BOOST_CONFIDENCE), 2)
+        candidates = [{**top, 'confidence': boosted}] + candidates[1:]
+    elif signal['agreement'] in ('disagree', 'rejects') and base_conf < DISAGREEMENT_OVERRIDE_MAX:
+        candidates = [{**c,
+                       'raw_confidence': c.get('raw_confidence', c.get('confidence')),
+                       'confidence': round(min(float(c.get('confidence') or 0.0),
+                                               DISAGREEMENT_CONFIDENCE_CAP), 2)}
+                      for c in candidates]
+        if signal['skills_model_title'] and all(
+                c.get('canonical_title') != signal['skills_model_title'] for c in candidates):
+            candidates.append({'job_title': signal['skills_model_title'],
+                               'canonical_title': signal['skills_model_title'],
+                               'confidence': round(min(signal['skills_model_confidence'],
+                                                       DISAGREEMENT_CONFIDENCE_CAP), 2),
+                               'raw_confidence': signal['skills_model_confidence']})
+    return [{**c, **signal} for c in candidates]
 
 def _title_similarities(candidate: str):
     vec = title_encoder.encode([candidate], normalize_embeddings=True)
@@ -89,6 +315,16 @@ def confidence_level(n: int) -> str:
     if n >= 100: return 'high'
     if n >= 50:  return 'medium'
     return 'low'
+
+
+# Below this many postings, aggregation degrades into n-gram fragments
+# ("planning execution") rather than skills - the caller must know the
+# list is not trustworthy instead of receiving fabricated-looking output.
+LIMITED_DATA_MIN_RECORDS = int(os.getenv('SKILL_MIN_RECORDS', '25'))
+
+
+def limited_data(records_count: int) -> bool:
+    return records_count < LIMITED_DATA_MIN_RECORDS
 
 class NpEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -324,13 +560,12 @@ def best_title_candidate(candidates: list):
 @app.get("/text/skills")
 def predict_skills_from_text(text: str):
     try:
-        annotations = skill_extractor.annotate(text)
-        full_matches = annotations['results']['full_matches']
-        ngram_matches = annotations['results']['ngram_scored']
-        
-        skills = { "full_matches": full_matches, "ngram_matches": ngram_matches }
+        # Chunked fallback: SkillNer's matcher can crash on specific real-world
+        # texts (hit by an authentic CV in M18 eval); annotating in line-aligned
+        # chunks recovers the skills instead of silently returning nothing.
+        skills = annotate_with_fallback(skill_extractor, text)
         return json.loads(json.dumps(skills, ensure_ascii=False, cls=NpEncoder))
-    except:
+    except Exception:
         return {}
 
 @app.get("/title/skills")
@@ -348,10 +583,13 @@ def predict_skills(title: str, top_n: int = 5):
         pool_size=SKILL_TOP_POOL,
         display_count=n,
         fallback=skills_data[idx],
+        role_counts=skill_role_counts,
+        ubiquity_cap=UBIQUITY_CAP,
     )
 
     return {
         "matched_canonical": matched_canonical,
+        "limited_data": limited_data(rc),
         "data_confidence": confidence_level(rc),
         "records_count": rc,
         "suggested_skills": [r['skill'] for r in ranked],
@@ -408,7 +646,7 @@ def classify_cv_role(text: str) -> list:
 
 @app.get("/cv/role")
 def match_role_to_cv(text: str):
-    return classify_cv_role(text)
+    return apply_agreement_signal_to_roles(classify_cv_role(text), text)
 
 def _sanitize_text(value: Optional[str]) -> Optional[str]:
     """
@@ -481,7 +719,7 @@ def extract_and_normalize_title(payload: CvTitleRequest):
                 "confidence": confidence,
                 "raw_confidence": confidence,
             }] + alternatives
-            return {
+            return apply_agreement_signal({
                 "extracted_title": clean_extracted,
                 "raw_title": raw_extracted,
                 "seniority": seniority,
@@ -490,10 +728,10 @@ def extract_and_normalize_title(payload: CvTitleRequest):
                 "low_confidence": False,
                 "source": "title_extraction",
                 "candidates": response_candidates[:3],
-            }
+            }, cv_text)
 
     top = classifier_candidates[0] if classifier_candidates else None
-    return {
+    return apply_agreement_signal({
         "extracted_title": clean_extracted,
         "raw_title": raw_extracted,
         "seniority": seniority,
@@ -502,7 +740,7 @@ def extract_and_normalize_title(payload: CvTitleRequest):
         "low_confidence": (top["confidence"] if top else 0.0) < CLASSIFIER_FALLBACK_LOW_CONFIDENCE,
         "source": "cv_classifier",
         "candidates": classifier_candidates,
-    }
+    }, cv_text)
 
 @app.get("/title/normalize")
 def normalize_title(title: str):
@@ -566,7 +804,11 @@ def trending_skills(title: str, n: int = 5):
 
     feats = feature_matrix.get(matched_canonical, {})
     if feats:
-        ranked = sorted(feats.items(), key=lambda kv: -kv[1].get('prevalence', 0.0))[:n]
+        pool_items = [
+            (s, f) for s, f in feats.items()
+            if skill_role_counts.get(s, 0) <= UBIQUITY_CAP
+        ] or list(feats.items())
+        ranked = sorted(pool_items, key=lambda kv: -kv[1].get('prevalence', 0.0))[:n]
         skills = [
             {
                 "skill":                   s,
@@ -590,6 +832,7 @@ def trending_skills(title: str, n: int = 5):
 
     return {
         "matched_canonical": matched_canonical,
+        "limited_data":      limited_data(rc),
         "data_confidence":   confidence_level(rc),
         "records_count":     rc,
         "skills":            skills,

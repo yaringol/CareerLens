@@ -1,0 +1,28 @@
+/* T3 "minimal executive" - serif, whitespace, small-caps rules. Polished senior CV.
+   Markup: header(.name .title .contact) | section > h2 | .job(.job-head .role .company .dates) */
+@page { size: A4; margin: 24mm 26mm; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: Georgia, 'Times New Roman', serif; font-size: 10.5pt; color: #1a1a1a; line-height: 1.4; }
+
+header { border-bottom: 1px solid #999; padding-bottom: 10pt; margin-bottom: 14pt; }
+.name { font-size: 22pt; letter-spacing: 0.5px; }
+.title { font-size: 11pt; color: #555; margin-top: 3pt; }
+.contact { font-size: 9.5pt; color: #555; margin-top: 6pt; }
+.contact span + span::before { content: "  ·  "; }
+
+section { margin-bottom: 13pt; }
+section > h2 { font-size: 10pt; font-variant: small-caps; letter-spacing: 2.5px;
+               color: #666; margin-bottom: 7pt; }
+.summary p { font-size: 10.5pt; }
+
+.job { margin-bottom: 10pt; page-break-inside: avoid; }
+.job-head { display: flex; justify-content: space-between; align-items: baseline; }
+.role { font-weight: bold; font-size: 11pt; }
+.company { font-style: italic; color: #444; }
+.dates { font-size: 9.5pt; color: #777; }
+.job ul { margin: 4pt 0 0 16pt; }
+.job li { margin-bottom: 2.5pt; }
+
+.skills p { font-size: 10pt; }
+.skills b { font-weight: bold; }
+.edu-item { display: flex; justify-content: space-between; margin-bottom: 3pt; }

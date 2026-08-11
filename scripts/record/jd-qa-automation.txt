@@ -1,0 +1,37 @@
+***Responsibilities:***
+
+Perform manual end-to-end quality life cycle testing and monitoring while maintaining high-quality assurance.
+Write and executes test cases and analyze results.
+Report bugs and errors to the development team.
+Help troubleshoot issues.
+Collaborate with cross-functional teams to deliver high-quality products by demand from customers.
+
+***Requirements:***
+
+***2+ years*** of experience as a QA.
+Understanding testing processes and methodologies.
+STD+STP+STR Skills.
+HTTP API and Web Developer tools knowledge.
+Experience with SQL databases (preferably MySQL).
+Attention to detail.
+Previous experience with test tool for 3rd party HTTP API (for example, Postman).
+Excellent communication skills, particularly in English.
+Team player.
+Good communication skills.
+Willingness to work hard to meet customer expectations.
+Passion for self-improvement.
+Ability to learn fast.
+Well-organized.
+
+***Advantages:***
+
+ElasticSearch/Kibana.
+AWS.
+Cypress.
+DataDog, Honeybadger and/or other APM packages/services.
+Messaging technologies (i.e. RabbitMQ).
+Ruby on Rails and related technologies (RSpec, Resque/Sidekiq, etc).
+
+***About the company:***
+
+Our product is a B2B SaaS product, used by large business customers to make a difference in how they engage with their own customers, learn from them, and operate better in a fast-moving market. We deal with complex and fascinating data and interaction applications, and our customers and users are top-notch. Customer-obsession is in our DNA, and we need people to fit right into that.

@@ -1,0 +1,37 @@
+**Requirements**
+- 2+ years of experience as a Front End Engineer
+- Strong knowledge of JavaScript and ES6
+- More than 2 year experience with React.js
+- Create and implement unit and end-to-end tests
+- Knowledge and understanding of OOP
+- Understanding the principles of client-server interaction
+
+**Tech stack**
+Current: React, Redux, Redux-saga, Flow
+Planned: React, Redux, Redux-saga, TypeScript
+
+**Will be a plus**
+- Experience with WebRTC apps
+- Experience in creating complex animations using JavaScript libraries (e.g. GSAP)
+- Formik
+- Jest & React Testing Library
+
+**Swivl offers:** 
+• Ability to work remotely
+• Career and professional growth
+• 18 working days of leave
+• Unlimited paid hospitals
+• Built system of experience transfer and active use of engineering practices (Code Review, etc.)
+• Ability to influence the software development process
+• Work with a highly professional team with extensive experience in development
+• Flexibility of management
+• Continuing professional development (free internal and external professional training)
+• Good compensation package: health insurance, gym, parking space, English language courses, business administration, tax compensation, paid leave and sick leave.
+
+**Interview stages:** 
+1. With the team online
+2. Technical (can be lifecoding or online ts to choose from)
+
+The company Swivl was founded in 2010, has offices in Silicon Valley, Ukraine (Kyiv), Hong Kong, China. The company is supported by a team of world-class investors, including Idea Bulb Ventures, Fresco Ventures, Grishin Robotics, Newbury Ventures, Kima Ventures, Zhen Fund and others.
+
+The company's product is a comprehensive hardware and software product Swivl Robot, which is widely used in K12 and higher education institutions, as well as in business in America, Europe, Asia and Australia. Four generations (or more than 100,000) of robotic video platforms have been developed, manufactured and sold by Swivl since 2010, along with related applications and support materials.

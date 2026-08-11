@@ -32,10 +32,20 @@ function shouldRetry(err: unknown): boolean {
   );
 }
 
+export interface LlmCallOptions {
+  /** Per-call output budget; agents whose JSON outgrows the default must raise this or get truncated mid-object. */
+  maxTokens?: number;
+  timeoutMs?: number;
+}
+
 export async function llmCall(
   agentName: string,
-  messages: { role: 'system' | 'user'; content: string }[]
+  messages: { role: 'system' | 'user'; content: string }[],
+  options?: LlmCallOptions
 ): Promise<string> {
+  const maxTokens = options?.maxTokens ?? OPENAI_MAX_TOKENS;
+  const timeoutMs = options?.timeoutMs ?? OPENAI_TIMEOUT_MS;
+
   const callModel = async (model: string): Promise<string> => {
     let lastErr: unknown;
     for (let attempt = 1; attempt <= LLM_CALL_ATTEMPTS; attempt++) {
@@ -46,14 +56,14 @@ export async function llmCall(
             model,
             messages,
             temperature: TEMPERATURE,
-            max_tokens: OPENAI_MAX_TOKENS,
+            max_tokens: maxTokens,
           },
           {
             headers: {
               Authorization: `Bearer ${OPENAI_API_KEY}`,
               'Content-Type': 'application/json',
             },
-            timeout: OPENAI_TIMEOUT_MS,
+            timeout: timeoutMs,
           }
         );
         return response.data.choices?.[0]?.message?.content ?? '';

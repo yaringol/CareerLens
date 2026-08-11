@@ -17,22 +17,36 @@ Score scale (integer 0-10):
   7-9 : Clear, concrete evidence with examples or outcomes
   10  : Extensive, prominent, repeated, demonstrably deep evidence
 
+Per-skill gap analysis - alongside each score, report in plain factual language:
+- "evidence": what the CV actually shows for this skill (max 18 words). Empty string if nothing found.
+- "missing": what is absent that would justify a higher score (max 18 words). Empty string for a 10.
+Both must reference the CV content, never generic advice.
+
 Output discipline - return ONLY valid JSON, no markdown, no explanation:
 {
   "skills": [
-    { "skill": "<skill name>", "score": <integer 0-10> }
+    { "skill": "<skill name>", "score": <integer 0-10>, "evidence": "<string>", "missing": "<string>" }
   ]
 }
 Include every supplied skill exactly once, in the order given, using the skill names verbatim.`;
 
+// Score + evidence + missing for 10 skills lands around 600-900 tokens; the
+// global 500-token default would truncate the JSON mid-object.
+const SCORING_MAX_TOKENS = 1600;
+const SCORING_TIMEOUT_MS = 30000;
+
 export async function scoreSkills(cvText: string, skills: string[]): Promise<string> {
   const skillsList = skills.map((s, i) => `${i + 1}. ${s}`).join('\n');
 
-  return llmCall(AGENT_NAME, [
-    { role: 'system', content: SYSTEM_PROMPT },
-    {
-      role: 'user',
-      content: `Skills to score (all supplied skills, in order):\n${skillsList}\n\nCV text:\n${cvText}`,
-    },
-  ]);
+  return llmCall(
+    AGENT_NAME,
+    [
+      { role: 'system', content: SYSTEM_PROMPT },
+      {
+        role: 'user',
+        content: `Skills to score (all supplied skills, in order):\n${skillsList}\n\nCV text:\n${cvText}`,
+      },
+    ],
+    { maxTokens: SCORING_MAX_TOKENS, timeoutMs: SCORING_TIMEOUT_MS }
+  );
 }

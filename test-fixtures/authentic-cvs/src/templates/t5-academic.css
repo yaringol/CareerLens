@@ -1,0 +1,32 @@
+/* T5 "academic plain" - Times, education-first, dense, zero decoration. Students/researchers.
+   Markup: .name .contact | section > h2 | .edu-item / .job / .project(.proj-name .proj-stack) */
+@page { size: A4; margin: 18mm 20mm; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Times New Roman', Times, serif; font-size: 11pt; color: #000; line-height: 1.2; }
+
+.name { font-size: 16pt; font-weight: bold; text-align: center; }
+.title { text-align: center; font-size: 11pt; }
+.contact { text-align: center; font-size: 10pt; margin: 3pt 0 8pt; }
+.contact span + span::before { content: " \2022 "; }
+
+section { margin-bottom: 8pt; }
+section > h2 { font-size: 11pt; font-weight: bold; text-transform: uppercase;
+               border-bottom: 1px solid #000; margin-bottom: 4pt; }
+
+.edu-item { margin-bottom: 4pt; }
+.edu-line { display: flex; justify-content: space-between; }
+.degree { font-weight: bold; }
+.edu-sub { font-size: 10pt; }
+
+.project { margin-bottom: 5pt; }
+.proj-name { font-weight: bold; }
+.proj-stack { font-style: italic; font-size: 10pt; }
+.project ul, .job ul { margin: 1pt 0 0 16pt; }
+li { margin-bottom: 1pt; }
+
+.job { margin-bottom: 5pt; }
+.job-head { display: flex; justify-content: space-between; }
+.role { font-weight: bold; }
+.company { font-style: italic; }
+.dates { font-size: 10pt; }
+.skills p { margin-bottom: 2pt; }

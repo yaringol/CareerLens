@@ -1,0 +1,23 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<style>
+body{background:#fff;margin:0;padding:26px 30px;font-family:'Segoe UI',Arial,sans-serif}
+h1{font-size:24px;margin:0 0 4px;color:#1c2833}
+h1 span{color:#1a5276}
+.sub{font-size:14px;color:#5d6d7e;margin:0 0 14px}
+</style></head><body>
+<h1><span>Step 1: Upload &amp; Role Detection</span></h1>
+<p class="sub">Three attempts, from cheapest to smartest — each one runs only if the previous cannot answer.</p>
+<pre class="mermaid">
+flowchart LR
+  PDF["📄 CV upload<br/>(PDF)"] --> TXT["Text<br/>extraction"]
+  TXT --> T1["1️⃣ Title written<br/>in the CV header"]
+  T1 -->|"no title found"| T2["2️⃣ Classifier reads<br/>the CV body"]
+  T2 -->|"low confidence"| T3["3️⃣ AI picks from<br/>the 59-role list"]
+  T1 --> R["✅ Detected role<br/>+ confidence"]
+  T2 --> R
+  T3 --> R
+</pre>
+<script>mermaid.initialize({startOnLoad:true, theme:'neutral', flowchart:{htmlLabels:true, curve:'linear', nodeSpacing:55, rankSpacing:70, padding:14}, themeVariables:{fontFamily:'Segoe UI, Arial', fontSize:'17px', primaryColor:'#eaf2f8', primaryBorderColor:'#1a5276', lineColor:'#37474f', primaryTextColor:'#1c2833'}});</script>
+</body></html>

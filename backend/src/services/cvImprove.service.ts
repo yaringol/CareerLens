@@ -75,32 +75,72 @@ function stableSectionId(order: number): string {
   return `sec_${String(order).padStart(3, '0')}`;
 }
 
+// The section headings CVs actually use. Needed because the two structural
+// signals we had - ALL CAPS and a trailing colon - both miss the most common
+// form by far: a short Title Case line ("Professional Summary", "Experience").
+// Matched against the WHITESPACE-FREE form of a line, so a single pattern covers
+// "Professional Summary", "ProfessionalSummary" and the letter-spaced
+// "P r o f e s s i o n a l  S u m m a r y" that CV templates using
+// `letter-spacing` produce - PDF extraction keeps those gaps as real spaces.
+const SECTION_HEADING_WORDS =
+  /^(?:(?:professional|work|core|key|technical|personal|academic|relevant|additional|other)\s*)?(?:summary|profile|objective|about(?:\s*me)?|experience|employment(?:\s*history)?|history|background|education|skills|competencies|technologies|toolbox|stack|projects?|portfolio|certifications?|certificates?|licen[cs]es?|courses?|training|publications?|patents?|awards?|honou?rs?|achievements?|activities|languages?|volunteering|volunteer(?:\s*work)?|interests|hobbies|references|military(?:\s*service)?)$/i;
+
 function isHeading(text: string): boolean {
   const trimmed = text.trim();
   if (!trimmed || trimmed.length > 50) return false;
   const letters = trimmed.replace(/[^A-Za-z]/g, '');
   if (!letters) return false;
+  const bare = trimmed.replace(/[\s:.–—-]+$/, '');
   return (
     (trimmed === trimmed.toUpperCase() && letters.length >= 3) ||
-    /^[A-Za-z][A-Za-z\s&/.-]+:$/.test(trimmed)
+    /^[A-Za-z][A-Za-z\s&/.-]+:$/.test(trimmed) ||
+    SECTION_HEADING_WORDS.test(bare.replace(/\s+/g, ''))
   );
 }
 
+// "E x p e r i e n c e" -> "Experience", "M i l i t a r y S e r v i c e" ->
+// "Military Service". Display only: the section text keeps what the PDF said.
+function tidyHeadingLabel(line: string): string {
+  const bare = line.trim().replace(/:$/, '');
+  const parts = bare.split(/\s+/);
+  if (parts.length >= 4 && parts.every((p) => p.length === 1)) {
+    return parts.join('').replace(/(?<=[a-z])(?=[A-Z])/g, ' ');
+  }
+  return bare;
+}
+
+// pdf-parse emits a page separator ("-- 1 of 1 --") into the extracted text.
+// Left in, it becomes a section of its own and lands in the exported CV.
+function isPageMarker(line: string): boolean {
+  const bare = line.trim().replace(/^[\s–—-]+|[\s–—-]+$/g, '');
+  return /^(?:page\s*)?\d+\s*(?:of|\/)\s*\d+$/i.test(bare);
+}
+
+function matchKind(haystack: string): CvSection['kind'] | null {
+  const h = haystack.toLowerCase();
+  if (/\b(skill|skills|technologies|toolbox)\b/.test(h)) return 'skills';
+  if (/\b(experience|employment|work history|professional experience)\b/.test(h)) return 'experience';
+  if (/\b(education|degree|university|college)\b/.test(h)) return 'education';
+  if (/\b(project|projects|portfolio)\b/.test(h)) return 'projects';
+  if (/\b(summary|profile|objective|about)\b/.test(h)) return 'summary';
+  return null;
+}
+
+// The heading wins over the body. Matching both together lets ordinary prose
+// decide the kind - a summary that says "five years of experience" classified
+// as 'experience', and one that lists skills as 'skills', which then makes it
+// the target section for skills being ADDED to the CV.
 function inferKind(label: string, text: string): CvSection['kind'] {
-  const haystack = `${label}\n${text}`.toLowerCase();
-  if (/\b(skill|skills|technologies|toolbox)\b/.test(haystack)) return 'skills';
-  if (/\b(experience|employment|work history|professional experience)\b/.test(haystack)) return 'experience';
-  if (/\b(education|degree|university|college)\b/.test(haystack)) return 'education';
-  if (/\b(project|projects|portfolio)\b/.test(haystack)) return 'projects';
-  if (/\b(summary|profile|objective|about)\b/.test(haystack)) return 'summary';
-  return 'other';
+  return matchKind(label) ?? matchKind(text) ?? 'other';
 }
 
 function labelForBlock(text: string, order: number): string {
   const firstLine = text.split('\n').map((line) => line.trim()).find(Boolean);
   if (firstLine && isHeading(firstLine)) {
-    return firstLine.replace(/:$/, '');
+    return tidyHeadingLabel(firstLine);
   }
+  // The block above the first heading is the name/contact block in every CV layout.
+  if (order === 0) return 'Header';
   return `Section ${order + 1}`;
 }
 
@@ -108,12 +148,41 @@ export function splitCvIntoSections(cvText: string): CvSection[] {
   const normalized = cvText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
   if (!normalized) return [];
 
-  const rawBlocks = normalized
-    .split(/\n\s*\n+/)
-    .map((block) => block.trim())
-    .filter((block) => block.length > 0);
+  // Blank lines alone cannot carry this split: PDF text extraction returns one
+  // line per rendered row and almost never a blank line between sections, so
+  // splitting on blank lines collapses the entire CV into a single section - and
+  // then every weak skill points at the whole document instead of the paragraph
+  // that mentions it. Headings are the boundary that actually exists in the text.
+  const blocks: string[] = [];
+  let current: string[] = [];
+  let currentHasBody = false;   // a heading on its own is not yet a section
+  const flush = () => {
+    const text = current.join('\n').trim();
+    if (text) blocks.push(text);
+    current = [];
+    currentHasBody = false;
+  };
 
-  const blocks = rawBlocks.length > 0 ? rawBlocks : [normalized];
+  for (const line of normalized.split('\n')) {
+    if (isPageMarker(line)) continue;
+    if (!line.trim()) {
+      // Whitespace under a heading is layout, not a boundary. Flushing on it
+      // would strand the heading in a section of its own and leave its body
+      // in an unlabelled one.
+      if (currentHasBody) flush();
+      continue;
+    }
+    if (isHeading(line)) {
+      if (currentHasBody) flush();
+      current.push(line);
+      continue;
+    }
+    current.push(line);
+    currentHasBody = true;
+  }
+  flush();
+
+  if (blocks.length === 0) blocks.push(normalized);
 
   return blocks.map((text, order) => {
     const label = labelForBlock(text, order);

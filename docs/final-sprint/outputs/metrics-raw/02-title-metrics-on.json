@@ -1,0 +1,102 @@
+{
+  "tag": "on",
+  "generatedAt": "2026-08-02T18:50:52.046Z",
+  "thresholds": {
+    "auto_match": 60,
+    "llm_fallback": 55
+  },
+  "overall": {
+    "n": 29,
+    "top1": 26,
+    "top3": 27,
+    "errors": 0
+  },
+  "byScenario": {
+    "clear-cut": {
+      "n": 9,
+      "top1": 8,
+      "top3": 9,
+      "errors": 0
+    },
+    "ambiguous": {
+      "n": 4,
+      "top1": 4,
+      "top3": 4,
+      "errors": 0
+    },
+    "career-changer": {
+      "n": 3,
+      "top1": 3,
+      "top3": 3,
+      "errors": 0
+    },
+    "hybrid": {
+      "n": 3,
+      "top1": 3,
+      "top3": 3,
+      "errors": 0
+    },
+    "junior": {
+      "n": 3,
+      "top1": 2,
+      "top3": 2,
+      "errors": 0
+    },
+    "niche-core": {
+      "n": 5,
+      "top1": 5,
+      "top3": 5,
+      "errors": 0
+    },
+    "unsupported": {
+      "n": 2,
+      "top1": 1,
+      "top3": 1,
+      "errors": 0
+    }
+  },
+  "bySource": {
+    "title_extraction": {
+      "n": 26,
+      "top1": 24,
+      "autoAccepted": 24,
+      "confidenceMin": 28.34,
+      "confidenceMedian": 89.11,
+      "confidenceMax": 98.46
+    },
+    "cv_classifier": {
+      "n": 3,
+      "top1": 2,
+      "autoAccepted": 3,
+      "confidenceMin": 92.91,
+      "confidenceMedian": 98.21,
+      "confidenceMax": 99.83
+    }
+  },
+  "guards": {
+    "n": 3,
+    "allBlocked": true,
+    "detail": [
+      {
+        "file": "hebrew-reject_Rotem-Bar.pdf",
+        "status": 400,
+        "message": "CareerLens analyzes English CVs only. Please upload an English version of your CV."
+      },
+      {
+        "file": "hebrew-mixed-reject_Shai-Levi.pdf",
+        "status": 400,
+        "message": "CareerLens analyzes English CVs only. Please upload an English version of your CV."
+      },
+      {
+        "file": "scanned-image-reject_Old-Format.pdf",
+        "status": 400,
+        "message": "Extracted CV text is too short to analyze"
+      }
+    ]
+  },
+  "errorRows": [],
+  "agreement": {
+    "absent (extraction path)": 26,
+    "skipped_high_confidence": 3
+  }
+}

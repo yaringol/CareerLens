@@ -3,6 +3,10 @@ import { Schema, model, Document, Types } from 'mongoose';
 interface SkillScore {
   skill: string;
   score: number;
+  // Gap-analysis fields from the scoring agent; absent on pre-feature
+  // analyses and on keyword-fallback scoring.
+  evidence?: string;
+  missing?: string;
 }
 
 export interface ICvAnalysis extends Document {
@@ -21,7 +25,12 @@ export interface ICvAnalysis extends Document {
 }
 
 const SkillScoreSchema = new Schema<SkillScore>(
-  { skill: { type: String, required: true }, score: { type: Number, required: true } },
+  {
+    skill: { type: String, required: true },
+    score: { type: Number, required: true },
+    evidence: { type: String },
+    missing: { type: String },
+  },
   { _id: false }
 );
 

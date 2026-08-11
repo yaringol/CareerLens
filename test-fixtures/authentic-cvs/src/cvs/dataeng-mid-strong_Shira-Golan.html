@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Shira Golan - CV</title>
+<link rel="stylesheet" href="../templates/t6-compact-tables.css">
+</head>
+<body>
+<div class="head">
+  <div>
+    <div class="name">Shira Golan</div>
+    <div class="title">Data Engineer</div>
+  </div>
+  <div class="contact">
+    Ramat Gan &middot; 052-8460137<br>
+    shira.golan@gmail.com<br>
+    linkedin.com/in/shira-golan-a4e267 &middot; github.com/shirag-data
+  </div>
+</div>
+<div class="page">
+  <main class="main">
+    <section>
+      <h2>Summary</h2>
+      <p>Data engineer, 5 years. Batch and streaming pipelines on Spark/Kafka, warehouse
+      modeling in Snowflake/dbt, data infrastructure as code with Terraform. Owns platform
+      components end to end: design, build, cost, on-call.</p>
+    </section>
+    <section>
+      <h2>Experience</h2>
+      <div class="job-box">
+        <div class="job-head">
+          <div><span class="role">Data Engineer</span> <span class="company">&middot; DeepFlow Data, Tel Aviv</span></div>
+          <div class="dates">2023 - Present</div>
+        </div>
+        <ul>
+          <li>Own the ingestion platform: 40+ Airflow DAGs, ~2.1TB/day from 30 sources (APIs, CDC, S3 drops).</li>
+          <li>Rebuilt core Spark jobs on EMR: nightly runtime 5.5h &rarr; 1.2h, compute cost down 47% (~$18K/month).</li>
+          <li>Migrated warehouse modeling to dbt: 300+ models with tests and docs; broken-dashboard incidents down ~80%.</li>
+          <li>Built Kafka streaming layer (MSK, 6 topics, ~15K events/s) feeding near-real-time features at &lt;60s end-to-end latency.</li>
+          <li>Terraform modules for the full data stack (EMR, MSK, Snowflake grants); new environment spin-up 2 days &rarr; 40 minutes.</li>
+          <li>Data quality gates with Great Expectations on 25 critical tables, enforced in CI before merge.</li>
+        </ul>
+      </div>
+      <div class="job-box">
+        <div class="job-head">
+          <div><span class="role">BI / Data Engineer</span> <span class="company">&middot; Corvantis, Ramat Gan</span></div>
+          <div class="dates">2021 - 2023</div>
+        </div>
+        <ul>
+          <li>Built ELT from operational PostgreSQL and MongoDB into Snowflake (Fivetran + custom Python extractors).</li>
+          <li>Modeled finance and operations marts in dbt; replaced 60+ ad-hoc analyst queries with governed models.</li>
+          <li>Ran Airflow on Kubernetes; on-call for nightly loads, 99.5% SLA met over the final 12 months.</li>
+          <li>Wrote the team's SQL style guide and review checklist.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <aside class="sidebar">
+    <section>
+      <h2>Core Stack</h2>
+      <table>
+        <tr><td>Processing</td><td>Spark, PySpark, EMR</td></tr>
+        <tr><td>Orchestration</td><td>Airflow, dbt</td></tr>
+        <tr><td>Warehouse</td><td>Snowflake, PostgreSQL</td></tr>
+        <tr><td>Streaming</td><td>Kafka (MSK)</td></tr>
+        <tr><td>Cloud / IaC</td><td>AWS, Terraform</td></tr>
+        <tr><td>Languages</td><td>Python, SQL, Bash</td></tr>
+        <tr><td>Quality</td><td>Great Expectations</td></tr>
+      </table>
+    </section>
+    <section>
+      <h2>Education</h2>
+      <ul>
+        <li><b>B.Sc. Information Systems Engineering</b></li>
+        <li>Ben-Gurion University, Beer Sheva</li>
+        <li>2017 - 2021</li>
+      </ul>
+    </section>
+    <section>
+      <h2>Military Service</h2>
+      <ul>
+        <li>Full military service, IDF (2015 - 2017)</li>
+      </ul>
+    </section>
+    <section>
+      <h2>Languages</h2>
+      <ul>
+        <li>Hebrew - native</li>
+        <li>English - fluent</li>
+      </ul>
+    </section>
+  </aside>
+</div>
+</body>
+</html>

@@ -1,0 +1,156 @@
+{
+  "summary": {
+    "generatedAt": "2026-08-03T09:34:20.341Z",
+    "annotator": "single annotator (blind, merged two-model list)",
+    "liveArtifact": "model.joblib",
+    "backupArtifact": "model.joblib.bak-20260728",
+    "config": {
+      "ubiquity_cap": 11,
+      "min_prevalence": 0.05,
+      "top_n": 10
+    },
+    "roles": 12,
+    "skillsMarked": "191/191",
+    "meanPrecisionAt10": {
+      "live": 0.9666666666666667,
+      "backup": 0.9583333333333334
+    },
+    "rolesImproved": 3,
+    "rolesRegressed": 2,
+    "rolesUnchanged": 7
+  },
+  "rows": [
+    {
+      "title": "Data Engineer",
+      "live": 1,
+      "liveRelevant": 10,
+      "liveN": 10,
+      "backup": 0.9,
+      "backupRelevant": 9,
+      "backupN": 10,
+      "delta": 0.09999999999999998,
+      "labelledOfMerged": "14/14"
+    },
+    {
+      "title": "Frontend Developer",
+      "live": 1,
+      "liveRelevant": 10,
+      "liveN": 10,
+      "backup": 0.9,
+      "backupRelevant": 9,
+      "backupN": 10,
+      "delta": 0.09999999999999998,
+      "labelledOfMerged": "16/16"
+    },
+    {
+      "title": "Java Developer",
+      "live": 1,
+      "liveRelevant": 10,
+      "liveN": 10,
+      "backup": 0.9,
+      "backupRelevant": 9,
+      "backupN": 10,
+      "delta": 0.09999999999999998,
+      "labelledOfMerged": "16/16"
+    },
+    {
+      "title": "Backend Developer",
+      "live": 1,
+      "liveRelevant": 10,
+      "liveN": 10,
+      "backup": 1,
+      "backupRelevant": 10,
+      "backupN": 10,
+      "delta": 0,
+      "labelledOfMerged": "15/15"
+    },
+    {
+      "title": "C++ Developer",
+      "live": 0.9,
+      "liveRelevant": 9,
+      "liveN": 10,
+      "backup": 0.9,
+      "backupRelevant": 9,
+      "backupN": 10,
+      "delta": 0,
+      "labelledOfMerged": "15/15"
+    },
+    {
+      "title": "Data Scientist",
+      "live": 1,
+      "liveRelevant": 10,
+      "liveN": 10,
+      "backup": 1,
+      "backupRelevant": 10,
+      "backupN": 10,
+      "delta": 0,
+      "labelledOfMerged": "15/15"
+    },
+    {
+      "title": "DevOps Engineer",
+      "live": 1,
+      "liveRelevant": 10,
+      "liveN": 10,
+      "backup": 1,
+      "backupRelevant": 10,
+      "backupN": 10,
+      "delta": 0,
+      "labelledOfMerged": "13/13"
+    },
+    {
+      "title": "Product Manager",
+      "live": 0.9,
+      "liveRelevant": 9,
+      "liveN": 10,
+      "backup": 0.9,
+      "backupRelevant": 9,
+      "backupN": 10,
+      "delta": 0,
+      "labelledOfMerged": "19/19"
+    },
+    {
+      "title": "QA Automation Engineer",
+      "live": 1,
+      "liveRelevant": 10,
+      "liveN": 10,
+      "backup": 1,
+      "backupRelevant": 10,
+      "backupN": 10,
+      "delta": 0,
+      "labelledOfMerged": "19/19"
+    },
+    {
+      "title": "UX Designer",
+      "live": 1,
+      "liveRelevant": 10,
+      "liveN": 10,
+      "backup": 1,
+      "backupRelevant": 10,
+      "backupN": 10,
+      "delta": 0,
+      "labelledOfMerged": "16/16"
+    },
+    {
+      "title": "Cyber Security",
+      "live": 0.9,
+      "liveRelevant": 9,
+      "liveN": 10,
+      "backup": 1,
+      "backupRelevant": 10,
+      "backupN": 10,
+      "delta": -0.09999999999999998,
+      "labelledOfMerged": "15/15"
+    },
+    {
+      "title": "Software Engineer",
+      "live": 0.9,
+      "liveRelevant": 9,
+      "liveN": 10,
+      "backup": 1,
+      "backupRelevant": 10,
+      "backupN": 10,
+      "delta": -0.09999999999999998,
+      "labelledOfMerged": "18/18"
+    }
+  ]
+}

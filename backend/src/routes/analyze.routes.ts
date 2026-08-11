@@ -271,7 +271,6 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       expectedSkillCount,
       excludeCvId: typeof excludeCvId === 'string' ? excludeCvId : undefined,
       cvFileName: id,
-      keywordOnly: cvOnlyMode,
     });
 
     logAnalyzeOk(job.title);
@@ -282,6 +281,8 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         name: s.skill,
         score: s.score,
         trend: trendBySkill.get(s.skill.toLowerCase()) ?? 'stable',
+        evidence: s.evidence,
+        missing: s.missing,
       })),
       matchScore: analysis.matchScore,
       id: analysis._id.toString(),
@@ -349,14 +350,18 @@ router.post('/rescore', async (req: Request, res: Response, next: NextFunction) 
       expectedSkillCount,
       excludeCvId: typeof excludeCvId === 'string' ? excludeCvId : undefined,
       cvFileName: id,
-      keywordOnly: resolvedCvOnlyMode,
     });
 
     logAnalyzeOk(job.title);
 
     res.json({
       jobTitle: analysis.jobTitle,
-      skills: analysis.scores.map((s) => ({ name: s.skill, score: s.score })),
+      skills: analysis.scores.map((s) => ({
+        name: s.skill,
+        score: s.score,
+        evidence: s.evidence,
+        missing: s.missing,
+      })),
       matchScore: analysis.matchScore,
       id: analysis._id.toString(),
       cvOnlyMode: analysis.cvOnlyMode ?? false,
@@ -424,7 +429,12 @@ router.post('/skillner', async (req: Request, res: Response, next: NextFunction)
 
     res.json({
       jobTitle: analysis.jobTitle,
-      skills: analysis.scores.map((s) => ({ name: s.skill, score: s.score })),
+      skills: analysis.scores.map((s) => ({
+        name: s.skill,
+        score: s.score,
+        evidence: s.evidence,
+        missing: s.missing,
+      })),
       matchScore: analysis.matchScore,
       id: analysis._id.toString(),
       extractor: 'skillner',
@@ -514,7 +524,11 @@ router.post('/personalized', async (req: Request, res: Response, next: NextFunct
     const job = await validateJobTitle(canonicalTitle.trim());
     const id = job._id.toString();
 
-    const jd = typeof jobDescription === 'string' ? jobDescription.trim() : '';
+    // A pasted job link must be fetched before it is treated as description
+    // text (the other analyze paths already do this via the same resolver).
+    const jd = await resolveJobDescriptionInput(
+      typeof jobDescription === 'string' ? jobDescription.trim() : ''
+    );
     const skipGibberish = !jd;
     if (!skipGibberish && isGibberish(jd)) {
       res.status(400).json({
@@ -560,7 +574,6 @@ router.post('/personalized', async (req: Request, res: Response, next: NextFunct
       expectedSkillCount,
       excludeCvId: typeof excludeCvId === 'string' ? excludeCvId : undefined,
       cvFileName: id,
-      keywordOnly: cvOnlyMode,
     });
 
     logAnalyzeOk(job.title);
@@ -571,6 +584,8 @@ router.post('/personalized', async (req: Request, res: Response, next: NextFunct
         name: s.skill,
         score: s.score,
         trend: trendBySkill.get(s.skill.toLowerCase()) ?? 'stable',
+        evidence: s.evidence,
+        missing: s.missing,
       })),
       matchScore: analysis.matchScore,
       id: analysis._id.toString(),

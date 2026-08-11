@@ -1,0 +1,492 @@
+{
+  "summary": {
+    "canonical_titles": 59,
+    "min_cv_per_class": 50,
+    "lang_uk_corpus_available": true,
+    "titles_with_zero_real_cvs": 33,
+    "titles_below_min_but_nonzero": 0,
+    "titles_clearing_min": 26,
+    "dropped_rows": {
+      "master_resumes": 9,
+      "lang_uk_cv": 12788
+    },
+    "other_label_rows": {
+      "master_resumes": 19,
+      "lang_uk_cv": 44598
+    }
+  },
+  "rows": [
+    {
+      "title": "Software Engineer",
+      "master_resumes": 644,
+      "lang_uk_cv": 26560,
+      "total_real_cvs": 27204,
+      "has_any_real_cv": true,
+      "clears_min_50": true
+    },
+    {
+      "title": "Data Scientist",
+      "master_resumes": 109,
+      "lang_uk_cv": 4842,
+      "total_real_cvs": 4951,
+      "has_any_real_cv": true,
+      "clears_min_50": true
+    },
+    {
+      "title": "Product Manager",
+      "master_resumes": 0,
+      "lang_uk_cv": 4048,
+      "total_real_cvs": 4048,
+      "has_any_real_cv": true,
+      "clears_min_50": true
+    },
+    {
+      "title": "DevOps Engineer",
+      "master_resumes": 535,
+      "lang_uk_cv": 5648,
+      "total_real_cvs": 6183,
+      "has_any_real_cv": true,
+      "clears_min_50": true
+    },
+    {
+      "title": "Frontend Developer",
+      "master_resumes": 700,
+      "lang_uk_cv": 33980,
+      "total_real_cvs": 34680,
+      "has_any_real_cv": true,
+      "clears_min_50": true
+    },
+    {
+      "title": "SOC Analyst",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "Detection Engineer",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "Digital Forensics",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "Backend Developer",
+      "master_resumes": 300,
+      "lang_uk_cv": 13223,
+      "total_real_cvs": 13523,
+      "has_any_real_cv": true,
+      "clears_min_50": true
+    },
+    {
+      "title": "Incident Response",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "Security Analyst",
+      "master_resumes": 100,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 100,
+      "has_any_real_cv": true,
+      "clears_min_50": true
+    },
+    {
+      "title": "Cyber Security",
+      "master_resumes": 207,
+      "lang_uk_cv": 781,
+      "total_real_cvs": 988,
+      "has_any_real_cv": true,
+      "clears_min_50": true
+    },
+    {
+      "title": "QA Automation Engineer",
+      "master_resumes": 201,
+      "lang_uk_cv": 30845,
+      "total_real_cvs": 31046,
+      "has_any_real_cv": true,
+      "clears_min_50": true
+    },
+    {
+      "title": "Threat Intelligence",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "Embedded Engineer",
+      "master_resumes": 100,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 100,
+      "has_any_real_cv": true,
+      "clears_min_50": true
+    },
+    {
+      "title": "Fullstack Engineer",
+      "master_resumes": 100,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 100,
+      "has_any_real_cv": true,
+      "clears_min_50": true
+    },
+    {
+      "title": "Cloud Security",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "C++ Developer",
+      "master_resumes": 0,
+      "lang_uk_cv": 2981,
+      "total_real_cvs": 2981,
+      "has_any_real_cv": true,
+      "clears_min_50": true
+    },
+    {
+      "title": "Distributed Systems Engineer",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "Security Operations",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "UX Designer",
+      "master_resumes": 0,
+      "lang_uk_cv": 15068,
+      "total_real_cvs": 15068,
+      "has_any_real_cv": true,
+      "clears_min_50": true
+    },
+    {
+      "title": "Security Architect",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "Firmware Engineer",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "Machine Learning Engineer",
+      "master_resumes": 206,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 206,
+      "has_any_real_cv": true,
+      "clears_min_50": true
+    },
+    {
+      "title": "AI Researcher",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "Malware Researcher",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "Threat Analyst",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "Security Researcher",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "Driver Developer",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "Solutions Architect",
+      "master_resumes": 200,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 200,
+      "has_any_real_cv": true,
+      "clears_min_50": true
+    },
+    {
+      "title": "NLP Engineer",
+      "master_resumes": 100,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 100,
+      "has_any_real_cv": true,
+      "clears_min_50": true
+    },
+    {
+      "title": "Chip Design Engineer",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "Penetration Tester",
+      "master_resumes": 100,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 100,
+      "has_any_real_cv": true,
+      "clears_min_50": true
+    },
+    {
+      "title": "Security Consultant",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "Go Developer",
+      "master_resumes": 0,
+      "lang_uk_cv": 1343,
+      "total_real_cvs": 1343,
+      "has_any_real_cv": true,
+      "clears_min_50": true
+    },
+    {
+      "title": "UI Designer",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "Reverse Engineer",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "Platform Engineer",
+      "master_resumes": 100,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 100,
+      "has_any_real_cv": true,
+      "clears_min_50": true
+    },
+    {
+      "title": "VLSI Engineer",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "Computer Vision Engineer",
+      "master_resumes": 100,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 100,
+      "has_any_real_cv": true,
+      "clears_min_50": true
+    },
+    {
+      "title": "Data Engineer",
+      "master_resumes": 501,
+      "lang_uk_cv": 1922,
+      "total_real_cvs": 2423,
+      "has_any_real_cv": true,
+      "clears_min_50": true
+    },
+    {
+      "title": "Kubernetes Engineer",
+      "master_resumes": 100,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 100,
+      "has_any_real_cv": true,
+      "clears_min_50": true
+    },
+    {
+      "title": "Algorithm Engineer",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "Hardware Engineer",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "MLOps Engineer",
+      "master_resumes": 100,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 100,
+      "has_any_real_cv": true,
+      "clears_min_50": true
+    },
+    {
+      "title": "Product Security Engineer",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "Deep Learning Engineer",
+      "master_resumes": 100,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 100,
+      "has_any_real_cv": true,
+      "clears_min_50": true
+    },
+    {
+      "title": "FPGA Engineer",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "Verification Engineer",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "Cloud Architect",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "Vulnerability Researcher",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "Exploit Developer",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "Cryptographer",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "Rust Developer",
+      "master_resumes": 0,
+      "lang_uk_cv": 160,
+      "total_real_cvs": 160,
+      "has_any_real_cv": true,
+      "clears_min_50": true
+    },
+    {
+      "title": "Kernel Developer",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "Java Developer",
+      "master_resumes": 186,
+      "lang_uk_cv": 11463,
+      "total_real_cvs": 11649,
+      "has_any_real_cv": true,
+      "clears_min_50": true
+    },
+    {
+      "title": "Reinforcement Learning Researcher",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "Cloud Native Engineer",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    },
+    {
+      "title": "Technical Product Manager (TPM)",
+      "master_resumes": 0,
+      "lang_uk_cv": 0,
+      "total_real_cvs": 0,
+      "has_any_real_cv": false,
+      "clears_min_50": false
+    }
+  ]
+}

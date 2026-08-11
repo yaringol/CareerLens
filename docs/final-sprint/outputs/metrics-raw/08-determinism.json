@@ -1,0 +1,58 @@
+{
+  "runs": 5,
+  "files": {
+    "software-mid-mid_Tomer-Azulay.pdf": {
+      "dsCvRole": {
+        "values": [
+          "Software Engineer@50",
+          "Software Engineer@50",
+          "Software Engineer@50",
+          "Software Engineer@50",
+          "Software Engineer@50"
+        ],
+        "distinct": 1,
+        "stable": true
+      },
+      "productLadder": {
+        "values": [
+          "Software Engineer@92.52",
+          "Software Engineer@92.52",
+          "Software Engineer@92.52",
+          "Software Engineer@92.52",
+          "Software Engineer@92.52"
+        ],
+        "distinct": 1,
+        "stable": true
+      }
+    },
+    "gamedev-mid-none_Ben-Harari.pdf": {
+      "dsCvRole": {
+        "values": [
+          "Software Engineer@92.91",
+          "Software Engineer@92.91",
+          "Software Engineer@92.91",
+          "Software Engineer@92.91",
+          "Software Engineer@92.91"
+        ],
+        "distinct": 1,
+        "stable": true
+      },
+      "productLadder": {
+        "values": [
+          "Software Engineer@92.91",
+          "Software Engineer@92.91",
+          "Software Engineer@92.91",
+          "Software Engineer@92.91",
+          "Software Engineer@92.91"
+        ],
+        "distinct": 1,
+        "stable": true
+      }
+    }
+  },
+  "verdict": {
+    "dsLayerStable": true,
+    "ompPinNeeded": false,
+    "note": "sklearn layer reproducible across runs; no thread pin required"
+  }
+}

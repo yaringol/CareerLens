@@ -44,11 +44,11 @@ router.post('/upload', uploadMiddleware.single('file'), async (req: Request, res
     if (!req.file) {
       throw new ValidationError('No file uploaded');
     }
-    const { cvText, headerText } = await processUpload(req.file.buffer, req.file.originalname);
+    const { cvText, headerText, rawText } = await processUpload(req.file.buffer, req.file.originalname);
     const save = req.query.save !== 'false';
 
     if (!save) {
-      res.json({ cvId: null, cvText, headerText, fileName: req.file.originalname });
+      res.json({ cvId: null, cvText, headerText, rawText, fileName: req.file.originalname });
       return;
     }
 
@@ -59,6 +59,7 @@ router.post('/upload', uploadMiddleware.single('file'), async (req: Request, res
       userId,
       fileName: req.file.originalname,
       cvText,
+      rawText,
       headerText,
       fileSizeBytes: req.file.size,
       isFavorite: false,
@@ -68,6 +69,7 @@ router.post('/upload', uploadMiddleware.single('file'), async (req: Request, res
       cvId: cvFile._id.toString(),
       cvText,
       headerText,
+      rawText,
       fileName: cvFile.fileName,
     });
   } catch (err) {
@@ -124,6 +126,7 @@ router.get('/cv/:id', async (req: Request, res: Response, next: NextFunction): P
       cvId: file._id.toString(),
       cvText: file.cvText,
       headerText: file.headerText,
+      rawText: file.rawText,
       fileName: file.fileName,
     });
   } catch (err) {

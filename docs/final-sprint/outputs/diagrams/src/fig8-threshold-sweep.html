@@ -1,0 +1,71 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+html,body{overflow:hidden;background:#fff}
+body{background:#fff;margin:0;padding:26px 30px;font-family:'Segoe UI',Arial,sans-serif;width:880px}
+h1{font-size:24px;margin:0 0 4px;color:#1c2833}
+h1 span{color:#0b6e4f}
+.sub{font-size:14px;color:#5d6d7e;margin:0 0 10px}
+.legend{font-size:14px;color:#1c2833;margin:0 0 6px;display:flex;gap:22px;align-items:center}
+.sw{display:inline-block;width:14px;height:14px;border-radius:3px;margin-right:7px;vertical-align:-2px}
+text{font-family:'Segoe UI',Arial,sans-serif}
+</style></head><body>
+<h1><span>Auto-accept threshold sweep</span> — what each bar costs</h1>
+<p class="sub">29-CV corpus, extraction rung. Raising the bar from 60 to 80 removes a wrong auto-accept for free; beyond 80, correct detections start paying.</p>
+<div class="legend">
+  <span><span class="sw" style="background:#eb6834"></span>Wrong auto-accepts</span>
+  <span><span class="sw" style="background:#2a78d6"></span>Correct detections demoted to manual picker</span>
+</div>
+<svg width="820" height="330" viewBox="0 0 820 330">
+  <!-- gridlines + y labels (0..18 step 6), plot area x:70..800 y:20..270 -->
+  <g stroke="#eceff1" stroke-width="1">
+    <line x1="70" y1="270" x2="800" y2="270"/>
+    <line x1="70" y1="186.7" x2="800" y2="186.7"/>
+    <line x1="70" y1="103.3" x2="800" y2="103.3"/>
+    <line x1="70" y1="20" x2="800" y2="20"/>
+  </g>
+  <g font-size="12" fill="#78909c" text-anchor="end">
+    <text x="60" y="274">0</text>
+    <text x="60" y="190.7">6</text>
+    <text x="60" y="107.3">12</text>
+    <text x="60" y="24">18</text>
+  </g>
+  <text x="24" y="150" font-size="13" fill="#5d6d7e" transform="rotate(-90 24 150)" text-anchor="middle">CVs (of 29)</text>
+
+  <!-- groups centered at 161, 344, 527, 710; bar w=54, gap 2px; scale: 1 CV = 13.888px -->
+  <!-- baseline y=270; wrong=orange left, demoted=blue right; zero => 3px stub -->
+  <!-- t=60: wrong 2 (h27.8), demoted 0 (stub) -->
+  <rect x="106" y="242.2" width="54" height="27.8" rx="4" fill="#eb6834"/>
+  <rect x="162" y="267" width="54" height="3" fill="#2a78d6"/>
+  <text x="133" y="236" font-size="14" fill="#1c2833" text-anchor="middle" font-weight="600">2</text>
+  <text x="189" y="261" font-size="14" fill="#1c2833" text-anchor="middle" font-weight="600">0</text>
+  <!-- t=80: wrong 1 (h13.9), demoted 0 -->
+  <rect x="289" y="256.1" width="54" height="13.9" rx="4" fill="#eb6834"/>
+  <rect x="345" y="267" width="54" height="3" fill="#2a78d6"/>
+  <text x="316" y="250" font-size="14" fill="#1c2833" text-anchor="middle" font-weight="600">1</text>
+  <text x="372" y="261" font-size="14" fill="#1c2833" text-anchor="middle" font-weight="600">0</text>
+  <!-- t=90: wrong 1, demoted 12 (h166.7) -->
+  <rect x="472" y="256.1" width="54" height="13.9" rx="4" fill="#eb6834"/>
+  <rect x="528" y="103.3" width="54" height="166.7" rx="4" fill="#2a78d6"/>
+  <text x="499" y="250" font-size="14" fill="#1c2833" text-anchor="middle" font-weight="600">1</text>
+  <text x="555" y="97" font-size="14" fill="#1c2833" text-anchor="middle" font-weight="600">12</text>
+  <!-- t=95: wrong 0, demoted 17 (h236.1) -->
+  <rect x="655" y="267" width="54" height="3" fill="#eb6834"/>
+  <rect x="711" y="33.9" width="54" height="236.1" rx="4" fill="#2a78d6"/>
+  <text x="682" y="261" font-size="14" fill="#1c2833" text-anchor="middle" font-weight="600">0</text>
+  <text x="738" y="28" font-size="14" fill="#1c2833" text-anchor="middle" font-weight="600">17</text>
+
+  <!-- x labels -->
+  <g font-size="14" fill="#1c2833" text-anchor="middle">
+    <text x="161" y="292">60</text>
+    <text x="344" y="292">80</text>
+    <text x="527" y="292">90</text>
+    <text x="710" y="292">95</text>
+  </g>
+  <g font-size="12" fill="#78909c" text-anchor="middle">
+    <text x="161" y="310">deployed</text>
+    <text x="344" y="310" fill="#0b6e4f" font-weight="600">recommended</text>
+  </g>
+  <text x="435" y="328" font-size="13" fill="#5d6d7e" text-anchor="middle">Auto-accept confidence threshold</text>
+</svg>
+</body></html>

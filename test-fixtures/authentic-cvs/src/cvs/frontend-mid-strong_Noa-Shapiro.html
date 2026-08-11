@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Noa Shapiro - CV</title>
+<link rel="stylesheet" href="../templates/t2-sidebar-dark.css">
+</head>
+<body>
+<div class="page">
+  <aside class="sidebar">
+    <div class="name">Noa Shapiro</div>
+    <div class="title">Frontend Developer</div>
+    <section class="contact-block">
+      <div>Tel Aviv</div>
+      <div>054-7284913</div>
+      <div>noa.shapiro@gmail.com</div>
+      <div>linkedin.com/in/noa-shapiro-b71a42</div>
+      <div>github.com/noashapiro-fe</div>
+    </section>
+    <section>
+      <h2>Skills</h2>
+      <span class="skill-tag">React 18/19</span>
+      <span class="skill-tag">TypeScript</span>
+      <span class="skill-tag">Next.js</span>
+      <span class="skill-tag">Redux Toolkit</span>
+      <span class="skill-tag">RTK Query</span>
+      <span class="skill-tag">Vite</span>
+      <span class="skill-tag">Playwright</span>
+      <span class="skill-tag">Storybook</span>
+      <span class="skill-tag">Tailwind CSS</span>
+      <span class="skill-tag">HTML/CSS</span>
+      <span class="skill-tag">Web Vitals</span>
+      <span class="skill-tag">Node.js (tooling)</span>
+    </section>
+    <section>
+      <h2>Education</h2>
+      <ul>
+        <li><b>B.Sc. Computer Science</b></li>
+        <li>Afeka College of Engineering</li>
+        <li>2017 - 2021</li>
+      </ul>
+    </section>
+    <section>
+      <h2>Languages</h2>
+      <div class="lang-row"><span>Hebrew</span><span>Native</span></div>
+      <div class="lang-row"><span>English</span><span>Fluent</span></div>
+    </section>
+  </aside>
+  <main class="main">
+    <section>
+      <h2>Summary</h2>
+      <p>Frontend developer, 5 years building React applications at scale. Owns performance,
+      build tooling and design-system work end to end. TypeScript-first; measures before and
+      after every change.</p>
+    </section>
+    <section>
+      <h2>Experience</h2>
+      <div class="job">
+        <div class="job-head">
+          <div><span class="role">Frontend Developer</span> <span class="company">&middot; Cloudrise, Tel Aviv</span></div>
+          <div class="dates">Mar 2023 - Present</div>
+        </div>
+        <ul>
+          <li>Led migration of the core dashboard from CRA/Webpack to Vite + React 18; cold build 210s &rarr; 24s, HMR under 300ms.</li>
+          <li>Cut main bundle 38% (1.4MB &rarr; 870KB gzip) via route-level code splitting and a dependency audit.</li>
+          <li>Improved LCP on the customer portal from 4.1s to 1.9s (p75, CrUX); INP under 200ms on top 10 routes.</li>
+          <li>Built shared design system: 42 components, Storybook, design tokens. Adopted by 3 product teams; UI PR review time down ~30%.</li>
+          <li>Introduced Playwright E2E suite (140 specs, 6 min in CI); release regressions from ~3/quarter to near zero.</li>
+          <li>Upgraded to React 19: migrated forms to Actions + useOptimistic, removed two legacy state libraries.</li>
+        </ul>
+      </div>
+      <div class="job">
+        <div class="job-head">
+          <div><span class="role">Frontend Developer</span> <span class="company">&middot; BitSage, Tel Aviv</span></div>
+          <div class="dates">Jul 2021 - Feb 2023</div>
+        </div>
+        <ul>
+          <li>Built trading dashboard in React 18 + Redux Toolkit; real-time WebSocket updates at 20 msg/s with no dropped frames.</li>
+          <li>Implemented RTK Query data layer; deleted ~4K lines of hand-written thunks and cache logic.</li>
+          <li>Delivered dark mode and full RTL support across the product in one quarter.</li>
+          <li>Wrote the team's frontend conventions doc (naming, folder structure, testing policy) still in use today.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+</div>
+</body>
+</html>

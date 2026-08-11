@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate } from '../middleware/auth.middleware';
 import { ValidationError } from '../errors';
-import { extractTitleFromCv, getCoreSkills, getSkillsFromText } from '../services/dsModel';
+import { getCoreSkills, getSkillsFromText, isRoleDataLimited } from '../services/dsModel';
 import { isGibberish } from '../utils/gibberishDetector';
 import { looksLikeJobUrl } from '../utils/jobUrl';
 import { fetchJobPostingFromUrl } from '../services/jobPostingFetcher.service';
@@ -51,7 +51,6 @@ router.post('/options', async (req: Request, res: Response, next: NextFunction):
       jobDescription.trim().length > 0
     );
 
-    const titlePromise = extractTitleFromCv(cvText).catch(() => null);
     const cvSkillsPromise = getSkillsFromText(cvText, 15).catch(() => [] as string[]);
     let focusSkillsPromise: Promise<string[]> = Promise.resolve([]);
 
@@ -80,18 +79,21 @@ router.post('/options', async (req: Request, res: Response, next: NextFunction):
         .then((pool) => pool.map((skill) => skill.name));
     }
 
-    const [titleResult, focusSkills, cvSkills] = await Promise.all([
-      titlePromise,
+    const roleDataLimitedPromise = isRoleDataLimited(canonicalTitle.trim());
+    const [focusSkills, cvSkills] = await Promise.all([
       focusSkillsPromise,
       cvSkillsPromise,
     ]);
 
-    const detectedTitle =
-      titleResult?.canonical_title || titleResult?.extracted_title || canonicalTitle.trim();
+    // The role was detected and user-confirmed on the upload screen; a fresh
+    // detection here (which ran without headerText) could disagree and made
+    // this screen display a different role than the one being scored.
+    const detectedTitle = canonicalTitle.trim();
     const extractedCvSkills = cvSkills ?? [];
     const roleDerivedSkills = buildSkillOptions(focusSkills ?? []);
 
-    res.json({ detectedTitle, extractedCvSkills, roleDerivedSkills });
+    const roleDataLimited = await roleDataLimitedPromise;
+    res.json({ detectedTitle, extractedCvSkills, roleDerivedSkills, roleDataLimited });
   } catch (err) {
     next(err);
   }

@@ -1,0 +1,19 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<style>
+body{background:#fff;margin:0;padding:26px 30px;font-family:'Segoe UI',Arial,sans-serif}
+h1{font-size:24px;margin:0 0 4px;color:#1c2833}
+h1 span{color:#7d3c98}
+.sub{font-size:14px;color:#5d6d7e;margin:0 0 14px}
+</style></head><body>
+<h1><span>Step 2: Personalize</span></h1>
+<p class="sub">The user chooses what "important skills" means for them.</p>
+<pre class="mermaid">
+flowchart LR
+  R["✅ Detected<br/>role"] --> POOL["Skill pool for the role<br/>market skills + skills<br/>from the job ad"]
+  POOL --> STRAT["🎛️ User picks a strategy<br/>Stable / Balanced /<br/>Trending / Custom"]
+  STRAT --> TEN["🎯 10 focus skills<br/>5 core + 5 dynamic"]
+</pre>
+<script>mermaid.initialize({startOnLoad:true, theme:'neutral', flowchart:{htmlLabels:true, curve:'linear', nodeSpacing:70, rankSpacing:90, padding:14}, themeVariables:{fontFamily:'Segoe UI, Arial', fontSize:'17px', primaryColor:'#f4ecf7', primaryBorderColor:'#7d3c98', lineColor:'#37474f', primaryTextColor:'#1c2833'}});</script>
+</body></html>

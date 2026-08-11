@@ -181,12 +181,40 @@ def compute_stability_score(observation_dates: list[datetime]) -> dict[str, Any]
     }
 
 
+def compute_role_counts(
+    feature_matrix: dict[str, dict[str, Any]],
+    min_prevalence: float = 0.0,
+) -> dict[str, int]:
+    """For each skill, the number of roles whose feature map contains it.
+
+    min_prevalence: only count a role when the skill's prevalence there reaches
+    the floor. On dense corpora (thousands of postings per role) nearly every
+    skill appears at least once in every role, so presence alone cannot separate
+    boilerplate ('english') from genuinely shared stack skills - a prevalence
+    floor restores that distinction. 0.0 preserves the legacy presence-only
+    behavior.
+    """
+    counts: dict[str, int] = {}
+    for skills in feature_matrix.values():
+        for skill, features in skills.items():
+            if min_prevalence > 0.0:
+                try:
+                    if float(features.get('prevalence', 0.0)) < min_prevalence:
+                        continue
+                except (TypeError, ValueError):
+                    continue
+            counts[skill] = counts.get(skill, 0) + 1
+    return counts
+
+
 def select_display_skills(
     feature_map: dict[str, dict[str, Any]],
     *,
     pool_size: int = 10,
     display_count: int = 5,
     fallback: Optional[list[str]] = None,
+    role_counts: Optional[dict[str, int]] = None,
+    ubiquity_cap: int = 48,
 ) -> list[dict[str, Any]]:
     if not feature_map:
         return [
@@ -194,8 +222,19 @@ def select_display_skills(
             for s in (fallback or [])[:display_count]
         ]
 
+    # Ubiquity filter: a skill present in nearly every role ("backend" appears in
+    # 52/59, boilerplate like "disability" in 57/59) carries no role information,
+    # yet dominates raw prevalence because postings mention it constantly. Skills
+    # above the cap are excluded from ranking; if the filter would empty the pool
+    # (tiny roles), it is skipped rather than serve nothing.
+    items = feature_map.items()
+    if role_counts:
+        filtered = [(s, f) for s, f in items if role_counts.get(s, 0) <= ubiquity_cap]
+        if filtered:
+            items = filtered
+
     pool = sorted(
-        feature_map.items(),
+        items,
         key=lambda kv: -float(kv[1].get('prevalence', 0.0)),
     )[:pool_size]
 
@@ -211,7 +250,11 @@ def select_display_skills(
             'recent_prevalence': round(float(f.get('recent_prevalence', 0.0)), 4),
             'stability_score': round(float(f.get('stability_score', DEFAULT_STABILITY)), 4),
             'trend': f.get('trend', 'stable'),
-            'time_coverage_reliable': bool(f.get('time_coverage_reliable', False)),
+            # trained artifacts store this under 'time_features_reliable' (stability.py);
+            # 'time_coverage_reliable' is kept as a legacy fallback for older joblibs.
+            'time_coverage_reliable': bool(
+                f.get('time_features_reliable', f.get('time_coverage_reliable', False))
+            ),
         }
         for skill, f in selected
     ]

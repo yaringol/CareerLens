@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Amir Dahan - CV</title>
+<link rel="stylesheet" href="../templates/t3-minimal-exec.css">
+</head>
+<body>
+
+<header>
+  <div class="name">Amir Dahan</div>
+  <div class="title">Senior Machine Learning Engineer</div>
+  <div class="contact">
+    <span>Herzliya</span>
+    <span>053-6104778</span>
+    <span>amir.dahan91@gmail.com</span>
+    <span>linkedin.com/in/amir-dahan-9e4</span>
+    <span>github.com/amirdahan-ml</span>
+  </div>
+</header>
+
+<section class="summary">
+  <h2>Summary</h2>
+  <p>Machine learning engineer with 7 years spanning classical models to production LLM systems.
+  Deep hands-on experience in fine-tuning, retrieval pipelines and the MLOps required to keep them
+  healthy in production. Unit 8200 alumnus; Technion CS graduate.</p>
+</section>
+
+<section>
+  <h2>Experience</h2>
+
+  <div class="job">
+    <div class="job-head">
+      <div><span class="role">Senior Machine Learning Engineer</span> <span class="company">Brightpath AI, Tel Aviv</span></div>
+      <span class="dates">Oct 2022 - Present</span>
+    </div>
+    <ul>
+      <li>Architected and now operate the company LLM platform serving 3 product lines: fine-tuning, evaluation and serving for models up to 70B parameters.</li>
+      <li>Fine-tuned domain LLMs (LoRA/QLoRA on Llama-family models), lifting task accuracy from 71% to 89% over the prompted baseline.</li>
+      <li>Deployed a RAG pipeline (Qdrant, hybrid BM25 + dense retrieval, cross-encoder reranking) answering 40K queries/day at p95 of 1.8s.</li>
+      <li>Cut inference cost 62% through AWQ quantization and moving batch scoring to spot GPU nodes.</li>
+      <li>Designed the offline and online evaluation harness (2K-sample golden set, LLM-as-judge calibrated against human ratings) that gates every model release.</li>
+      <li>Led the ML hiring loop as the team grew from 3 to 8 engineers.</li>
+    </ul>
+  </div>
+
+  <div class="job">
+    <div class="job-head">
+      <div><span class="role">Machine Learning Engineer</span> <span class="company">DataSphere Analytics, Tel Aviv</span></div>
+      <span class="dates">Jun 2019 - Oct 2022</span>
+    </div>
+    <ul>
+      <li>Shipped demand-forecasting models (gradient boosting, later a temporal fusion transformer) for 800 retail SKUs; MAPE improved from 19% to 11%.</li>
+      <li>Productionized training with MLflow and SageMaker Pipelines, shrinking experiment-to-deploy time from 3 weeks to 4 days.</li>
+      <li>Implemented feature monitoring and drift alerting; caught two silent-degradation incidents before SLA breach.</li>
+      <li>Served models behind SageMaker endpoints with shadow deployments - zero rollout regressions across 2021-2022.</li>
+      <li>Collaborated with data engineering on PySpark feature jobs processing 2TB of events daily.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>Military Service</h2>
+  <div class="job">
+    <div class="job-head">
+      <div><span class="role">Data &amp; Algorithms Team</span> <span class="company">IDF, Unit 8200</span></div>
+      <span class="dates">2012 - 2016</span>
+    </div>
+    <ul>
+      <li>Led a 4-person analysis team; built NLP tooling for large-scale text triage (details classified).</li>
+    </ul>
+  </div>
+</section>
+
+<section class="skills">
+  <h2>Skills</h2>
+  <p><b>ML:</b> PyTorch, Hugging Face Transformers, PEFT/LoRA, scikit-learn &nbsp;&middot;&nbsp; <b>LLM/RAG:</b> vLLM, Qdrant, pgvector, evaluation tooling</p>
+  <p><b>MLOps:</b> MLflow, SageMaker, Docker, Kubernetes, GitHub Actions &nbsp;&middot;&nbsp; <b>Data:</b> Python, SQL, PySpark, Airflow</p>
+</section>
+
+<section>
+  <h2>Education</h2>
+  <div class="edu-item"><span>B.Sc. Computer Science, Technion - Israel Institute of Technology, cum laude</span><span>2016 - 2019</span></div>
+</section>
+
+<section>
+  <h2>Languages</h2>
+  <p>Hebrew - native, English - fluent.</p>
+</section>
+
+</body>
+</html>

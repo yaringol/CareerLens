@@ -50,7 +50,7 @@ const AccountPage = () => {
   useEffect(() => {
     getMyCVs()
       .then(setCvs)
-      .catch((err) => showToast(err instanceof Error ? err.message : 'Could not load CVs'))
+      .catch((err) => showToast(err instanceof Error ? err.message : 'Could not load your CVs. Please try again.'))
       .finally(() => setCvsLoading(false))
 
     getImprovementSessions()
@@ -67,7 +67,7 @@ const AccountPage = () => {
       setCvs((prev) => prev.filter((c) => c.cvId !== cvId))
       showToast('CV deleted', 'success')
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Could not delete CV')
+      showToast(err instanceof Error ? err.message : 'Could not delete this CV. Please try again.')
     } finally {
       setDeletingId(null)
     }
@@ -83,7 +83,7 @@ const AccountPage = () => {
       )
       showToast(next ? 'Added to favorites' : 'Removed from favorites', 'success')
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Could not update favorite')
+      showToast(err instanceof Error ? err.message : 'Could not update this favorite. Please try again.')
     } finally {
       setFavoritingId(null)
     }
@@ -97,7 +97,7 @@ const AccountPage = () => {
       setPlans((prev) => prev.filter((p) => p.id !== id))
       showToast('Plan deleted', 'success')
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Could not delete plan')
+      showToast(err instanceof Error ? err.message : 'Could not delete this plan. Please try again.')
     } finally {
       setDeletingPlanId(null)
     }
@@ -118,7 +118,7 @@ const AccountPage = () => {
       a.click()
       URL.revokeObjectURL(url)
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Could not download improvement')
+      showToast(err instanceof Error ? err.message : 'Could not download this plan. Please try again.')
     }
   }
 
@@ -140,7 +140,7 @@ const AccountPage = () => {
       setNewPassword('')
       setConfirmPassword('')
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Password change failed')
+      showToast(err instanceof Error ? err.message : 'Password change failed. Please try again.')
     } finally {
       setPwdLoading(false)
     }
@@ -199,12 +199,12 @@ const AccountPage = () => {
         {tab === 'cvs' && (
           <section className="account-section">
             <h2 className="account-section-title">My CV Library</h2>
-            <p className="account-section-sub">CVs you've saved while analyzing. Star up to 3 favorites for background job-fit comparisons.</p>
+            <p className="account-section-sub">CVs you've saved while analyzing. Star up to 3 favorites and we'll compare them automatically on your next analysis.</p>
 
             {cvsLoading ? (
               <p className="account-empty">Loading…</p>
             ) : cvs.length === 0 ? (
-              <p className="account-empty">No CVs saved yet. Upload a CV with "Save to library" enabled.</p>
+              <p className="account-empty">No CVs saved yet. Upload a CV with "Save to my CV library" enabled.</p>
             ) : (
               <ul className="account-cv-list">
                 {cvs.map((cv) => (
@@ -243,7 +243,7 @@ const AccountPage = () => {
         {tab === 'plans' && (
           <section className="account-section">
             <h2 className="account-section-title">Improvement Plans</h2>
-            <p className="account-section-sub">CV improvement sessions based on your analysis results.</p>
+            <p className="account-section-sub">Improvement plans based on your analysis results.</p>
 
             {plansLoading ? (
               <p className="account-empty">Loading…</p>
