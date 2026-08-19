@@ -2,6 +2,7 @@
  * API base: relative `/api` in dev (Vite proxies to backend) unless VITE_API_BASE_URL is set.
  */
 import { clearUserFlowSession } from '../utils/userFlowSession'
+import type { StructuredCv } from '../pdf/cvPdfTypes'
 
 function apiBase(): string {
   const raw = import.meta.env.VITE_API_BASE_URL?.trim()
@@ -570,6 +571,24 @@ export async function mergeCv(
   }
   const data = await res.json() as { mergedCvText: string }
   return data.mergedCvText
+}
+
+export async function structureCvForPdf(
+  cvText: string,
+  jobTitle?: string
+): Promise<StructuredCv> {
+  const res = await apiFetch(`${base()}/cv-improve/structure`, {
+    method: 'POST',
+    headers: { ...jsonHeaders, ...authHeaders() },
+    body: JSON.stringify({ cvText, jobTitle }),
+  }, LLM_TIMEOUT_MS)
+  await handleUnauthorized(res)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || `PDF preparation failed (${res.status})`)
+  }
+  const data = await res.json() as { structured: StructuredCv }
+  return data.structured
 }
 
 export async function saveImprovementSession(payload: {

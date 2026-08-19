@@ -6,11 +6,14 @@ import {
   mergeCv,
   reanalyzeCv,
   saveImprovementSession,
+  structureCvForPdf,
   type AnalyzeResponse,
   type CvSection,
   type Proficiency,
   type SkillContext,
 } from '../services/api'
+import type { StructuredCv } from '../pdf/cvPdfTypes'
+import { CV_PDF_TEMPLATE_META, asTemplateId, type CvPdfTemplateId } from '../pdf/templateMeta'
 import AppLogo from '../components/ui/AppLogo'
 import { useError } from '../context/ErrorContext'
 import AdminNavLink from '../components/admin/AdminNavLink'
@@ -298,6 +301,12 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
   const [isReanalyzing, setIsReanalyzing] = useState(false)
   const [copied, setCopied] = useState(false)
   const [isPreparing, setIsPreparing] = useState(true)
+  const [exportMenuOpen, setExportMenuOpen] = useState(false)
+  const [exportMenuView, setExportMenuView] = useState<'main' | 'templates'>('main')
+  const [isExportingPdf, setIsExportingPdf] = useState(false)
+  // Structuring is an LLM round-trip; cache it per merged text so a second
+  // PDF export (or a retry after a download) is instant.
+  const structuredCvRef = useRef<{ text: string; structured: StructuredCv } | null>(null)
   const requestSeqRef = useRef(0)
   // Tab to open when entering the improvement phase; set by the dashboard's
   // "Improve this skill" hint, consumed once by handleContinue.
@@ -679,16 +688,48 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
     })
   }, [mergedCvText])
 
-  const handleExport = useCallback(() => {
-    const filename = (sessionStorage.getItem(CV_FILENAME_KEY) ?? 'cv').replace(/\.pdf$/i, '')
-    const blob = new Blob([mergedCvText], { type: 'text/plain;charset=utf-8' })
+  const exportFilenameBase = () =>
+    (sessionStorage.getItem(CV_FILENAME_KEY) ?? 'cv').replace(/\.pdf$/i, '')
+
+  const downloadBlob = (blob: Blob, filename: string) => {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${filename}_improved.txt`
+    a.download = filename
     a.click()
     URL.revokeObjectURL(url)
+  }
+
+  const handleExportTxt = useCallback(() => {
+    setExportMenuOpen(false)
+    const blob = new Blob([mergedCvText], { type: 'text/plain;charset=utf-8' })
+    downloadBlob(blob, `${exportFilenameBase()}_improved.txt`)
   }, [mergedCvText])
+
+  const handleExportPdf = useCallback(async (templateId: CvPdfTemplateId) => {
+    setExportMenuOpen(false)
+    setExportMenuView('main')
+    setIsExportingPdf(true)
+    // Remember the choice so the picker opens on the user's usual design.
+    localStorage.setItem('cvPdfTemplateId', templateId)
+    try {
+      let structured = structuredCvRef.current?.text === mergedCvText
+        ? structuredCvRef.current.structured
+        : null
+      if (!structured) {
+        structured = await structureCvForPdf(mergedCvText, jobTitle)
+        structuredCvRef.current = { text: mergedCvText, structured }
+      }
+      // Heavy renderer + fonts: loaded on demand, only when a PDF is exported.
+      const { generateCvPdfBlob } = await import('../pdf/generateCvPdf')
+      const blob = await generateCvPdfBlob(structured, templateId)
+      downloadBlob(blob, `${exportFilenameBase()}_improved.pdf`)
+    } catch (err) {
+      reportError(err instanceof Error ? err : new Error('PDF export failed. Please try again.'))
+    } finally {
+      setIsExportingPdf(false)
+    }
+  }, [mergedCvText, jobTitle, reportError])
 
   const handleReanalyze = useCallback(async () => {
     if (!jobTitle) { reportError(new Error('No role found - please analyze a CV first.')); return }
@@ -1115,10 +1156,66 @@ export default function ImproveCVScreen({ onClose, onReanalyze }: ImproveCVScree
                 : <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</>
               }
             </button>
-            <button className="improve-action-btn" onClick={handleExport}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Export
-            </button>
+            <div className="improve-export-wrap">
+              <button
+                className="improve-action-btn"
+                onClick={() => { setExportMenuOpen((open) => !open); setExportMenuView('main') }}
+                disabled={isExportingPdf}
+                aria-haspopup="menu"
+                aria-expanded={exportMenuOpen}
+              >
+                {isExportingPdf
+                  ? <><div className="improve-spinner improve-spinner--sm" /> Designing PDF…</>
+                  : <>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                      Export
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    </>
+                }
+              </button>
+              {exportMenuOpen && (
+                <>
+                  <div className="improve-export-backdrop" onClick={() => { setExportMenuOpen(false); setExportMenuView('main') }} />
+                  <div className="improve-export-menu" role="menu">
+                    {exportMenuView === 'main' ? (
+                      <>
+                        <button className="improve-export-option" role="menuitem" onClick={() => setExportMenuView('templates')}>
+                          <span className="improve-export-option-title">Styled PDF
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 6 }}><polyline points="9 18 15 12 9 6"/></svg>
+                          </span>
+                          <span className="improve-export-option-sub">Choose one of {CV_PDF_TEMPLATE_META.length} designs</span>
+                        </button>
+                        <button className="improve-export-option" role="menuitem" onClick={handleExportTxt}>
+                          <span className="improve-export-option-title">Plain text (.txt)</span>
+                          <span className="improve-export-option-sub">Raw text for further editing</span>
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button className="improve-export-back" onClick={() => setExportMenuView('main')}>
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                          Choose a design
+                        </button>
+                        {CV_PDF_TEMPLATE_META.map((template) => {
+                          const isDefault = asTemplateId(localStorage.getItem('cvPdfTemplateId')) === template.id
+                          return (
+                            <button
+                              key={template.id}
+                              className={`improve-export-option${isDefault ? ' improve-export-option--current' : ''}`}
+                              role="menuitem"
+                              onClick={() => void handleExportPdf(template.id)}
+                            >
+                              <span className="improve-export-option-title">{template.name}</span>
+                              <span className="improve-export-option-sub">{template.description}</span>
+                            </button>
+                          )
+                        })}
+                      </>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
             <button className="improve-action-btn improve-action-btn--primary" onClick={handleReanalyze} disabled={isReanalyzing}>
               {isReanalyzing
                 ? <><div className="improve-spinner improve-spinner--sm" /> Scoring…</>

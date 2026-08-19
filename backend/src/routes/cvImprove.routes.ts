@@ -7,6 +7,7 @@ import {
   rephraseSkill,
   type Proficiency,
 } from '../agents/suggestions.agent';
+import { structureCv } from '../agents/cvStructure.agent';
 import { ImprovementSession } from '../models/improvementSession.model';
 import { NotFoundError, ValidationError } from '../errors';
 
@@ -166,6 +167,29 @@ router.post('/merge', async (req: Request, res: Response, next: NextFunction) =>
 
     const mergedCvText = composeCvFromSections({ sections });
     res.json({ mergedCvText });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * POST /api/cv-improve/structure
+ * Converts the final CV text into the typed layout used by the designed PDF export.
+ */
+router.post('/structure', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { cvText, jobTitle } = req.body as { cvText?: string; jobTitle?: string };
+
+    if (!cvText || typeof cvText !== 'string' || cvText.trim().length < 50) {
+      throw new ValidationError('cvText is required (min 50 chars)');
+    }
+
+    const structured = await structureCv(
+      cvText.trim(),
+      typeof jobTitle === 'string' && jobTitle.trim() ? jobTitle.trim() : undefined
+    );
+
+    res.json({ structured });
   } catch (err) {
     next(err);
   }

@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# esbuild artifacts of the dev scripts in scripts/
+scripts/.*.cjs
