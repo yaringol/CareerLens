@@ -477,7 +477,7 @@
 }
 
 .model-section-title {
-  margin: 0.5rem 0 0;
+  margin: 1.5rem 0 0.5rem;
   font-size: 0.95rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.75);
@@ -542,117 +542,4 @@
 .confidence-low {
   background: rgba(248, 113, 113, 0.15);
   color: #f87171;
-}
-
-.pipeline-panel {
-  margin-top: 1.5rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.pipeline-actions {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.pipeline-hint {
-  margin: 0;
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.5);
-  line-height: 1.5;
-}
-
-.pipeline-command {
-  display: block;
-  margin-top: 0.5rem;
-  padding: 0.75rem;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.25);
-  font-size: 0.75rem;
-  overflow-x: auto;
-}
-
-.pipeline-run-card {
-  padding: 1rem;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.pipeline-run-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.55);
-  margin-bottom: 0.75rem;
-}
-
-.pipeline-status {
-  font-weight: 700;
-  text-transform: uppercase;
-  font-size: 0.7rem;
-  padding: 0.15rem 0.5rem;
-  border-radius: 999px;
-}
-
-.pipeline-status--running {
-  background: rgba(250, 204, 21, 0.15);
-  color: #facc15;
-}
-
-.pipeline-status--completed {
-  background: rgba(74, 222, 128, 0.15);
-  color: #4ade80;
-}
-
-.pipeline-status--failed {
-  background: rgba(248, 113, 113, 0.15);
-  color: #f87171;
-}
-
-.pipeline-status--aborted {
-  background: rgba(251, 146, 60, 0.15);
-  color: #fb923c;
-}
-
-.btn-pipeline-stop {
-  padding: 0.5rem 1.25rem;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  border: 1px solid rgba(248, 113, 113, 0.35);
-  background: rgba(248, 113, 113, 0.12);
-  color: #fca5a5;
-  font-family: inherit;
-  transition: background 0.15s, border-color 0.15s;
-}
-
-.btn-pipeline-stop:hover:not(:disabled) {
-  background: rgba(248, 113, 113, 0.22);
-  border-color: rgba(248, 113, 113, 0.5);
-}
-
-.btn-pipeline-stop:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.pipeline-log {
-  margin: 0;
-  max-height: 220px;
-  overflow: auto;
-  padding: 0.75rem;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.35);
-  font-size: 0.72rem;
-  line-height: 1.4;
-  color: rgba(255, 255, 255, 0.75);
-  white-space: pre-wrap;
-  word-break: break-word;
 }
