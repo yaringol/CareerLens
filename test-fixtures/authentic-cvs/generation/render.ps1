@@ -5,9 +5,9 @@ if (-not (Test-Path $edge)) { $edge = "C:\Program Files\Microsoft\Edge\Applicati
 $outDir = Join-Path $base "pdfs"
 New-Item -ItemType Directory -Force $outDir | Out-Null
 
-Get-ChildItem (Join-Path $base "src\cvs") -Filter *.html | ForEach-Object {
+Get-ChildItem (Join-Path $base "generation\cvs") -Filter *.html | ForEach-Object {
   $pdf = Join-Path $outDir ($_.BaseName + ".pdf")
-  $uri = "file:///" + ($_.FullName -replace '\\','/')
+  $uri = "file:///" + ($_.FullName -replace '\','/')
   & $edge --headless --disable-gpu --no-pdf-header-footer --print-to-pdf="$pdf" $uri 2>$null | Out-Null
   Start-Sleep -Milliseconds 400
   if (Test-Path $pdf) { Write-Output ("OK   " + $_.BaseName) } else { Write-Output ("FAIL " + $_.BaseName) }
