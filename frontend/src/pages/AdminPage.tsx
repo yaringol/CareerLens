@@ -74,16 +74,6 @@ export default function AdminPage() {
     [showToast],
   )
 
-  const handlePipelineError = useCallback(
-    (message: string) => showToast(message),
-    [showToast],
-  )
-
-  const handlePipelineSuccess = useCallback(
-    (message: string) => showToast(message, 'success'),
-    [showToast],
-  )
-
   function handleFilter(e: React.FormEvent) {
     e.preventDefault()
     void loadAnalyses()
@@ -157,11 +147,7 @@ export default function AdminPage() {
 
       <div className="admin-content">
         {tab === 'model' ? (
-          <AdminModelStatusPanel
-            onError={handleModelError}
-            onPipelineError={handlePipelineError}
-            onPipelineSuccess={handlePipelineSuccess}
-          />
+          <AdminModelStatusPanel onError={handleModelError} />
         ) : (
           <>
             <form className="admin-filters" onSubmit={handleFilter}>

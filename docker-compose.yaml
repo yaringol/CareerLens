@@ -30,11 +30,6 @@ services:
       - DS_MODEL_URL=http://ds:8000
       - JWT_SECRET=${JWT_SECRET:-dev-insecure-change-me}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-      - PIPELINE_DOCKER_IMAGE=careerlens/pipeline:main
-      - PIPELINE_DOCKER_NETWORK=app-network
-      - DS_CONTAINER=careerlens-ds
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "3000:3000" # direct API access for testing; the frontend proxies /api -> backend:3000
     depends_on:
