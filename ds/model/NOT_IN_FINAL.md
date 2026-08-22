@@ -1,11 +1,14 @@
 # Notebooks & Artifacts NOT in `ds/final/`
 
 `ds/final/` holds only the four models production certainly serves (see
-[`ds/final/README.md`](../final/README.md)). Everything below stays in `ds/model/`:
-research that led to those models, superseded trainers, and versioned snapshots.
-Nothing here is loaded by `server.py`.
+[`ds/final/README.md`](../final/README.md)). Everything below is research that led to
+those models, superseded trainers, and versioned snapshots. Nothing here is loaded by
+`server.py`.
 
-## Notebooks
+> **2026-08-22:** the superseded/research notebooks were moved to
+> [`ds/model/archive/`](archive/README.md); the artifact snapshots stay in `ds/model/`.
+
+## Notebooks (now in `archive/`)
 
 ### `tfid.ipynb` — previous-generation CV→title trainer (superseded)
 - **What it is:** the "proof of learning" notebook that trained the original 38-class
@@ -38,7 +41,7 @@ Nothing here is loaded by `server.py`.
   the M18 results memo (`docs/final-sprint/outputs/18-skills-to-title-results.md`) and
   the M19 report cite it.
 
-### `Copy_of_CV_to_title.ipynb` — Colab scratch copy (untracked)
+### `Copy_of_CV_to_title.ipynb` — Colab scratch copy
 - **What it is:** a Colab export experimenting with title prediction from
   `jobs.lang-uk-job-skills.json`, saving raw `pickle` files.
 - **Why not final:** not referenced anywhere in the codebase, produces no artifact the

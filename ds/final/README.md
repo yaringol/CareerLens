@@ -82,7 +82,27 @@ the exact `.joblib` artifact the DS server loads.
   in `backend/src/services/dsModel.ts:89-91`, threaded through `extractTitleFromCv`
   into the fallback-logging and auto-match decisions.
 
+## Helper modules (`*.py`)
+
+The eight Python modules here are the complete local-import closure of the trainers
+above, copied so the folder is a self-contained snapshot:
+
+- `taxonomy.py` — the 59-title canonical taxonomy + label projections (used by all four)
+- `train.py` — Model 1 training driven by `model1_retrain.ipynb`; imports
+  `promotion_gate.py`, `skill_schema.py`, `stability.py`, `mongo_env.py`
+- `promotion_gate.py` — the nightly no-regression gate on data volume
+- `skill_schema.py` — unified skill-observation schema
+- `stability.py` — trend/stability scoring for Model 1
+- `extract_skills.py` + `skillner_utils.py` — SkillNer extraction (chunked fallback
+  included) used by the skills→title router notebook
+- `mongo_env.py` — Mongo connection resolution
+
+Like the `.joblib` files, these are **copies**: the live modules the DS server and the
+nightly pipeline import are the ones in `ds/model/` — change there first, then refresh
+the copy here.
+
 ## What is deliberately NOT here
 
-Research notebooks, superseded trainers and versioned artifact snapshots stay in
-`ds/model/` and are mapped in [`ds/model/NOT_IN_FINAL.md`](../model/NOT_IN_FINAL.md).
+Research notebooks and superseded trainers live in
+[`ds/model/archive/`](../model/archive/README.md); versioned artifact snapshots stay
+in `ds/model/`. Both are mapped in [`ds/model/NOT_IN_FINAL.md`](../model/NOT_IN_FINAL.md).
