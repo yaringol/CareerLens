@@ -237,11 +237,26 @@ def _bucket_month(acc, canonical, job_key, posted_dt, skills):
         acc['role_skill_month_counts'][canonical][skill][month_key] += 1
 
 
+# Sources to leave out of training entirely, matched case-insensitively against
+# each document's `source` field. Unlike a zero weight this removes the records
+# from record_counts too, so the promotion gate sees the corpus that actually
+# trained. Empty (the default) changes nothing.
+SOURCE_EXCLUDE = [s.strip().lower() for s in
+                  os.getenv('SOURCE_EXCLUDE', '').split(',') if s.strip()]
+
+
+def source_query() -> dict:
+    if not SOURCE_EXCLUDE:
+        return {}
+    return {'$expr': {'$not': [{'$in': [
+        {'$toLower': {'$ifNull': ['$source', '']}}, SOURCE_EXCLUDE]}]}}
+
+
 def accumulate_from_collection(collection, source_weight, acc):
     """Read one Mongo collection into shared accumulators (weighted by source)."""
     loaded = 0
     skipped = 0
-    for item in collection.find({}):
+    for item in collection.find(source_query()):
         try:
             og_title     = item.get('og_title') or item.get('og_tite')
             actual_title = item.get('title', '')
@@ -358,6 +373,8 @@ source_label = '+'.join(f'{n}:{w}' for n, w in source_weights)
 
 acc = _empty_accumulators()
 print(f"Reading from MongoDB: {MONGO_URI.split('@')[-1]} sources={source_label}")
+if SOURCE_EXCLUDE:
+    print(f"  EXCLUDING documents whose source is one of: {SOURCE_EXCLUDE}")
 
 if USE_UNIFIED:
     coll = fdb[UNIFIED_COLL]
@@ -576,6 +593,7 @@ if os.getenv('PERSIST_FEATURES', '1').lower() not in ('0', 'false', 'no'):
     runs_coll.replace_one({'_id': run_id}, {
         '_id':                 run_id,
         'source_collection':   MONGO_COLLECTION,
+    'source_exclude':      SOURCE_EXCLUDE,
         'source_weights':      {n: w for n, w in source_weights},
         'promoted':            promoted,
         'promote_reason':      promote_reason,

@@ -139,7 +139,20 @@ def week_bucket(dt: datetime) -> tuple[int, int]:
     return (iso.year, iso.week)
 
 
+def _as_utc(value: datetime) -> datetime:
+    """Naive datetimes are UTC by convention here (that is what pymongo returns
+    for a BSON date when the client is not tz_aware)."""
+    return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+
+
 def compute_stability_score(observation_dates: list[datetime]) -> dict[str, Any]:
+    # Observation dates reach this function from two provenances that differ in
+    # tz-awareness: dates parsed out of an ISO string (aware, via _parse_dt) and
+    # dates read straight from a document's stored skill_records, which pymongo
+    # hands back naive. Mixing them makes sorted() raise, so normalise up front -
+    # a corpus that mixes pre-extracted and freshly-extracted documents is the
+    # normal case, not an edge case.
+    observation_dates = [_as_utc(d) for d in observation_dates if d is not None]
     if len(observation_dates) < MIN_OBSERVATIONS_FOR_STABILITY:
         return {
             'stability_score': DEFAULT_STABILITY,
