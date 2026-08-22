@@ -1,7 +1,11 @@
 /* ─── Page ─────────────────────────────────────────────────────────── */
 .home-page {
   min-height: 100vh;
-  background: var(--color-bg);
+  min-height: 100dvh;
+  /* Dark, like the hero and the two sections after it: on mobile DPRs the
+     section heights round to fractional pixels and a light page background
+     bleeds through the seams as thin white lines. */
+  background: #0a0828;
   scroll-behavior: smooth;
 }
 
@@ -9,6 +13,9 @@
 .hero {
   position: relative;
   height: 100vh;
+  /* svh = viewport with the mobile address bar visible, so the scroll
+     indicator is never hidden behind it and no gap opens when it collapses */
+  height: 100svh;
   min-height: 600px;
   display: flex;
   align-items: center;
@@ -106,6 +113,8 @@
 /* ─── Hero CTA ─────────────────────────────────────────────────────── */
 .hero-actions {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 1rem;
   margin-top: 0.5rem;
 }
@@ -645,6 +654,7 @@ a.btn-hero-logout {
 /* ─── Responsive ───────────────────────────────────────────────────── */
 @media (max-width: 600px) {
   .hero-tagline { font-size: 1rem; }
+  .hero-subheadline br { display: none; }
   .hero-stats   { gap: 1rem; padding: 0.75rem 1.25rem; }
   .upload-section { padding: 3rem 1rem 4rem; }
   .hiw-steps { flex-direction: column; align-items: center; }

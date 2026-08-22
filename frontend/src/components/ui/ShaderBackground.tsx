@@ -160,8 +160,11 @@ const ShaderBackground = () => {
     const uTime         = gl.getUniformLocation(program, 'iTime')
 
     const resize = () => {
-      canvas.width  = canvas.offsetWidth
-      canvas.height = canvas.offsetHeight
+      // render at device resolution (capped for perf) - a CSS-pixel canvas is
+      // upscaled ~3x on phones, turning the plasma lines into blurry streaks
+      const dpr = Math.min(window.devicePixelRatio || 1, 2)
+      canvas.width  = Math.round(canvas.offsetWidth * dpr)
+      canvas.height = Math.round(canvas.offsetHeight * dpr)
       gl.viewport(0, 0, canvas.width, canvas.height)
     }
     window.addEventListener('resize', resize)
