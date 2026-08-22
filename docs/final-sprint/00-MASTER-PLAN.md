@@ -59,7 +59,7 @@
 
 | סדר | # | משימה | קובץ | תלוי ב- | סטטוס |
 |---|---|---|---|---|---|
-| 1 | **M13** | **יסודות ריפו ו-git** - חוסם הכל: `.gitignore` בולע את הספר; `npm install` נכשל ב-clone; היסטוריית AI ב-main | [13-repo-git-foundation.md](13-repo-git-foundation.md) | - | 🚧 kickoff הוכן; **המימוש לא אושר** (20/07) - [פרטים](outputs/kickoffs/13-kickoff.md) |
+| 1 | **M13** | **יסודות ריפו ו-git** - חוסם הכל: `.gitignore` בולע את הספר; `npm install` נכשל ב-clone; היסטוריית AI ב-main | [13-repo-git-foundation.md](13-repo-git-foundation.md) | - | ◐ **סקופ צומצם 22/08:** ניקוי היסטוריית ה-AI **ירד** (אושרו עד 20 קומיטים; יש 19 - ראה החלטה 1). ה-`.gitignore` שוכתב ותוצרי ההגשה tracked (`681dc13`), LFS preflight נכנס (`2a96aad`). **נותר:** pin לתלויות Python, הנחיות LFS ל-README, שער clone נקי - [פרטים](outputs/kickoffs/13-kickoff.md) |
 | 2 | M01 | סגירת אימות E2E (המיזוג עצמו כבר בוצע) | [01-branch-stabilization.md](01-branch-stabilization.md) | - | ◐ |
 | 3 | **M09** | **ספר הפרויקט - שלד + פרקים 1, 3, "תוכנן מול בוצע"** (50-65 ש'; רץ ברקע לאורך כל הספרינט, פרק Results נסגר בגל 4) | [09-project-book.md](09-project-book.md) | לשלד: - | ◐ kickoff: אושר 2026-07-21 (שלב א') |
 | 4 | M16 | ארכיטקטורה ודיאגרמות (נכס משותף ל-M08/M09/M11) | [16-architecture-diagrams.md](16-architecture-diagrams.md) | - | ☑ **2026-08-03** - 7 figures ב-`docs/progect_book/figures/`, מוטמעות בפרקים 4-5 עם קישורים עובדים. סבב תיקון 03/08 מול הקוד: Figure 3 "Quality gate"→**Coverage gate** (השער סופר רשומות, לא מודד איכות - ממצא M05), Figure 6 סולם 1-10→**0-10**, Figure 4 תווית `unsure`→**`no title found`** (המעבר קורה כשלא נמצא טייטל, לא כשאין ודאות); הניסוח תוקן גם בפרקים 1 ו-4 וב-`architecture.md`; 3 רינדורים מדור ראשון נמחקו ([דוח](outputs/kickoffs/16-kickoff.md)) |
@@ -98,7 +98,7 @@
 |---|---|---|---|---|---|
 | 15 | M08 | חומרי הצגה: סקרינשוטים, פלייר, סרטון, מצגת + פוסטר | [08-marketing-assets.md](08-marketing-assets.md) | M03, M05, M06, M14, M15, M16 | ☐ |
 | 16 | M11 | מוכנות לדמו חי | [11-demo-readiness.md](11-demo-readiness.md) | M04, M06, M14, M15 | ☐ |
-| 17 | M09 | ספר הפרויקט - **סגירה**: פרק Results, הגהה, אישור טיוטה | [09-project-book.md](09-project-book.md) | M05, M10, M16, M17 | ◐ kickoff שלב ב': אושר 2026-08-03 ([kickoff](outputs/kickoffs/09-kickoff.md)) |
+| 17 | M09 | ספר הפרויקט - **סגירה**: פרק Results, הגהה, אישור טיוטה | [09-project-book.md](09-project-book.md) | M05, M10, M16, M17 | ☑ **2026-08-11 - הטיוטה המלאה אושרה ע"י המשתמשת.** כל הפרקים + Appendix A+B, 14 figures, docx מיוצר; סבבי כתיבה/סיפוריות/איזון תועדו ב-[kickoff](outputs/kickoffs/09-kickoff.md); המרה סופית לתבנית המכללה - ידנית ב-Word |
 
 ### גל 5 - אחרון, תמיד
 
@@ -167,8 +167,11 @@ server (2 מודלים) → MongoDB. פרויקט גמר, המכללה למנה�
 
 ## החלטות שהוכרעו ע"י המשתמש (2026-07-14)
 
-1. ✅ **היסטוריית AI (M13): לנקות רק את `main`.** ה-5 קומיטים ב-origin/main מנוקים
-   (rewrite + force-push, אחרי גיבוי mirror ותיאום עם השותפים); UI_branch נשאר כמו שהוא.
+1. ✅ ~~**היסטוריית AI (M13): לנקות רק את `main`.**~~ **בוטל 2026-08-22: ניקוי ההיסטוריה ירד
+   מהתוכנית.** התקבל אישור שעד 20 קומיטים עם חתימת AI בהיסטוריה - מקובל; ספירה בפועל
+   (22/08): 19 קומיטים מסומנים ב-origin/main (Claude + Cursor trailers). אין rewrite, אין
+   force-push. **שימו לב: המרווח הוא קומיט אחד בלבד** - הכלל "שום זכר ל-AI בקומיטים חדשים"
+   נשאר בתוקף מלא, ואין למזג ענפים ישנים (last_fix וכו') לתוך main בלי לבדוק trailers.
 2. ✅ **Gap Analysis (M15): לבנות.** ההחלטה התקבלה - M15 יוצאת לדרך; M8/M11 יכולות להניח
    שהמסך קיים.
 3. ✅ **CV-only (M14 P1-4): להריץ LLM גם שם.** מסירים את `keywordOnly: cvOnlyMode`;
