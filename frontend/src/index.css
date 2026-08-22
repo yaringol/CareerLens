@@ -49,10 +49,18 @@
   box-sizing: border-box;
 }
 
+/* Invisible absolutely-positioned helpers (tooltips) must never widen the
+   page into a horizontal scroll on narrow screens. */
+html {
+  overflow-x: clip;
+}
+
 body {
   min-width: 320px;
   min-height: 100vh;
+  min-height: 100dvh;
   background-color: var(--color-bg);
+  overflow-x: clip;
 }
 
 #root {
@@ -112,4 +120,10 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   [data-tooltip]::after { transition: none; }
+}
+
+/* No hover on touch devices - the tooltip can never open, but its laid-out
+   box (up to 70vw wide, anchored left) still stretches the page sideways. */
+@media (hover: none) {
+  [data-tooltip]::after { display: none; }
 }
