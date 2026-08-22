@@ -209,7 +209,7 @@ def agreement_check(base_canonical, cv_text: str):
                 'skills_model_title': None if pred == OTHER_LABEL else pred,
                 'skills_model_confidence': round(conf * 100, 2)}
     except Exception as exc:
-        print(f"  agreement check failed ({exc.__class__.__name__}) - neutral")
+        print(f"[server] agreement check failed ({exc.__class__.__name__}) - neutral")
         return None
 
 

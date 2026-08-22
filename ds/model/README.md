@@ -23,21 +23,10 @@ python server.py
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/title/skills?title=<title>&title_match=<0.0-1.0>` | Top-5 skills for a job title |
+| GET | `/title/skills?title=<title>` | Top-5 skills for a job title |
 | GET | `/title/match?title=<title>` | Nearest canonical titles with confidence |
 | GET | `/text/skills?text=<text>` | SkillNer extraction from free text |
 | POST | `/cv/title` body `{"text": "..."}` | Extract + canonicalise the job title from a CV |
-
-### `title_match` parameter (DS-7)
-
-Controls how much title-specificity weighs against raw prevalence when ranking skills:
-
-```
-score = 0.7 × prevalence + 0.3 × title_match × title_specificity
-```
-
-- `title_match=0.0` (default) - pure prevalence, identical to the pre-feature-matrix model
-- `title_match=1.0` - boosts skills that appear disproportionately in this role vs. others
 
 ### Response fields - `/title/skills`
 
@@ -89,17 +78,18 @@ The model covers **60+ canonical titles** grouped from hundreds of title variant
 
 ```bash
 # unit tests (no server needed) + smoke tests (requires running server)
-python ds/model/test_preferences.py
+python ds/model/test_stability.py
+python ds/model/test_skill_schema.py
 ```
 
-Unit tests inject a mock `feature_matrix` so they verify ranking logic independently of real data. Smoke tests call a live server at `localhost:8000`.
+Unit tests inject a mock `feature_matrix` so they verify the logic independently of real data. Smoke tests call a live server at `localhost:8000`.
 
 ---
 
 ## Task log
 
-### DS-7 - Skill preferences / `title_match` parameter
-Added `SkillPreferences` schema and `rank_skills()` to the server. The `/title/skills` endpoint now accepts an optional `title_match` float (0.0-1.0) that shifts ranking from pure prevalence toward title-specific skills. Added `test_preferences.py` to cover the ranking logic and validate server responses.
+### DS-7 - Skill preferences / `title_match` parameter (removed)
+Added a `SkillPreferences` schema and `rank_skills()` that let `/title/skills` shift ranking from pure prevalence toward title-specific skills. The experiment did not survive: the server was rewritten around the feature matrix without it, and the parameter was dropped from the API and from the backend that had gone on sending it.
 
 ### DS-8 - Canonical titles metadata + feature matrix
 `train.py` now computes a `feature_matrix` per canonical title: each skill carries `prevalence` (normalised frequency in this role) and `title_specificity` (IDF-based - how exclusively the skill appears in this role vs. all roles). The matrix is saved into `model.joblib` and summarised in `canonical_titles.json` with per-title record counts and confidence levels.

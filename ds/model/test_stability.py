@@ -1,9 +1,7 @@
 """
 Unit tests for stability.py's compute_stability_features (pure function, no Mongo/
 training run needed) plus a smoke test of /title/trending-skills' new response fields
-against a mocked server.feature_matrix (same style as test_preferences.py's MOCK_MATRIX,
-but that file's own rank_skills/SkillPreferences/title_match references are pre-existing
-dead code against the current server.py - this file does not build on it).
+against a mocked server.feature_matrix.
 
 Run:
   python ds/model/test_stability.py
