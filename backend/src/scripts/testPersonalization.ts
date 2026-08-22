@@ -1,6 +1,6 @@
 /**
  * Standalone unit tests for personalization.service.ts - no Mongo/DS server required,
- * pure-logic checks in the same style as ds/model/test_preferences.py.
+ * pure-logic checks only.
  *
  * Run from backend/: npm run test-personalization
  */
