@@ -172,9 +172,20 @@ build+בדיקה אחרי כל תחום. **חלופה שנדחתה:** סריקה
 | 6. סריקה סופית | ☑ 0 TODO/FIXME, 0 `console.log` בפרונט, 0 אימוג'י-לוג. ה-✓/✕ שנמצאו הם תוכן UI לגיטימי. `server.py`: 4 מ-5 ה-`print` הם הודעות עלייה - הושארו; החמישי (נתיב בקשה) קיבל תג `[server]` |
 | 7. אימות סיום | ☑ `tsc --noEmit` נקי, `npm run build` עובר בשני הצדדים, DS עולה ומחזיר 59 טייטלים, `/title/skills` עובד **בלי** הפרמטר שהוסר, ו-`/api/personalize/options` מחזיר 10 סקילז דרך החתימה החדשה של `getCoreSkills` |
 
-**חריגה מהתוכנית:** אימות ה-Playwright לא רץ - הדפדפן היה תפוס ע"י סשן מקביל. במקומו
-בוצע אימות API מלא של הנתיב שהשתנה (רישום → jobs → personalize/options), כולל הקריאה
-היחידה שבה **הזזתי ארגומנטים** (`personalize.routes.ts:76`). **נותר ל-M12:** מעבר UI.
+### אימות Playwright (רץ 22/08, אחרי שהדפדפן התפנה)
+
+מעבר מלא על stack חי (DS 8000 + backend 3000 + frontend 8080), 2 קו"ח מהסט של M04:
+
+- **Maya-Berkovich (data scientist):** זיהוי `Data Scientist` **96.16%** → JD של DS →
+  ניתוח → **54% GOOD**, 5 core + 5 dynamic עם ניקוד per-skill, Gap Analysis "10 skills
+  to improve". **אפס שגיאות console.**
+- **Daniel-Peretz (backend):** הזרימה עברה, אך חשפה **שני באגים קיימים-מראש** (סעיף 11).
+- **דלת המילוט:** החיפוש הידני עובד ומחזיר `Backend Developer` **96.56%** - אבל הבחירה
+  לא נתפסת (באג 2 למטה).
+
+**ממצא שהאימות תפס בקוד שלי:** הסרתי את `titleMatch` רק מהבקאנד; הפרונט המשיך לשלוח
+אותו ב-body של `/api/analyze` (נראה ב-network trace). הושלם ב-`c0acd3f`
+(`api.ts` + 2 קוראים), `tsc` נקי, והזרימה אומתה שוב אחרי התיקון.
 
 ## 11. ממצאים מחוץ לסקופ (לא בוצעו - דורשים הכרעה)
 
@@ -182,3 +193,29 @@ build+בדיקה אחרי כל תחום. **חלופה שנדחתה:** סריקה
 `backend/src/controllers/jobs.controller.ts` ו-`cv.controller.ts` - אף route לא מייבא
 אותם (אומת ב-grep; `results.controller.ts` ו-`score.controller.ts` **כן** בשימוש).
 `jobs.controller.ts` אף מכיל `getCoreSkills` שמדמה endpoint שלא קיים. המלצה: למחוק.
+
+### 🔴 באג 1: ה-normalizer מעדיף Frontend על Backend (שייך ל-M19 / M12)
+
+`GET /title/normalize?title=Senior Backend Developer, Tech Lead` מחזיר:
+`Frontend Developer 73.73` > **`Backend Developer 72.91`** > `Software Engineer 67.32`.
+בלי הסיומת `, Tech Lead` הדירוג נכון (Backend **84.9** מול Frontend 81.48) - כלומר תוספת
+תפקיד-משנה בכותרת מדללת את ה-embedding ומהפכת את הסדר בפער של **0.82 נקודות**.
+
+**ההשפעה חמורה ובדיוק בדמו:** קו"ח backend חזק (Daniel-Peretz) נמדד מול core skills של
+frontend (`react`, `html`, `css`) וקיבל **"Poor"**. הסיגנל של M19 לא מציל כאן - הוא רוכב
+על דרגת המסווג, וה-normalizer (דרגה 1) פותר בביטחון גבוה מספיק כדי לא ליפול אליה.
+
+### 🔴 באג 2: בחירת התפקיד הידנית לא נתפסת כשהזיהוי היה בטוח (שייך ל-M14 / M12)
+
+`frontend/src/components/upload/CvUploadSection.tsx:317`:
+```js
+if (roleDetection.status !== 'uncertain' && roleDetection.status !== 'not-found') return
+```
+כשהזיהוי הצליח (`status === 'ready'`) המשתמש עדיין רואה את "Not the right role? Choose it
+manually", מקבל תוצאות חיפוש תקינות עם אחוזים - **ובלחיצה לא קורה כלום**. אומת ב-network
+trace: אחרי בחירת `Backend Developer 96.56%` הבקשה ל-`/api/analyze` עדיין נשאה
+`canonicalTitle: "Frontend Developer"`, והתוצאות הוצגו לפי frontend.
+
+זו הסיבה ש-M07 סימן את דלת המילוט כ"אומתה חיה" - האימות שם רץ על קו"ח אחות, שבו הסטטוס
+הוא `not-found` והשומר עובר. המסלול השבור הוא **זיהוי מוצלח אך שגוי** - בדיוק צירוף
+באג 1. תיקון: להוסיף `'ready'` לתנאי (שינוי התנהגות - לא בסקופ M02).
