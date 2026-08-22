@@ -113,5 +113,52 @@ check(
     ['kubernetes', 'react', 'pandas', 'pytorch', 'java'].every((s) => fullExplicitFocus.includes(s))
 );
 
+// ── selectDynamicSkills — selectedSkillNames as source of truth ─────────────────
+// The pool at scoring time is re-fetched with a different core exclusion than the
+// screen's pool, so named picks must survive even when absent from the pool.
+
+const namesNotInPool = selectDynamicSkills(
+  DYNAMIC_POOL,
+  [],
+  ['Spring Boot', 'Hibernate'],
+  []
+);
+check(
+  'named picks absent from the re-fetched pool are still honored verbatim',
+  namesNotInPool[0] === 'Spring Boot' && namesNotInPool[1] === 'Hibernate' && namesNotInPool.length === 5,
+  `got ${JSON.stringify(namesNotInPool)}`
+);
+
+const namesDedupedVsCore = selectDynamicSkills(
+  DYNAMIC_POOL,
+  [],
+  ['english', 'sql', 'Spring Boot', 'SQL databases', 'react'],
+  ['english', 'sql', 'api', 'mysql', 'c #']
+);
+check(
+  'picks already covered by core (exact or near-duplicate) are deduped, rest honored',
+  !namesDedupedVsCore.includes('english') &&
+    !namesDedupedVsCore.includes('sql') &&
+    !namesDedupedVsCore.includes('SQL databases') &&
+    namesDedupedVsCore.includes('Spring Boot') &&
+    namesDedupedVsCore.includes('react') &&
+    namesDedupedVsCore.length === 5,
+  `got ${JSON.stringify(namesDedupedVsCore)}`
+);
+
+const shortNamePick = selectDynamicSkills(DYNAMIC_POOL, [], ['C#'], ['java', 'sql']);
+check(
+  'token-less pick ("C#") is not swallowed as a false near-duplicate of core',
+  shortNamePick[0] === 'C#',
+  `got ${JSON.stringify(shortNamePick)}`
+);
+
+const namesWinOverIds = selectDynamicSkills(DYNAMIC_POOL, ['pytorch'], ['pandas'], []);
+check(
+  'when names are present, ids (same picks, older shape) are not applied on top',
+  namesWinOverIds[0] === 'pandas' && !namesWinOverIds.slice(0, 2).includes('pytorch'),
+  `got ${JSON.stringify(namesWinOverIds)}`
+);
+
 console.log(failures ? `\n${failures} test(s) FAILED.` : '\nAll tests passed.');
 process.exit(failures ? 1 : 0);
