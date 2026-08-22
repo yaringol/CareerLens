@@ -1,6 +1,6 @@
 /**
  * Renders every production CV PDF template with the same sample data so the
- * designs can be compared side by side (output: repo-root design-options/).
+ * designs can be compared side by side (output: docs/design/pdf-export-options/).
  *
  * Usage (from frontend/):
  *   node node_modules/esbuild/bin/esbuild scripts/render-design-options.tsx \
@@ -88,7 +88,7 @@ const sample: StructuredCv = {
   extras: [{ label: 'Military Service', items: ['IDF, Mamram - infrastructure unit (2013-2016).'] }],
 }
 
-const outDir = process.argv[2] ?? path.resolve(__dirname, '../../design-options')
+const outDir = process.argv[2] ?? path.resolve(__dirname, '../../docs/design/pdf-export-options')
 
 async function main() {
   fs.mkdirSync(outDir, { recursive: true })
