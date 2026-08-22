@@ -522,7 +522,6 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
         roleDetection.canonicalTitle,
         cvText,
         isPostingMode ? trimmedJobDescription : '',
-        0.0,
         { skipGibberish: !isPostingMode, excludeCvId: excludeCvId || undefined },
       )
       sessionStorage.setItem(

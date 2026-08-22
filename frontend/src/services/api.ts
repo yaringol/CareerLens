@@ -347,7 +347,6 @@ export async function analyzeCv(
   canonicalTitle: string,
   cvText: string,
   jobDescription: string,
-  titleMatch = 0.0,
   options: { skipGibberish?: boolean; excludeCvId?: string } = {}
 ): Promise<AnalyzeResponse> {
   const jd = jobDescription.trim()
@@ -365,7 +364,6 @@ export async function analyzeCv(
       canonicalTitle,
       cvText,
       jobDescription: jd,
-      titleMatch,
       ...(options.excludeCvId ? { excludeCvId: options.excludeCvId } : {}),
     }),
   }, LLM_TIMEOUT_MS)
