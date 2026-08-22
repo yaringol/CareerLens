@@ -1,2 +1,3 @@
+*.sh text eol=lf
 ds/model/*.joblib filter=lfs diff=lfs merge=lfs -text
 ds/final/*.joblib filter=lfs diff=lfs merge=lfs -text

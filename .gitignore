@@ -8,6 +8,12 @@ __pycache__/
 # Secrets (see *.example counterparts - placeholders only, no real credentials)
 secrets/mongo.env
 
+# DB migration - URIs are session env vars only; these patterns catch accidents.
+# Dump archives live outside the repo (C:\tmp\careerlens-migration) by design.
+scripts/db-migration/*.local.ps1
+scripts/db-migration/*.env
+*.gz
+
 # Data outputs
 data/processed/*
 !data/raw/.gitkeep
@@ -43,6 +49,8 @@ ds/model/tsne_map.html
 ds/model/.ipynb_checkpoints/
 ds/model/skill_db_relax_*.json
 ds/model/model.joblib.bak-*
+# working copy the retrain notebook writes for its before/after diff
+ds/model/model.joblib.baseline
 
 # Internal working docs - historical plans, task boards and QA scratch, local only
 /LOGIN_QA_REPORT.md
@@ -70,3 +78,27 @@ ds/model/lang_uk_dataset_report.md
 docs/final-sprint/promo/clips/
 docs/final-sprint/promo/final/
 docs/final-sprint/promo/_archive/
+
+# Real-CV corpus: the hash->filename map is the one artifact that can identify
+# a person, because collected CVs are named after their authors. The corpus
+# itself lives outside the repo; this keeps its name map out too.
+docs/final-sprint/outputs/metrics-raw/*.local.json
+
+# humanize skill: plain text extracted from .docx for linting
+*.extracted.txt
+
+# Submission materials live outside the repo (policy 2026-08-22): the repo carries
+# only code, DS notebooks and run-critical data. The book, design assets and
+# marketing/demo media are delivered separately.
+docs/progect_book/
+docs/design/
+docs/final-sprint/promo/
+docs/final-sprint/outputs/marketing/
+docs/final-sprint/outputs/metrics-raw/
+docs/final-sprint/outputs/video/
+demo_screenshots/
+test-fixtures/download-verification/
+
+# Colab download copies of the M06 retrain notebook (executed outputs, ~8MB).
+# The canonical trainer is ds/final/model1_retrain.ipynb.
+ds/model/archive/model1_retrain*.ipynb
