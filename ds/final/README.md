@@ -55,10 +55,15 @@ the exact `.joblib` artifact the DS server loads.
   First rung of the title-detection ladder and the manual title search.
 - **Trained by:** the original notebook (`NEW.ipynb`) was lost before being committed.
   `title_normalizer_59.ipynb` (M19/W2) is its **reconstruction and living spec**: the
-  rebuild ties the live artifact exactly (82.2% taxonomy fidelity each, 8 fixes vs
+  rebuild ties the live artifact exactly (81.8% taxonomy fidelity each, 8 fixes vs
   8 regressions), so the equivalence gate deliberately kept the live artifact — the
   `.joblib` here is that live artifact, and the notebook documents how it is built
   (its own output, `title_normalizer_rebuilt.joblib`, was intentionally not promoted).
+- **Lookup:** a title scores as its best match across the whole phrase and the
+  role-shaped segments inside it, so a header naming a second role after the primary
+  one ("Senior Backend Developer, Tech Lead") is no longer decided by the average of
+  the two. The notebook's `predict` mirrors `normalize_title_semantic_topk` in
+  `ds/model/server.py` — change one and change the other.
 - **Loaded at:** `ds/model/server.py:113-118` (`TITLE_NORMALIZER_PATH`).
 - **Served on:** `GET /title/normalize`; also scores header-line candidates inside the
   CV-title flow.
