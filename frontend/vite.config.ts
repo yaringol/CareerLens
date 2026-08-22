@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 8080,
+    host: true, // listen on the LAN so the app opens from a phone on the same Wi-Fi
     open: true,
     proxy: {
       '/api': {
