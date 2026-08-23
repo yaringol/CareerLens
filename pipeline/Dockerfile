@@ -24,6 +24,13 @@ COPY ds/model/promotion_gate.py   /app/promotion_gate.py
 COPY ds/model/migrate_unified_skill_observations.py /app/migrate_unified_skill_observations.py
 COPY ds/model/migrate_skill_records.py /app/migrate_skill_records.py
 COPY ds/model/train.py              /app/train.py
+
+# The retrain notebook is the source of truth for the training configuration;
+# nightly_config.py parses it at run time (see run_daily.sh step 3). It ships as
+# data, not as something the image executes - no jupyter in this image.
+COPY ds/final/model1_retrain.ipynb  /app/model1_retrain.ipynb
+COPY pipeline/nightly_config.py     /app/nightly_config.py
+
 COPY pipeline/run_daily.sh          /app/run_daily.sh
 RUN chmod +x /app/run_daily.sh
 

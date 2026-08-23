@@ -437,7 +437,6 @@ export default function PersonalizationScreen() {
         input.canonicalTitle,
         input.cvText,
         input.isPostingMode ? input.jobDescription : '',
-        0.0,
         { skipGibberish: !input.isPostingMode, excludeCvId: input.excludeCvId || undefined }
       )
       sessionStorage.setItem(

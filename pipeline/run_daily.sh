@@ -35,11 +35,28 @@ python /app/migrate_skill_records.py
 echo "[pipeline] $(date -u +%FT%TZ) migrate unified observations: starting"
 python /app/migrate_unified_skill_observations.py
 
-# 3) Retrain from unified role_skill_observations -> model.joblib on shared volume.
+# 3) Retrain from `jobs` -> model.joblib on shared volume.
+#
+# The training configuration is NOT defined here. `ds/final/model1_retrain.ipynb`
+# is the source of truth for it: section 0 of the notebook holds the values and
+# section 5 explains why each one differs from train.py's shipped default -
+# TREND_WINDOW_DAYS 7 collapses every trend label to `stable` against a corpus
+# reaching back to 2020, RECENCY_HALF_LIFE_DAYS 14 decays the historical slice to
+# numerically nothing, and an unset SOURCE_EXCLUDE retrains the retired
+# `augmented-2026` synthetic bridge every night.
+#
+# nightly_config.py parses that cell (ast.literal_eval - the notebook is read,
+# never executed) and emits `export KEY=${KEY:-<notebook value>}`, so an operator
+# can still override a single key for one run, and a change to the notebook
+# reaches production without editing this file.
+echo "[pipeline] $(date -u +%FT%TZ) train config: reading ds/final/model1_retrain.ipynb"
+eval "$(python /app/nightly_config.py)" || {
+  echo "[pipeline] $(date -u +%FT%TZ) train: cannot read the notebook config - aborting" >&2
+  exit 1
+}
+echo "[pipeline]   half-life=${RECENCY_HALF_LIFE_DAYS}d window=${TREND_WINDOW_DAYS}d collection=${MONGO_COLLECTION} exclude=${SOURCE_EXCLUDE} unified=${TRAIN_USE_UNIFIED}"
+
 echo "[pipeline] $(date -u +%FT%TZ) train: starting"
-TRAIN_USE_UNIFIED="${TRAIN_USE_UNIFIED:-1}" \
-SOURCE_WEIGHTS="${SOURCE_WEIGHTS:-linkedin:1.0,lang_uk:0.3}" \
-UNIFIED_SKILLS_COLLECTION="${UNIFIED_SKILLS_COLLECTION:-role_skill_observations}" \
 python /app/train.py
 train_status=$?
 

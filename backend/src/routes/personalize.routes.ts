@@ -73,7 +73,7 @@ router.post('/options', async (req: Request, res: Response, next: NextFunction):
         return;
       }
 
-      focusSkillsPromise = getCoreSkills(canonicalTitle.trim(), 0.0, DEFAULT_SELECTED_COUNT)
+      focusSkillsPromise = getCoreSkills(canonicalTitle.trim(), DEFAULT_SELECTED_COUNT)
         .catch(() => null)
         .then((core) => fetchFocusSkillPool(canonicalTitle.trim(), description, core ?? []))
         .then((pool) => pool.map((skill) => skill.name));

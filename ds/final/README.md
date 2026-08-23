@@ -55,10 +55,15 @@ the exact `.joblib` artifact the DS server loads.
   First rung of the title-detection ladder and the manual title search.
 - **Trained by:** the original notebook (`NEW.ipynb`) was lost before being committed.
   `title_normalizer_59.ipynb` (M19/W2) is its **reconstruction and living spec**: the
-  rebuild ties the live artifact exactly (82.2% taxonomy fidelity each, 8 fixes vs
+  rebuild ties the live artifact exactly (81.8% taxonomy fidelity each, 8 fixes vs
   8 regressions), so the equivalence gate deliberately kept the live artifact — the
   `.joblib` here is that live artifact, and the notebook documents how it is built
   (its own output, `title_normalizer_rebuilt.joblib`, was intentionally not promoted).
+- **Lookup:** a title scores as its best match across the whole phrase and the
+  role-shaped segments inside it, so a header naming a second role after the primary
+  one ("Senior Backend Developer, Tech Lead") is no longer decided by the average of
+  the two. The notebook's `predict` mirrors `normalize_title_semantic_topk` in
+  `ds/model/server.py` — change one and change the other.
 - **Loaded at:** `ds/model/server.py:113-118` (`TITLE_NORMALIZER_PATH`).
 - **Served on:** `GET /title/normalize`; also scores header-line candidates inside the
   CV-title flow.
@@ -82,7 +87,27 @@ the exact `.joblib` artifact the DS server loads.
   in `backend/src/services/dsModel.ts:89-91`, threaded through `extractTitleFromCv`
   into the fallback-logging and auto-match decisions.
 
+## Helper modules (`*.py`)
+
+The eight Python modules here are the complete local-import closure of the trainers
+above, copied so the folder is a self-contained snapshot:
+
+- `taxonomy.py` — the 59-title canonical taxonomy + label projections (used by all four)
+- `train.py` — Model 1 training driven by `model1_retrain.ipynb`; imports
+  `promotion_gate.py`, `skill_schema.py`, `stability.py`, `mongo_env.py`
+- `promotion_gate.py` — the nightly no-regression gate on data volume
+- `skill_schema.py` — unified skill-observation schema
+- `stability.py` — trend/stability scoring for Model 1
+- `extract_skills.py` + `skillner_utils.py` — SkillNer extraction (chunked fallback
+  included) used by the skills→title router notebook
+- `mongo_env.py` — Mongo connection resolution
+
+Like the `.joblib` files, these are **copies**: the live modules the DS server and the
+nightly pipeline import are the ones in `ds/model/` — change there first, then refresh
+the copy here.
+
 ## What is deliberately NOT here
 
-Research notebooks, superseded trainers and versioned artifact snapshots stay in
-`ds/model/` and are mapped in [`ds/model/NOT_IN_FINAL.md`](../model/NOT_IN_FINAL.md).
+Research notebooks and superseded trainers live in
+[`ds/model/archive/`](../model/archive/README.md); versioned artifact snapshots stay
+in `ds/model/`. Both are mapped in [`ds/model/NOT_IN_FINAL.md`](../model/NOT_IN_FINAL.md).

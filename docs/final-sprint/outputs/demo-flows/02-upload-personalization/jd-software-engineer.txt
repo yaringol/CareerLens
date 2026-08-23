@@ -1,0 +1,32 @@
+**Your responsibilities**
+- Take ownership of the design, development and maintenance of microservices powering our open platform for the energy and utilities industry.
+- Work on scalable components performing financial transactions, billing calculations and quotations for millions of energy consumers and metering points.
+- Analyze our legacy components in terms of throughput, latency, security and reliability and proactively drive refactorings and rebuilds.
+- Create POCs demonstrating the power of JVM technologies and frameworks and act as an evangelist to share your knowledge with the company.
+- Mentor and coach junior developers in pair programming sessions.
+
+**Our requirements**
+- You have a degree in computer science or a related subject.
+- You have profound experience as a backend engineer.
+- You have hands-on coding skills in Microservice architectures using Java 8+, Spring Boot, Hibernate or related JVM-based technology Stacks.
+- You have a background working with event-driven architectures using RabbitMQ, NATs or Kafka
+- You have experience working with SQL and NoSQL databases, preferably MySQL
+- You have strong conceptual knowledge of OO-patterns, Domain Driven Design, and database design.
+- You have strong technical coaching and mentoring skills.
+= You are proficient in English and keen to work in an international environment.
+
+**Our tech stack**
+Java 11, Spring Boot, MySQL/MariaDB, Bitbucket, Jenkins, AWS.
+
+**What we offer**
+- You are going to be part of a vibrant and international developer team who revolutionizes the energy industry with leading-edge technologies.
+- We know that our employees make the difference. Therefore we take care of every team member individually and provide manifold training opportunities.
+- Our teams work with agile methods without outdated structures.
+- We offer you an environment in which you can fulfill yourself and that enables your success as part of the whole.
+- Possibility to work from the Kharkiv office or remotely.
+- Paid sick leave/vacation days (6/15 working days per year).
+- Stability and excellent conditions for long-term cooperation.
+- English speaking club, internal corces, certifications and other educational activities.
+- Board games, parties, team buildings and corporate events.
+- Delicious coffee / tea / biscuits / fruit / milk in the office.
+*Potentially possible short business-trips to Germany.

@@ -241,16 +241,12 @@ export async function getSkillsFromText(text: string, topN = 5): Promise<string[
   }
 }
 
-export async function getCoreSkills(
-  jobTitle: string,
-  titleMatch = 0.0,
-  topN = 5
-): Promise<string[] | null> {
+export async function getCoreSkills(jobTitle: string, topN = 5): Promise<string[] | null> {
   try {
     const response = await axios.get<{ suggested_skills: string[]; matched_canonical?: string }>(
       `${DS_MODEL_URL}/title/skills`,
       {
-        params: { title: jobTitle, title_match: titleMatch, top_n: topN },
+        params: { title: jobTitle, top_n: topN },
         timeout: DS_MODEL_TIMEOUT_MS,
       }
     );

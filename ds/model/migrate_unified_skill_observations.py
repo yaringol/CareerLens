@@ -31,6 +31,14 @@ SOURCE_MAP_RAW = os.getenv(
     "SOURCE_MAP",
     "jobs:linkedin,lang-uk-job-skills:lang_uk",
 )
+# Documents whose OWN `source` field is one of these are not migrated. This is
+# load-bearing: the map above rewrites every document in `jobs` to
+# source=linkedin, so without this filter the retired `augmented-2026` synthetic
+# bridge would reappear in the unified collection under a real source's name,
+# where train.py's SOURCE_EXCLUDE (which matches on `source`) can no longer see
+# it. Excluding at migration time is the only place the distinction survives.
+EXCLUDE_SOURCES = [s.strip().lower() for s in
+                   os.getenv("EXCLUDE_SOURCES", "augmented-2026").split(",") if s.strip()]
 
 
 def parse_source_map(raw: str) -> list[tuple[str, str]]:
@@ -75,7 +83,11 @@ def migrate_collection(
     written = 0
     skipped = 0
 
-    for doc in source.find({}):
+    query = ({"$expr": {"$not": [{"$in": [
+        {"$toLower": {"$ifNull": ["$source", ""]}}, EXCLUDE_SOURCES]}]}}
+        if EXCLUDE_SOURCES else {})
+
+    for doc in source.find(query):
         canonical = resolve_canonical_simple(doc, canonical_titles)
         if canonical is None:
             skipped += 1

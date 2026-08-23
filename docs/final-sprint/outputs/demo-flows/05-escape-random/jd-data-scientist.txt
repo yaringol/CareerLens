@@ -1,0 +1,36 @@
+**Требования: **
+Опыт работы: 3 года
+Data Scientist - 3 года
+Опыт в Python
+Опыт в PySpark
+Опыт в NLP
+
+**KEY RESPONSIBILITIES**
+- Develop ML focused solutions for the financial sector using best-of-breed tools combining ThetaRay unique algorithms with frameworks such as spark, MLflow, Airflow, etc. in cloud native environments.
+- Design and implement methods to assess the quality of unsupervised and semi-supervised results with key metrics as well as thorough investigation.
+- Participate in research and technology innovation to develop more efficient and automated ways to handle ML/DL workloads.
+- Participate in new product/feature definitions and implementation.
+- Work mostly with Python/Spark on Kubernetes environments.
+
+**REQUIREMENTS**
+- 3+ years of experience as a data scientist.
+- Experience in defining and implementing feature engineering processes for ML based products
+- Experience in writing code in Python (and Pyspark) and using Python data-science frameworks.
+- BSc/BA in Mathematics, Physics, Computer Science, Economics, or another related field.
+- Experience with building solutions with Big Data tools and frameworks such as Spark, Hadoop, etc.
+- Experience in developing machine learning oriented solutions for the financial sector - advantage
+- Experienced with machine learning framework such as Sklearn - a must, TensorFlow/Keras - advantage
+- Experience with NLP - an advantage.
+- Experience with Graph Algorithms - an advantage.
+- Great communication skills.
+- Ability to quickly learn new technologies, frameworks, and algorithms.
+- Very good English, written and verbal.
+
+**THE COMPANY OFFERS:**
+- Work in an international company
+- Stable and competitive salary
+- Interesting tasks and projects using new technologies
+- Opportunities for professional and career development
+- Comfortable conditions, friendly, friendly staff
+- Medical insurance
+- Office in the center of Kyiv (metro University, near the Circus)

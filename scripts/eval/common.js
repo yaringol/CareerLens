@@ -54,14 +54,40 @@ async function login() {
 
 const auth = (token) => ({ Authorization: `Bearer ${token}` });
 
+/** True when the file really is a PDF, judged by its header bytes. */
+function looksLikePdf(absPath) {
+  let fd;
+  try {
+    fd = fs.openSync(absPath, 'r');
+    const head = Buffer.alloc(5);
+    fs.readSync(fd, head, 0, 5, 0);
+    return head.toString('latin1') === '%PDF-';
+  } catch {
+    return false;
+  } finally {
+    if (fd !== undefined) fs.closeSync(fd);
+  }
+}
+
 /**
  * Real multipart upload. save=false keeps the 10-CV library cap (and its
  * favourite-deleting bug) out of the measurement.
  * Returns { cvId, cvText, headerText, rawText, fileName }.
+ *
+ * The content type is decided by the file's header bytes, not by form-data's
+ * filename guess. form-data derives the part's Content-Type from the name, and
+ * a collected CV named exactly ".pdf" reads as an extensionless dotfile, so it
+ * guesses application/octet-stream - which multer's mimetype filter then
+ * rejects. A browser uploading that same file sends application/pdf and the
+ * document is accepted, so the guess is an artifact of the test client and
+ * counting it as a guard refusal would understate the extraction rate.
+ * Sniffing the bytes keeps format_guard meaningful: a file that is not a PDF
+ * still arrives with the wrong type and is still refused.
  */
 async function uploadPdf(token, pdfPath) {
   const form = new FormData();
-  form.append('file', fs.createReadStream(pdfPath));
+  form.append('file', fs.createReadStream(pdfPath),
+    looksLikePdf(pdfPath) ? { contentType: 'application/pdf' } : undefined);
   const res = await axios.post(`${API_URL}/api/upload?save=false`, form, {
     headers: { ...auth(token), ...form.getHeaders() },
     maxBodyLength: Infinity,

@@ -59,7 +59,7 @@
 
 | סדר | # | משימה | קובץ | תלוי ב- | סטטוס |
 |---|---|---|---|---|---|
-| 1 | **M13** | **יסודות ריפו ו-git** - חוסם הכל: `.gitignore` בולע את הספר; `npm install` נכשל ב-clone; היסטוריית AI ב-main | [13-repo-git-foundation.md](13-repo-git-foundation.md) | - | 🚧 kickoff הוכן; **המימוש לא אושר** (20/07) - [פרטים](outputs/kickoffs/13-kickoff.md) |
+| 1 | **M13** | **יסודות ריפו ו-git** - חוסם הכל: `.gitignore` בולע את הספר; `npm install` נכשל ב-clone; היסטוריית AI ב-main | [13-repo-git-foundation.md](13-repo-git-foundation.md) | - | ◐ **סקופ צומצם 22/08:** ניקוי היסטוריית ה-AI **ירד** (אושרו עד 20 קומיטים; יש 19 - ראה החלטה 1). ה-`.gitignore` שוכתב ותוצרי ההגשה tracked (`681dc13`), LFS preflight נכנס (`2a96aad`). **נותר:** pin לתלויות Python, הנחיות LFS ל-README, שער clone נקי - [פרטים](outputs/kickoffs/13-kickoff.md) |
 | 2 | M01 | סגירת אימות E2E (המיזוג עצמו כבר בוצע) | [01-branch-stabilization.md](01-branch-stabilization.md) | - | ◐ |
 | 3 | **M09** | **ספר הפרויקט - שלד + פרקים 1, 3, "תוכנן מול בוצע"** (50-65 ש'; רץ ברקע לאורך כל הספרינט, פרק Results נסגר בגל 4) | [09-project-book.md](09-project-book.md) | לשלד: - | ◐ kickoff: אושר 2026-07-21 (שלב א') |
 | 4 | M16 | ארכיטקטורה ודיאגרמות (נכס משותף ל-M08/M09/M11) | [16-architecture-diagrams.md](16-architecture-diagrams.md) | - | ☑ **2026-08-03** - 7 figures ב-`docs/progect_book/figures/`, מוטמעות בפרקים 4-5 עם קישורים עובדים. סבב תיקון 03/08 מול הקוד: Figure 3 "Quality gate"→**Coverage gate** (השער סופר רשומות, לא מודד איכות - ממצא M05), Figure 6 סולם 1-10→**0-10**, Figure 4 תווית `unsure`→**`no title found`** (המעבר קורה כשלא נמצא טייטל, לא כשאין ודאות); הניסוח תוקן גם בפרקים 1 ו-4 וב-`architecture.md`; 3 רינדורים מדור ראשון נמחקו ([דוח](outputs/kickoffs/16-kickoff.md)) |
@@ -90,15 +90,15 @@
 | סדר | # | משימה | קובץ | תלוי ב- | סטטוס |
 |---|---|---|---|---|---|
 | 13 | **M05** | **הערכה ומדדים רשמיים** → `official-metrics.md` (מודדים את ההתנהגות **הסופית** - אחרי כל התיקונים) | [05-evaluation-and-metrics.md](05-evaluation-and-metrics.md) | M04, M06, M14, M15 | ☑ **2026-08-03** - [official-metrics.md](outputs/official-metrics.md) + הגלמי וה-harness ב-git (`82978e8`). מודל 2: **Top-1 89.7%** בצינור המלא (מול 62.3% ברמת הרכיב); כיול לפי דרגה + המלצת סף 60→80; כיסוי **33/59** מחושב מהמקור; מודל 1: **precision@10 97%** - המדד הראשון שלו אי פעם; סוכן הניקוד: יציבות σ=0.11 והממצא שה-JD לא נכנס לפרומפט. **בהחלטת המשתמשת: הסכמה אנושית לסוכן הניקוד לא נמדדה** (§2.5) - מוצהר במפורש ולא מוסתר. תוך כדי נמצאה ותוקנה רגרסיית 503 מ-W5 (`98afe29`) ([kickoff](outputs/kickoffs/05-kickoff.md)) |
-| 14 | M02 | ניקיון קוד להגשה (אחרון בשרשרת הקוד - שלא ננקה קוד שעוד ישתנה) | [02-code-cleanup.md](02-code-cleanup.md) | M13, M14, M15, M07 | ☐ |
+| 14 | M02 | ניקיון קוד להגשה (אחרון בשרשרת הקוד - שלא ננקה קוד שעוד ישתנה) | [02-code-cleanup.md](02-code-cleanup.md) | M13, M14, M15, M07 | ☑ **2026-08-22** - 7/7 הצעדים בוצעו ב-4 קומיטים: README (שורה 82 השבורה + 11 פקודות macOS + `git lfs pull`), הסרת `titleMatch` ו-`dsModel.interface.ts`, מחיקת `test_preferences.py` היתום ותיקון `ds/model/README.md`, וארכוב `scraping/src/` **כיחידה** (התחקיר גילה ש-`main.py:15-20` כן מייבא את הסקרייפרים ה"מתים" - ארכוב חלקי היה שובר). builds עוברים ו-**מעבר Playwright מלא על 2 קו"ח** עבר (Data Scientist 96.16% → 54% GOOD, אפס שגיאות console). האימות תפס שהסרתי את `titleMatch` רק מהבקאנד - הפרונט המשיך לשלוח אותו, הושלם ב-`c0acd3f`. **⚠️ שני באגים קיימים-מראש נמצאו ותועדו (לא תוקנו - שינוי התנהגות):** ה-normalizer מדרג Frontend מעל Backend ל-"Senior Backend Developer, Tech Lead" (73.73 מול 72.91), **ובחירת התפקיד הידנית לא נתפסת כשהזיהוי הצליח** (`CvUploadSection.tsx:317`) - צירוף השניים נותן "Poor" לקו"ח backend חזק בלי דרך להתאושש ([דוח](outputs/kickoffs/02-kickoff.md)) |
 
 ### גל 4 - תוצרי ההגשה
 
 | סדר | # | משימה | קובץ | תלוי ב- | סטטוס |
 |---|---|---|---|---|---|
 | 15 | M08 | חומרי הצגה: סקרינשוטים, פלייר, סרטון, מצגת + פוסטר | [08-marketing-assets.md](08-marketing-assets.md) | M03, M05, M06, M14, M15, M16 | ☐ |
-| 16 | M11 | מוכנות לדמו חי | [11-demo-readiness.md](11-demo-readiness.md) | M04, M06, M14, M15 | ☐ |
-| 17 | M09 | ספר הפרויקט - **סגירה**: פרק Results, הגהה, אישור טיוטה | [09-project-book.md](09-project-book.md) | M05, M10, M16, M17 | ◐ kickoff שלב ב': אושר 2026-08-03 ([kickoff](outputs/kickoffs/09-kickoff.md)) |
+| 16 | M11 | מוכנות לדמו חי | [11-demo-readiness.md](11-demo-readiness.md) | M04, M06, M14, M15 | ◐ kickoff: אושר 2026-08-22. **סקופ הוגדר מחדש:** הדמו על production (careerlens.cs.colman.ac.il) שבאחריות גורם אחר; M11 = 5 תרחישי פלואו + בדיקות מול production באות המשתמשת. תיקיות + תסריטים + צ'קליסט סביבה נוצרו ([demo-flows](outputs/demo-flows/README.md), [kickoff](outputs/kickoffs/11-kickoff.md)) |
+| 17 | M09 | ספר הפרויקט - **סגירה**: פרק Results, הגהה, אישור טיוטה | [09-project-book.md](09-project-book.md) | M05, M10, M16, M17 | ☑ **2026-08-11 - הטיוטה המלאה אושרה ע"י המשתמשת.** כל הפרקים + Appendix A+B, 14 figures, docx מיוצר; סבבי כתיבה/סיפוריות/איזון תועדו ב-[kickoff](outputs/kickoffs/09-kickoff.md); המרה סופית לתבנית המכללה - ידנית ב-Word |
 
 ### גל 5 - אחרון, תמיד
 
@@ -167,8 +167,11 @@ server (2 מודלים) → MongoDB. פרויקט גמר, המכללה למנה�
 
 ## החלטות שהוכרעו ע"י המשתמש (2026-07-14)
 
-1. ✅ **היסטוריית AI (M13): לנקות רק את `main`.** ה-5 קומיטים ב-origin/main מנוקים
-   (rewrite + force-push, אחרי גיבוי mirror ותיאום עם השותפים); UI_branch נשאר כמו שהוא.
+1. ✅ ~~**היסטוריית AI (M13): לנקות רק את `main`.**~~ **בוטל 2026-08-22: ניקוי ההיסטוריה ירד
+   מהתוכנית.** התקבל אישור שעד 20 קומיטים עם חתימת AI בהיסטוריה - מקובל; ספירה בפועל
+   (22/08): 19 קומיטים מסומנים ב-origin/main (Claude + Cursor trailers). אין rewrite, אין
+   force-push. **שימו לב: המרווח הוא קומיט אחד בלבד** - הכלל "שום זכר ל-AI בקומיטים חדשים"
+   נשאר בתוקף מלא, ואין למזג ענפים ישנים (last_fix וכו') לתוך main בלי לבדוק trailers.
 2. ✅ **Gap Analysis (M15): לבנות.** ההחלטה התקבלה - M15 יוצאת לדרך; M8/M11 יכולות להניח
    שהמסך קיים.
 3. ✅ **CV-only (M14 P1-4): להריץ LLM גם שם.** מסירים את `keywordOnly: cvOnlyMode`;

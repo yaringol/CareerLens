@@ -455,9 +455,11 @@ type PersonalizationMode = (typeof PERSONALIZATION_MODES)[number];
  * - CORE (5): the DS model's 10 trending skills for the role, filtered ONLY by the
  *   stable/trending weights collapsed into a single stabilityPreference (0=stable..
  *   1=trending, see computeStabilityPreference) via selectPersonalizedSkills.
- * - DYNAMIC (5): the LLM/job-posting-derived focus-skill pool (same one shown on the
- *   Personalization screen's Focus Skills panel, see fetchFocusSkillPool), filtered
- *   ONLY by the user's selectedSkillIds via selectDynamicSkills.
+ * - DYNAMIC (5): the user's explicit picks from the Personalization screen's Focus
+ *   Skills panel, honored by NAME via selectDynamicSkills (the re-fetched pool uses a
+ *   different core exclusion than the screen's pool, so an id lookup silently dropped
+ *   picks); picks the weighted core already covers are deduped, remaining slots fill
+ *   from the re-fetched pool (fetchFocusSkillPool).
  * Mixing selectedSkillIds into core selection (as an earlier version of this route
  * did) starves the dynamic side of the user's actual picks and makes the visible
  * skill list look identical regardless of personalization - keep the two filters
@@ -490,7 +492,7 @@ router.post('/personalized', async (req: Request, res: Response, next: NextFunct
       throw new ValidationError('personalization is required');
     }
 
-    const { mode, weights, selectedSkillIds } = personalization;
+    const { mode, weights, selectedSkillIds, selectedSkillNames } = personalization;
     if (!PERSONALIZATION_MODES.includes(mode as PersonalizationMode)) {
       throw new ValidationError(
         `personalization.mode must be one of: ${PERSONALIZATION_MODES.join(', ')}`
@@ -518,6 +520,12 @@ router.post('/personalized', async (req: Request, res: Response, next: NextFunct
     const selectedSkillIdStrings = selectedSkillIds.filter(
       (v): v is string => typeof v === 'string'
     );
+
+    if (Array.isArray(selectedSkillNames) && selectedSkillNames.length > 5) {
+      throw new ValidationError('You can select up to 5 skills only');
+    }
+    const selectedSkillNameStrings = (Array.isArray(selectedSkillNames) ? selectedSkillNames : [])
+      .filter((v): v is string => typeof v === 'string' && v.trim().length > 0 && v.length <= 100);
 
     const stabilityPreference = computeStabilityPreference(stable, trending);
 
@@ -558,7 +566,12 @@ router.post('/personalized', async (req: Request, res: Response, next: NextFunct
       : mergeTenSkills(
           job.title,
           coreFive,
-          selectDynamicSkills(await fetchFocusSkillPool(job.title, jd, coreFive), selectedSkillIdStrings)
+          selectDynamicSkills(
+            await fetchFocusSkillPool(job.title, jd, coreFive),
+            selectedSkillIdStrings,
+            selectedSkillNameStrings,
+            coreFive
+          )
         );
 
     const cvOnlyMode = skipGibberish;
