@@ -943,7 +943,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                       Your Dream Job Posting <span className="field-required" aria-hidden="true">*</span>
                     </span>
                     <span className="field-hint">
-                      Paste the full description, or a link — we'll fetch the posting for you.
+                      Paste the full description, or a link and we'll fetch the posting for you.
                     </span>
                   </label>
                   <textarea
