@@ -1032,6 +1032,13 @@
   .job-description-warning {
     flex-wrap: wrap;
   }
+
+  /* The 4-step chain with full labels and 48px connectors cannot fit a phone
+     width - keep only the active step's label so the chain never overflows. */
+  .step-label { display: none; }
+  .step--active .step-label { display: inline; }
+  .step-line,
+  .upload-app-header .step-line { width: 16px; margin: 0 0.4rem; }
 }
 
 /* Field label that carries an About trigger on its right. */

@@ -8,11 +8,6 @@ import {
   getModelStatusTitles,
   MODEL_STATUS_TITLES_PAGE_SIZE,
 } from '../services/modelStatus.service';
-import {
-  abortPipeline,
-  getPipelineStatus,
-  triggerPipeline,
-} from '../services/pipelineTrigger.service';
 
 const router = Router();
 
@@ -138,47 +133,6 @@ router.get(
       const limit = Number.isFinite(limitRaw) ? limitRaw : MODEL_STATUS_TITLES_PAGE_SIZE;
 
       res.json(await getModelStatusTitles(runId, offset, limit));
-    } catch (err) {
-      next(err);
-    }
-  },
-);
-
-router.get(
-  '/pipeline/status',
-  authenticate,
-  requireRole('admin'),
-  async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      res.json(await getPipelineStatus());
-    } catch (err) {
-      next(err);
-    }
-  },
-);
-
-router.post(
-  '/pipeline/trigger',
-  authenticate,
-  requireRole('admin'),
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const triggeredBy = req.user?.email ?? req.user?.id ?? 'admin';
-      res.status(202).json(await triggerPipeline(triggeredBy));
-    } catch (err) {
-      next(err);
-    }
-  },
-);
-
-router.post(
-  '/pipeline/abort',
-  authenticate,
-  requireRole('admin'),
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const abortedBy = req.user?.email ?? req.user?.id ?? 'admin';
-      res.status(200).json(await abortPipeline(abortedBy));
     } catch (err) {
       next(err);
     }

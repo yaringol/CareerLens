@@ -23,7 +23,7 @@ export async function listJobs(): Promise<IJob[]> {
   return jobs;
 }
 
-export async function getCoreSkillsById(jobId: string, titleMatch = 0.0): Promise<{
+export async function getCoreSkillsById(jobId: string): Promise<{
   jobId: string;
   jobTitle: string;
   coreSkills: string[];
@@ -35,7 +35,7 @@ export async function getCoreSkillsById(jobId: string, titleMatch = 0.0): Promis
   const job = await getJobById(jobId);
   if (!job) throw new NotFoundError('Job not found');
 
-  const coreSkills = await getCoreSkills(job.title, titleMatch);
+  const coreSkills = await getCoreSkills(job.title);
   if (!coreSkills) {
     throw new DsModelError(`No core skills available for job title "${job.title}"`, 503);
   }

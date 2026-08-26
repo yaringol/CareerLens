@@ -450,6 +450,16 @@
   .improve-compare { grid-template-columns: 1fr; }
 }
 
+/* Topbar = nav pills + 3-step chain + logo in one row: far too wide for a
+   phone. Wrap it, drop the decorative logo and the inactive step labels. */
+@media (max-width: 700px) {
+  .improve-topbar { flex-wrap: wrap; row-gap: 0.75rem; }
+  .improve-topbar .app-logo { display: none; }
+  .improve-step-label { display: none; }
+  .improve-step--active .improve-step-label { display: inline; }
+  .improve-step-line { width: 16px; margin: 0 0.4rem; }
+}
+
 .improve-panel {
   border-radius: var(--radius-card);
   padding: 1.25rem;

@@ -437,7 +437,6 @@ export default function PersonalizationScreen() {
         input.canonicalTitle,
         input.cvText,
         input.isPostingMode ? input.jobDescription : '',
-        0.0,
         { skipGibberish: !input.isPostingMode, excludeCvId: input.excludeCvId || undefined }
       )
       sessionStorage.setItem(
@@ -507,7 +506,7 @@ export default function PersonalizationScreen() {
               <span className="personalize-detected-note"> · optional step, skip anytime with standard results</span>
               {options?.roleDataLimited && (
                 <span className="personalize-detected-note">
-                  {' '}· limited market data for this role — skill recommendations may be less reliable
+                  {' '}· limited market data for this role, so skill recommendations may be less reliable
                 </span>
               )}
             </p>

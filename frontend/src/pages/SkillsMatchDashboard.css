@@ -724,6 +724,11 @@
   .dashboard-screen { padding: 1.5rem 1rem 4rem; }
   .score-card { max-width: 100%; }
   .dashboard-nav { flex-wrap: wrap; gap: 0.75rem; }
+  /* keep only the active step's label so the step chain fits a phone width */
+  .step-indicator { justify-content: center; }
+  .step-label { display: none; }
+  .step--active .step-label { display: inline; }
+  .step-line { width: 16px; margin: 0 0.5rem; }
 }
 
 /* ─── M03: readable explanations at decision points ──────────────────────

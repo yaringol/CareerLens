@@ -23,14 +23,14 @@ const CONTENT: Record<AboutTopic, { title: string; body: React.ReactNode }> = {
         </dl>
         <h3>What the percentage means</h3>
         <p>
-          It is how sure we are about the <strong>role</strong> — not how well your CV matches a
+          It is how sure we are about the <strong>role</strong>, not how well your CV matches a
           job. Above 60% we select the role for you; below that we ask you to choose, because a
           low number usually means the CV genuinely fits more than one role.
         </p>
         <h3>If your role is not listed</h3>
         <p>
           Some roles are outside what the model was trained on. Rather than guess, we say so and
-          let you pick the closest supported role manually — your analysis then runs against that
+          let you pick the closest supported role manually. Your analysis then runs against that
           role's skills.
         </p>
       </>
@@ -70,7 +70,7 @@ const CONTENT: Record<AboutTopic, { title: string; body: React.ReactNode }> = {
           We extract up to 10 skills from the job posting and you pick the 5 to focus on. Only those
           appear in your results, so choose the ones the role really turns on.
         </p>
-        <p>This step is optional — skipping it runs the analysis with our standard selection.</p>
+        <p>This step is optional. Skipping it runs the analysis with our standard selection.</p>
       </>
     ),
   },

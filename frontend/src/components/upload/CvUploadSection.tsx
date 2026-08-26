@@ -314,12 +314,18 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
   // suggestions or /title/normalize search results) - never free text, so the
   // resulting canonicalTitle is always one the rest of the app can act on.
   function selectSuggestedRole(suggestion: TitleMatchSuggestion) {
-    if (roleDetection.status !== 'uncertain' && roleDetection.status !== 'not-found') return
+    if (roleDetection.status === 'idle' || roleDetection.status === 'detecting') return
+    // 'ready' belongs here too: a confident detection can still be the wrong
+    // role, and that is the case the manual search exists for. Leaving it out
+    // made the override silently do nothing on exactly those CVs - the panel
+    // opened, the results listed, the click changed neither the role shown nor
+    // the title sent to /analyze.
+    const detectedTitle = roleDetection.status === 'uncertain' || roleDetection.status === 'ready'
+      ? roleDetection.detectedTitle
+      : manualTitleQuery.trim()
     setRoleDetection({
       status: 'ready',
-      detectedTitle: roleDetection.status === 'uncertain'
-        ? roleDetection.detectedTitle
-        : manualTitleQuery.trim(),
+      detectedTitle,
       canonicalTitle: suggestion.canonicalTitle,
       confidence: suggestion.confidence,
       source: suggestion.source,
@@ -522,7 +528,6 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
         roleDetection.canonicalTitle,
         cvText,
         isPostingMode ? trimmedJobDescription : '',
-        0.0,
         { skipGibberish: !isPostingMode, excludeCvId: excludeCvId || undefined },
       )
       sessionStorage.setItem(
@@ -938,7 +943,7 @@ const CvUploadSection = forwardRef<HTMLElement, CvUploadSectionProps>(function C
                       Your Dream Job Posting <span className="field-required" aria-hidden="true">*</span>
                     </span>
                     <span className="field-hint">
-                      Paste the full description, or a link — we'll fetch the posting for you.
+                      Paste the full description, or a link and we'll fetch the posting for you.
                     </span>
                   </label>
                   <textarea

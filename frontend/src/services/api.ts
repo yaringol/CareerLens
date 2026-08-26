@@ -347,7 +347,6 @@ export async function analyzeCv(
   canonicalTitle: string,
   cvText: string,
   jobDescription: string,
-  titleMatch = 0.0,
   options: { skipGibberish?: boolean; excludeCvId?: string } = {}
 ): Promise<AnalyzeResponse> {
   const jd = jobDescription.trim()
@@ -365,7 +364,6 @@ export async function analyzeCv(
       canonicalTitle,
       cvText,
       jobDescription: jd,
-      titleMatch,
       ...(options.excludeCvId ? { excludeCvId: options.excludeCvId } : {}),
     }),
   }, LLM_TIMEOUT_MS)
@@ -798,54 +796,4 @@ export async function fetchAdminModelStatusTitles(
 /** @deprecated Prefer fetchAdminModelStatusSummary. */
 export async function fetchAdminModelStatus(): Promise<AdminModelStatusResponse> {
   return fetchAdminModelStatusSummary() as Promise<AdminModelStatusResponse>
-}
-
-export interface AdminPipelineRun {
-  id: string
-  status: 'running' | 'completed' | 'failed' | 'aborted'
-  triggeredBy: string
-  command: string
-  startedAt: string
-  finishedAt: string | null
-  exitCode: number | null
-  logTail: string
-  abortedBy?: string | null
-}
-
-export interface AdminPipelineStatusResponse {
-  enabled: boolean
-  manualCommand: string
-  activeRun: AdminPipelineRun | null
-  lastRun: AdminPipelineRun | null
-}
-
-export async function fetchAdminPipelineStatus(): Promise<AdminPipelineStatusResponse> {
-  const res = await apiFetch(`${base()}/admin/pipeline/status`, {
-    headers: { ...authHeaders() },
-  })
-  return res.json()
-}
-
-export async function triggerAdminPipeline(): Promise<AdminPipelineRun> {
-  const res = await apiFetch(`${base()}/admin/pipeline/trigger`, {
-    method: 'POST',
-    headers: { ...authHeaders() },
-  })
-  if (res.status === 202) {
-    return res.json()
-  }
-  const err = await res.json().catch(() => ({}))
-  throw new Error((err as { error?: string }).error || `Pipeline trigger failed (${res.status})`)
-}
-
-export async function abortAdminPipeline(): Promise<{ id: string; status: 'aborted'; abortedBy: string }> {
-  const res = await apiFetch(`${base()}/admin/pipeline/abort`, {
-    method: 'POST',
-    headers: { ...authHeaders() },
-  })
-  if (res.ok) {
-    return res.json()
-  }
-  const err = await res.json().catch(() => ({}))
-  throw new Error((err as { error?: string }).error || `Pipeline abort failed (${res.status})`)
 }

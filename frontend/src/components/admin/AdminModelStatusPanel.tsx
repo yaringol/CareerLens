@@ -7,7 +7,6 @@ import {
   type AdminModelStatusSummaryResponse,
   type AdminModelTitleRow,
 } from '../../services/api'
-import AdminPipelinePanel from './AdminPipelinePanel'
 
 const TITLES_PAGE_SIZE = 25
 
@@ -82,14 +81,10 @@ function ModelStatusSkeleton() {
 
 interface AdminModelStatusPanelProps {
   onError: (message: string) => void
-  onPipelineError: (message: string) => void
-  onPipelineSuccess: (message: string) => void
 }
 
 export default function AdminModelStatusPanel({
   onError,
-  onPipelineError,
-  onPipelineSuccess,
 }: AdminModelStatusPanelProps) {
   const [status, setStatus] = useState<AdminModelStatusSummaryResponse | null>(null)
   const [pendingCount, setPendingCount] = useState<number | null>(null)
@@ -258,8 +253,6 @@ export default function AdminModelStatusPanel({
           </p>
         </>
       )}
-
-      <AdminPipelinePanel onError={onPipelineError} onSuccess={onPipelineSuccess} />
 
       {model1 && (
         <>

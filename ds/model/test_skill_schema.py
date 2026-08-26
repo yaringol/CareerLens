@@ -85,3 +85,29 @@ class SkillSchemaTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class MixedTimezoneObservations(unittest.TestCase):
+    """Regression: a corpus mixing pre-extracted documents (skill_records read
+    back from Mongo -> naive datetimes) with freshly-extracted ones (parsed from
+    an ISO string -> tz-aware) crashed compute_stability_score on sorted()."""
+
+    def test_naive_and_aware_dates_do_not_raise(self):
+        dates = [
+            datetime(2026, 6, 1),                                # naive
+            datetime(2026, 6, 15, tzinfo=timezone.utc),          # aware
+            datetime(2026, 7, 1),                                # naive
+            datetime(2026, 7, 20, tzinfo=timezone.utc),          # aware
+        ]
+        result = compute_stability_score(dates)
+        self.assertEqual(result['observation_count'], 4)
+        self.assertIsNotNone(result['first_observed_at'].tzinfo)
+        self.assertIsNotNone(result['last_observed_at'].tzinfo)
+        self.assertEqual(result['first_observed_at'],
+                         datetime(2026, 6, 1, tzinfo=timezone.utc))
+        self.assertEqual(result['last_observed_at'],
+                         datetime(2026, 7, 20, tzinfo=timezone.utc))
+
+    def test_none_entries_are_dropped(self):
+        dates = [datetime(2026, 6, 1), None, datetime(2026, 7, 1, tzinfo=timezone.utc)]
+        self.assertEqual(compute_stability_score(dates)['observation_count'], 2)

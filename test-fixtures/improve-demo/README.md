@@ -61,6 +61,6 @@ role/company/date-range line - would tighten this further; not implemented.
 
 ## Content rules
 
-Same as `authentic-cvs/src/DESIGN-NOTES.md`: fictional people, fictional companies,
+Same as `authentic-cvs/generation/DESIGN-NOTES.md`: fictional people, fictional companies,
 Israeli-market conventions, English only, name and current title inside the first 25
 non-empty lines.

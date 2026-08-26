@@ -4,6 +4,12 @@
 presentation. Anything not in this document — or in the "must not be cited"
 section below — does not go into a submission artefact.
 
+**Companion document:** [`data-pipeline-metrics.md`](data-pipeline-metrics.md)
+holds the data-pipeline funnel, the corpus-scale figures and the full metric
+catalogue (formula + placement per metric), all recomputed from Mongo and the
+live artifact on 2026-08-18. Numbers there are citable on the same terms as the
+ones below.
+
 **Status:** Parts A and C complete. Part B measured except human agreement,
 which was deliberately not run — see §2.5. Updated 2026-08-03. · **Measured at
 commit** `29d0376` + M19/W6 (uncommitted at time of writing) · Raw data:

@@ -383,4 +383,7 @@
 @media (max-width: 600px) {
   .account-header { padding: 1rem; flex-wrap: wrap; }
   .account-body { margin: 1.5rem auto; }
+  /* three labeled tabs overflow a phone width at desktop padding */
+  .account-tabs { justify-content: space-between; }
+  .account-tab { padding: 0.625rem 0.5rem; font-size: 0.8125rem; }
 }
