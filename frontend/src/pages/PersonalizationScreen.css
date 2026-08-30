@@ -102,6 +102,26 @@
   color: #5a5480;
 }
 
+.personalize-preference-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  width: 100%;
+}
+
+.personalize-preference-row .save-toggle {
+  margin-top: 0;
+  min-width: 0;
+}
+
+.personalize-preference-row .btn-ghost {
+  margin-top: 0;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
 /* ── Custom weight sliders ────────────────────────────────────────── */
 .weights-body {
   margin-top: 0.9rem;

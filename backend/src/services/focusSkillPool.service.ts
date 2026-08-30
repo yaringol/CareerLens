@@ -1,4 +1,4 @@
-import { getSkillsFromText, getTrendingSkills } from './dsModel';
+import { getSkillsFromText } from './dsModel';
 import { extractDynamicSkills } from './job.service';
 import { skillId } from './personalization.service';
 
@@ -42,10 +42,10 @@ function isNearDuplicate(skill: string, existing: string[]): boolean {
 }
 
 /**
- * Builds the posting-aware "focus skill" candidate pool: trending market skills first,
- * then LLM/skillner skills extracted from the job posting, deduped and capped at
- * ROLE_SKILL_POOL_SIZE, with skills near-duplicate to the (already-chosen) core skills
- * excluded. The top DEFAULT_SELECTED_COUNT are flagged selectedByDefault.
+ * Builds the posting-aware "focus skill" candidate pool from job-posting extracts,
+ * deduped and capped at ROLE_SKILL_POOL_SIZE, with skills near-duplicate to the
+ * (already-chosen) core skills excluded. The top DEFAULT_SELECTED_COUNT are flagged
+ * selectedByDefault.
  */
 export function buildSkillOptions(skills: string[], excludedCoreSkills: string[] = []): SkillOption[] {
   const seen = new Set<string>();
@@ -71,27 +71,22 @@ export function buildSkillOptions(skills: string[], excludedCoreSkills: string[]
 }
 
 /**
- * Fetches the same trending+LLM+skillner candidates the Personalization screen's Focus
- * Skills panel is built from (see POST /api/personalize/options), so ids here match
- * whatever the client selected there — a `selectedSkillIds` lookup against a
- * differently-built pool would silently drop the user's picks.
+ * Fetches the posting-derived candidates the Personalization screen's Dynamic Skills
+ * panel is built from (see POST /api/personalize/options), so ids here match whatever
+ * the client selected there. A `selectedSkillIds` lookup against a differently-built
+ * pool would silently drop the user's picks. Market trending skills are not mixed in;
+ * those belong to Core Skills.
  */
 export async function fetchFocusSkillPool(
   jobTitle: string,
   jobDescription: string,
   excludedCoreSkills: string[] = []
 ): Promise<SkillOption[]> {
-  const [trending, dynamic, skillNer] = await Promise.all([
-    getTrendingSkills(jobTitle, ROLE_SKILL_POOL_SIZE).catch(() => []),
+  const [dynamic, skillNer] = await Promise.all([
     extractDynamicSkills(jobTitle, jobDescription)
       .then((r) => r.pool)
       .catch(() => [] as string[]),
     getSkillsFromText(jobDescription, ROLE_SKILL_POOL_SIZE).catch(() => [] as string[]),
   ]);
-  const candidates = [
-    ...trending.map((t: { skill: string }) => t.skill),
-    ...dynamic,
-    ...skillNer,
-  ];
-  return buildSkillOptions(candidates, excludedCoreSkills);
+  return buildSkillOptions([...dynamic, ...skillNer], excludedCoreSkills);
 }

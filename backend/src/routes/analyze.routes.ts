@@ -235,9 +235,8 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     const { coreSkills } = await getCoreSkillsById(id);
 
     // Time-aware skills (recency-weighted) fetched before scoring. Best-effort: a DS
-    // hiccup must never fail analyze. Trending skills are prepended to the dynamic list
-    // so positions 6-10 favour what's currently in demand; each skill's trend is also
-    // threaded to the response for display.
+    // hiccup must never fail analyze. Trend tags are for display only. Dynamic slots
+    // (positions 6-10) come from the pasted posting, not the market trending list.
     let trending: { skill: string; trend: string }[] = [];
     if (!skipGibberish) {
       try {
@@ -253,10 +252,11 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 
     const allSkills = skipGibberish
       ? coreSkills.slice(0, 5)
-      : mergeTenSkills(job.title, coreSkills, [
-          ...trending.map((t) => t.skill),
-          ...(await extractDynamicSkills(job.title, descriptionForDynamic)).topFive,
-        ]);
+      : mergeTenSkills(
+          job.title,
+          coreSkills,
+          (await extractDynamicSkills(job.title, descriptionForDynamic)).topFive
+        );
 
     const cvOnlyMode = skipGibberish;
     const expectedSkillCount = cvOnlyMode ? 5 : 10;
